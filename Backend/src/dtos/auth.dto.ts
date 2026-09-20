@@ -17,7 +17,6 @@ export interface UserResponseDTO {
 
 export interface AuthResponseDTO {
   accessToken: string;
-  refreshToken: string; // Sent in body specifically for Mobile Strategy
   user: UserResponseDTO;
 }
 

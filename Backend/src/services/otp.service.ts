@@ -29,6 +29,16 @@ export class OTPService {
    */
   static async sendEmail(to: string, subject: string, html: string) {
     if (env.NODE_ENV === 'test') return; // Bypass real network calls in tests
+    
+    // If developer hasn't set up real Ethereal credentials yet, mock the email to the console!
+    if (!env.SMTP_USER || env.SMTP_USER === 'your_ethereal_user@ethereal.email') {
+      console.log(`\n======================================================`);
+      console.log(`📧 [EMAIL MOCK] To: ${to}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Content (HTML stripped): ${html.replace(/<[^>]*>?/gm, '')}`);
+      console.log(`======================================================\n`);
+      return;
+    }
 
     try {
       const transporter = this.getTransporter();

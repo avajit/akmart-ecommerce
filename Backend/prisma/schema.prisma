@@ -44,7 +44,7 @@ model RefreshToken {
   id          String    @id @default(uuid())
   tokenHash   String    @unique
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   deviceInfo  String?
   expiresAt   DateTime
   revokedAt   DateTime?
@@ -57,7 +57,7 @@ model RefreshToken {
 model AuditLog {
   id          String   @id @default(uuid())
   userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action      String
   entity      String   // e.g. 'PRODUCT', 'ORDER', 'ROLE'
   entityId    String
