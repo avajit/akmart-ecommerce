@@ -45,16 +45,10 @@ jobs:
       working-directory: ./Backend
       run: npm ci
 
-    - name: Run Prisma Migrate
-      working-directory: ./Backend
-      env:
-        DATABASE_URL: postgresql://akmart:password@localhost:5432/akmart_test_db?schema=public
-      run: npx prisma migrate dev --name init
-
-    - name: Create .env.test
+    - name: Create .env
       working-directory: ./Backend
       run: |
-        cat << EOF > .env.test
+        cat << EOF > .env
         DATABASE_URL="postgresql://akmart:password@localhost:5432/akmart_test_db?schema=public"
         REDIS_URL="redis://localhost:6379"
         PORT=5001
@@ -65,7 +59,7 @@ jobs:
         JWT_REFRESH_EXPIRES_IN="7d"
         JWT_REFRESH_EXPIRES_IN_MS=604800000
         OTP_EXPIRES_IN_MS=900000
-        BCRYPT_SALT_ROUNDS=12
+        BCRYPT_SALT_ROUNDS=1
         DEFAULT_USER_ROLE="CONSUMER"
         SMTP_HOST="smtp.ethereal.email"
         SMTP_PORT=587
@@ -79,6 +73,11 @@ jobs:
         AUTH_RATE_LIMIT_WINDOW_MS=900000
         AUTH_RATE_LIMIT_MAX_REQUESTS=5
         EOF
+        cp .env .env.test
+
+    - name: Run Prisma Migrate
+      working-directory: ./Backend
+      run: npx prisma migrate dev --name init
 
     - name: Run Unit, Integration, E2E & Security Tests
       working-directory: ./Backend
