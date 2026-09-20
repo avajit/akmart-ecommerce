@@ -61,6 +61,7 @@ jobs:
         OTP_EXPIRES_IN_MS=900000
         BCRYPT_SALT_ROUNDS=1
         DEFAULT_USER_ROLE="CONSUMER"
+        GOOGLE_CLIENT_ID="test-google-client-id.apps.googleusercontent.com"
         SMTP_HOST="smtp.ethereal.email"
         SMTP_PORT=587
         SMTP_USER="test_user"
