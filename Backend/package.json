@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx src/server.ts",
-    "test": "dotenv -e .env.test -- vitest run",
-    "test:watch": "dotenv -e .env.test -- vitest",
+    "test": "npx dotenv-cli -e .env.test -- vitest run",
+    "test:watch": "npx dotenv-cli -e .env.test -- vitest",
     "postinstall": "prisma skills sync || exit 0"
   },
   "prisma": {
