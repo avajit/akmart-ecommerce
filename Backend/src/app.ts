@@ -1,0 +1,81 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import { env } from './config/env';
+import { errorHandler } from './middlewares/errorHandler';
+import { globalLimiter } from './middlewares/rateLimiter';
+import { PrismaClient } from '@prisma/client';
+import Redis from 'ioredis';
+import { setupGracefulShutdown } from './utils/gracefulShutdown';
+import { createServer } from 'http';
+
+// Initialize Core Services
+export const prisma = new PrismaClient();
+export const redis = new Redis(env.REDIS_URL);
+
+const app = express();
+const server = createServer(app);
+
+// Graceful Shutdown setup
+setupGracefulShutdown(server, prisma, redis);
+
+// --- GLOBAL MIDDLEWARES ---
+
+// 1. Security Headers (Helmet)
+app.use(helmet());
+
+// 2. CORS (Strict allowed origins for web & mobile)
+app.use(
+  cors({
+    origin: [env.FRONTEND_WEB_URL, env.FRONTEND_MOBILE_URL],
+    credentials: true, // Required for HttpOnly cookies (Refresh Token)
+  })
+);
+
+// 3. Body Parsers (with size limits to prevent DoS)
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
+
+// 4. Rate Limiting (Global DDoS protection via Redis)
+app.use(globalLimiter);
+
+// --- ROUTES ---
+import authRoutes from './routes/auth.routes';
+import sessionRoutes from './routes/session.routes';
+
+// Health Check Endpoint (For orchestrators/load balancers)
+app.get('/health', async (req, res) => {
+  try {
+    // Check DB and Redis connectivity
+    await prisma.$queryRaw`SELECT 1`;
+    await redis.ping();
+    res.status(200).json({ status: 'ok', message: 'All systems operational' });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(503).json({ status: 'error', message: 'Service unavailable' });
+  }
+});
+
+// Register API Routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/sessions', sessionRoutes);
+
+// --- ERROR HANDLING ---
+
+// Catch-all unhandled route handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: 404,
+      message: `Cannot find ${req.method} ${req.originalUrl}`,
+    },
+  });
+});
+
+// Centralized Error Handling Middleware (must be last)
+app.use(errorHandler);
+
+export { app, server };

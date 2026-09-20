@@ -1,0 +1,96 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String?  @unique
+  phoneNumber      String?  @unique // Crucial for Nepal market (#26)
+  passwordHash     String?
+  googleId         String?  @unique
+  fullName         String
+
+  roleId           String
+  role             Role     @relation(fields: [roleId], references: [id])
+
+  isEmailVerified  Boolean  @default(false)
+  isPhoneVerified  Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  avatarUrl        String?
+
+  deletedAt        DateTime? // Soft delete strategy (#4c)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  refreshTokens    RefreshToken[]
+  auditLogs        AuditLog[]
+
+  // App-level rule (#13): enforce in service layer, not DB constraint —
+  // every user must have at least one of passwordHash / googleId / phoneNumber+OTP
+
+  @@index([email])
+  @@index([phoneNumber])
+}
+
+// Fix #1: Separate Refresh Token table for multi-device support
+model RefreshToken {
+  id          String    @id @default(uuid())
+  tokenHash   String    @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  deviceInfo  String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+// (VerificationToken table removed: OTPs are now securely stored in Redis)
+
+// Fix #3: Audit logging for enterprise security (#3)
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entity      String   // e.g. 'PRODUCT', 'ORDER', 'ROLE'
+  entityId    String
+  details     Json?
+  createdAt   DateTime @default(now())
+}
+
+// RBAC System
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // Fix #16: protects core roles from rename/delete
+
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   @unique // e.g. 'CREATE_PRODUCT', 'DELETE_ANY_PRODUCT', 'VIEW_SALES'
+  description String?
+
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  assignedAt   DateTime   @default(now()) // Fix #16b: audit trail for permission grants
+
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
