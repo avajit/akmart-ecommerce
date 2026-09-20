@@ -1,0 +1,62 @@
+name: Backend CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    # Spin up ephemeral PostgreSQL & Redis for tests
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: akmart
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: akmart_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        cache-dependency-path: Backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./Backend
+      run: npm ci
+
+    - name: Run Prisma Migrate
+      working-directory: ./Backend
+      env:
+        DATABASE_URL: postgresql://akmart:password@localhost:5432/akmart_test_db?schema=public
+      run: npx prisma migrate dev --name init
+
+    - name: Run Unit, Integration, E2E & Security Tests
+      working-directory: ./Backend
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://akmart:password@localhost:5432/akmart_test_db?schema=public
+        REDIS_URL: redis://localhost:6379
+        JWT_ACCESS_SECRET: test_access_secret
+        JWT_REFRESH_SECRET: test_refresh_secret
+      run: npm run test
