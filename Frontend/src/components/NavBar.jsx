@@ -3,13 +3,17 @@ import { NavLink, Link } from "react-router-dom";
 import { FiMenu, FiX, FiShoppingCart, FiUser, FiSearch } from "react-icons/fi";
 import { assets } from "../assets/frontend_assets/assets"; // Ensure this matches your folder path
 import { ShopContext } from "../context/ShopContext";
+import { useAuthStore } from "../store/authStore";
+import { useLogout } from "../hooks/useAuth";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // 1. Get Global State from Context
+  // 1. Get Global State
   const { setShowSearch, getCartCount } = useContext(ShopContext);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   const navItemStyle = ({ isActive }) =>
     isActive
@@ -68,26 +72,36 @@ function Navbar() {
             </span>
           </NavLink>
 
-          {/* Profile Dropdown */}
-          <div className="relative">
-            <button onClick={handleProfileClick} className="hover:text-amber-500 transition-colors mt-1">
-                <FiUser />
-            </button>
+          {/* Profile Dropdown or Login Button */}
+          {isAuthenticated ? (
+            <div className="relative">
+              <button onClick={handleProfileClick} className="hover:text-amber-500 transition-colors mt-1">
+                  <FiUser />
+              </button>
 
-            {profileOpen && (
-                <div className="absolute right-0 top-12 bg-[#1A1A1A] border border-gray-700 rounded-lg w-48 shadow-xl py-2 text-sm z-50">
-                    <NavLink to="/profile" className="block px-4 py-3 hover:bg-[#252525] hover:text-amber-500 transition-colors" onClick={closeAll}>
-                        My Profile
-                    </NavLink>
-                    <NavLink to="/order" className="block px-4 py-3 hover:bg-[#252525] hover:text-amber-500 transition-colors" onClick={closeAll}>
-                        Orders
-                    </NavLink>
-                    <button className="block w-full text-left px-4 py-3 hover:bg-[#252525] hover:text-amber-500 transition-colors border-t border-gray-700" onClick={closeAll}>
-                        Logout
-                    </button>
-                </div>
-            )}
-          </div>
+              {profileOpen && (
+                  <div className="absolute right-0 top-12 bg-[#1A1A1A] border border-gray-700 rounded-lg w-48 shadow-xl py-2 text-sm z-50">
+                      <NavLink to="/profile" className="block px-4 py-3 hover:bg-[#252525] hover:text-amber-500 transition-colors" onClick={closeAll}>
+                          My Profile
+                      </NavLink>
+                      <NavLink to="/orders" className="block px-4 py-3 hover:bg-[#252525] hover:text-amber-500 transition-colors" onClick={closeAll}>
+                          Orders
+                      </NavLink>
+                      <button 
+                          onClick={() => { closeAll(); logout(); }}
+                          disabled={isLoggingOut}
+                          className="block w-full text-left px-4 py-3 hover:bg-[#252525] hover:text-amber-500 transition-colors border-t border-gray-700 disabled:opacity-50"
+                      >
+                          {isLoggingOut ? 'Logging out...' : 'Logout'}
+                      </button>
+                  </div>
+              )}
+            </div>
+          ) : (
+            <NavLink to="/login" className="text-sm font-bold bg-amber-500 text-black px-4 py-2 rounded-full hover:bg-amber-400 transition-colors">
+              Login
+            </NavLink>
+          )}
         </div>
 
         {/* --- MOBILE ICONS & HAMBURGER --- */}
@@ -106,17 +120,31 @@ function Navbar() {
             </span>
           </NavLink>
 
-          {/* Mobile Profile */}
-          <button onClick={handleProfileClick} className="hover:text-amber-500">
-            <FiUser />
-          </button>
-            {profileOpen && (
-                <div className="absolute right-4 top-16 bg-[#1A1A1A] border border-gray-700 rounded-lg w-40 shadow-xl py-2 text-sm z-50">
-                    <NavLink to="/profile" className="block px-4 py-2 hover:bg-[#252525]" onClick={closeAll}>My Profile</NavLink>
-                    <NavLink to="/order" className="block px-4 py-2 hover:bg-[#252525]" onClick={closeAll}>Orders</NavLink>
-                    <button className="block w-full text-left px-4 py-2 hover:bg-[#252525] border-t border-gray-700" onClick={closeAll}>Logout</button>
-                </div>
-            )}
+          {/* Mobile Profile or Login */}
+          {isAuthenticated ? (
+            <>
+              <button onClick={handleProfileClick} className="hover:text-amber-500">
+                <FiUser />
+              </button>
+              {profileOpen && (
+                  <div className="absolute right-4 top-16 bg-[#1A1A1A] border border-gray-700 rounded-lg w-40 shadow-xl py-2 text-sm z-50">
+                      <NavLink to="/profile" className="block px-4 py-2 hover:bg-[#252525]" onClick={closeAll}>My Profile</NavLink>
+                      <NavLink to="/orders" className="block px-4 py-2 hover:bg-[#252525]" onClick={closeAll}>Orders</NavLink>
+                      <button 
+                          onClick={() => { closeAll(); logout(); }}
+                          disabled={isLoggingOut}
+                          className="block w-full text-left px-4 py-2 hover:bg-[#252525] border-t border-gray-700 disabled:opacity-50"
+                      >
+                          {isLoggingOut ? 'Logging out...' : 'Logout'}
+                      </button>
+                  </div>
+              )}
+            </>
+          ) : (
+            <NavLink to="/login" className="text-sm font-bold bg-amber-500 text-black px-3 py-1.5 rounded-full hover:bg-amber-400 transition-colors">
+              Login
+            </NavLink>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button className="text-2xl text-amber-500 ml-2" onClick={handleMenuClick}>
