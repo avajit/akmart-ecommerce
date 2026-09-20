@@ -75,9 +75,12 @@ jobs:
         EOF
         cp .env .env.test
 
-    - name: Run Prisma Migrate
+    - name: Setup Database
       working-directory: ./Backend
-      run: npx prisma migrate dev --name init
+      run: |
+        npx prisma generate
+        npx prisma migrate deploy
+        npx prisma db seed
 
     - name: Run Unit, Integration, E2E & Security Tests
       working-directory: ./Backend
