@@ -24,11 +24,12 @@ describe('Authentication API', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.userId).toBeDefined();
+      expect(response.body.message).toBeDefined(); // Returns a message, not a data payload
 
-      // Verify in test DB
+      // Verify the user was actually created in the DB (correct way to test registration)
       const dbUser = await prismaTest.user.findUnique({ where: { email: testUser.email }});
       expect(dbUser).toBeDefined();
+      expect(dbUser?.email).toBe(testUser.email);
     });
 
     it('should fail if email is already registered', async () => {
