@@ -10,8 +10,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
-      data: { userId: user.id },
+      message: 'Registration initiated. Please check your email or phone for the verification code.',
     });
   } catch (error) {
     next(error);
@@ -41,7 +40,6 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const responseData: AuthResponseDTO = {
       accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
       user: toUserResponseDTO(result.user),
     };
 
@@ -77,7 +75,6 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       message: 'Token refreshed successfully',
       data: {
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
       },
     });
   } catch (error) {
@@ -88,7 +85,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies.refreshToken || req.body.refreshToken;
+    const token = req?.cookies?.refreshToken || req?.body?.refreshToken;
     if (token) {
       await AuthService.logout(token);
     }
@@ -120,7 +117,6 @@ export const googleSSO = async (req: Request, res: Response, next: NextFunction)
       message: 'SSO Login successful',
       data: {
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
         user: toUserResponseDTO(result.user),
       },
     });
@@ -156,10 +152,41 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
 export const verifyAccount = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { identifier, token } = req.body;
-    await AuthService.verifyAccount(identifier, token);
+    const deviceInfo = req.headers['user-agent'] || 'Unknown Device';
+    const ip = req.ip || 'Unknown IP';
+
+    const result = await AuthService.verifyAccount(identifier, token, deviceInfo, ip);
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
+    });
+
+    const responseData: AuthResponseDTO = {
+      accessToken: result.accessToken,
+      user: toUserResponseDTO(result.user),
+    };
+
     res.status(200).json({
       success: true,
-      message: 'Account verified successfully. You can now log in.',
+      message: 'Account verified successfully. You are now logged in.',
+      data: responseData,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resendOTP = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { identifier } = req.body;
+    await AuthService.resendOTP(identifier);
+    
+    res.status(200).json({
+      success: true,
+      message: 'If the account exists and is not verified, a new OTP has been sent.',
     });
   } catch (error) {
     next(error);

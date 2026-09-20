@@ -81,7 +81,6 @@ export const errorHandler = (
       code: number;
       errorCode: string;
       message: string;
-      stack?: string;
     };
   }
 
@@ -93,11 +92,6 @@ export const errorHandler = (
       message,
     }
   };
-
-  // Attach stack trace only in development environment
-  if (env.NODE_ENV === 'development') {
-    errorResponse.error.stack = err.stack;
-  }
 
   res.status(statusCode).json(errorResponse);
 };

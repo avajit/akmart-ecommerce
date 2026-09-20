@@ -15,13 +15,14 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(10),
   JWT_REFRESH_SECRET: z.string().min(10),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_ACCESS_EXPIRES_IN_MS: z.coerce.number().default(15 * 60 * 1000), // 15 mins
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
-  JWT_REFRESH_EXPIRES_IN_MS: z.string().transform(Number).default(604800000 as never), // 7 days in ms
-  OTP_EXPIRES_IN_MS: z.string().transform(Number).default(900000 as never), // 15 mins in ms
+  JWT_REFRESH_EXPIRES_IN_MS: z.coerce.number().default(7 * 24 * 60 * 60 * 1000), // 7 days
+  GOOGLE_CLIENT_ID: z.string().min(1, 'Google Client ID is required'),
+  OTP_EXPIRES_IN_MS: z.coerce.number().default(15 * 60 * 1000), // 15 mins in ms
   BCRYPT_SALT_ROUNDS: z.string().transform(Number).default(12 as never),
   DEFAULT_USER_ROLE: z.string().default('CONSUMER'),
   
-  GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CALLBACK_URL: z.string().url().optional(),
   
