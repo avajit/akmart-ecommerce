@@ -2,7 +2,8 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 
 // Load environment variables from correct file
-dotenv.config({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env' });
+// Load environment variables from correct file
+dotenv.config({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env', override: true });
 
 const envSchema = z.object({
   PORT: z.string().default('5000'),
