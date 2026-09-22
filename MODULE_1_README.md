@@ -1,3 +1,139 @@
+# Module 1: Enterprise Foundation & Security Architecture
+
+**Goal**: Build a rock-solid, highly secure, and scalable backend foundation capable of horizontally scaling to support high traffic (Nepal market), while remaining pragmatic for v1 development without over-engineering prematurely.
+
+## 🏗️ 1. Infrastructure & Scaling Strategy
+- **Cluster Mode (PM2) & Graceful Shutdown:** Node.js runs via PM2 in cluster mode. We will implement `process.on('SIGTERM')` to close Prisma and Redis connections cleanly, preventing connection leaks and dropped requests on restarts.
+- **Stateless Architecture:** No session data saved in Node.js RAM. State is shared via Redis or PostgreSQL.
+- **Database Connection Pooling:** Prisma connection pooling via PgBouncer prevents DB crashes at scale.
+- **AWS Region Selection:** We will deploy to **AWS Mumbai (ap-south-1)** for the lowest possible latency to Nepal ISPs (Worldlink, NTC, Ncell).
+- **Health Checks:** A dedicated `/health` endpoint to monitor DB + Redis connectivity for orchestrators/load balancers.
+- **Logging & Observability:** Structured logging using `Winston` or `Pino` and error tracking (e.g., Sentry) will be set up immediately, not bolted on later.
+
+## 🔐 2. Enterprise Security Layers
+1. **Redis Rate Limiting:** Global limits (DDoS protection), Auth limits (brute-force protection), and granular per-user limits for endpoints like "add to cart".
+2. **Helmet.js & Body Size Limits:** Secure HTTP headers and `express.json({ limit: '10kb' })` to prevent large-payload DoS attacks.
+3. **Strict CORS & CSRF Protection:** Strict origins for Web/Mobile. Because we use `HttpOnly` cookies for Refresh Tokens, we are exposed to CSRF. We will implement `SameSite=Strict` (or Lax) and CSRF token checks on state-changing routes.
+4. **Input & Env Validation:** We will use `zod` to validate all incoming request bodies AND to validate `process.env` on startup, ensuring the server refuses to boot with missing config.
+5. **Secrets Management:** JWT secrets and DB URLs will be managed securely, ensuring `.env` is git-ignored with a clear rotation plan. Passwords hashed using `bcrypt` with a deliberate cost factor (e.g., 10-12) to balance security and login speed.
+
+## 🔑 3. Advanced Authentication (Dual JWT + SSO)
+- **Access Token:** Short-lived (15 mins) in headers, containing the User ID and permissions to avoid DB hits.
+- **Refresh Token (Isolated Table):** Stored in a separate `RefreshToken` table (not as a single string on the User). This allows multiple concurrent sessions (phone + laptop) and "logout from all devices" functionality. Stored in a secure `HttpOnly` cookie.
+- **Google SSO Account Linking:** If a user signs up with email/password and later uses Google SSO with the same email, the accounts will automatically link to prevent duplicates.
+- **Email & Phone Verification:** Dedicated `VerificationToken` table for OTP flows and password resets. **Phone number (`phoneNumber`) is a first-class field** since it's highly trusted in Nepal for COD confirmation and login.
+
+## 🛡️ 4. Dynamic RBAC & Audit Logging
+- **Dynamic Permissions:** Roles and Permissions are defined in DB tables and cached in Redis/JWT.
+- **Seed Scripts:** `prisma/seed.ts` ensures fresh environments instantly have the `SUPER_ADMIN` role and core permissions.
+- **Audit Logs:** An `AuditLog` table will track sensitive actions (refunds, bans, price changes) for dispute resolution.
+
+## 🕰️ 5. Localization & Data Integrity
+- **Timezone Handling:** Nepal is UTC+5:45. The DB will store everything in UTC natively, and all display logic / cron jobs will explicitly convert to Nepal time.
+- **Soft Deletes:** `deletedAt` timestamps will be used for Products, Orders, and Users instead of hard deletes to maintain order history integrity (e.g., if a product is deleted, past orders still need to reference it).
+
+## 🗄️ 6. Database Schema (Prisma ORM)
+
+```prisma
+// schema.prisma
+
+model User {
+  id               String   @id @default(uuid())
+  email            String?  @unique
+  phoneNumber      String?  @unique // Crucial for Nepal market
+  passwordHash     String?  
+  googleId         String?  @unique
+  fullName         String
+  
+  roleId           String
+  role             Role     @relation(fields: [roleId], references: [id])
+  
+  isEmailVerified  Boolean  @default(false)
+  isPhoneVerified  Boolean  @default(false)
+  isActive         Boolean  @default(true) 
+  avatarUrl        String?
+  
+  deletedAt        DateTime? // Soft delete strategy
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  refreshTokens    RefreshToken[]
+  auditLogs        AuditLog[]
+
+  @@index([email]) 
+  @@index([phoneNumber])
+}
+
+// 1. Fix: Separate Refresh Token table for multi-device support
+model RefreshToken {
+  id          String   @id @default(uuid())
+  tokenHash   String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  deviceInfo  String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+}
+
+// 2. Fix: Verification flow for Emails / Password Resets
+model VerificationToken {
+  id          String   @id @default(uuid())
+  identifier  String   // Email or phone number
+  token       String   @unique
+  type        String   // e.g., 'EMAIL_VERIFY', 'PASSWORD_RESET'
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+// 3. Fix: Audit logging for enterprise security
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entity      String   // e.g., 'PRODUCT', 'ORDER'
+  entityId    String
+  details     Json?
+  createdAt   DateTime @default(now())
+}
+
+// RBAC System
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique 
+  description String?
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   @unique 
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  @@id([roleId, permissionId])
+}
+```
+
+## 🚀 7. Action Plan (Execution Steps)
+1. Initialize strict TypeScript environment and install dependencies (Express, Prisma, Redis, JWT, bcrypt, zod, helmet, winston for structured logging).
+2. Write `zod` schema to validate `process.env` on startup.
+3. Setup Prisma Schema (incorporating soft deletes, audit logs, verification tokens) and `prisma/seed.ts`.
+4. Build Middlewares: Graceful shutdown handlers, Redis Rate Limiter, Helmet, CORS, CSRF checks, Request Body Size Limits, Zod Input Validation, and Health Check endpoint.
+5. Build Auth Controllers: Register, Login (bcrypt cost 12), Google SSO linking, Multi-device Refresh Tokens, and Logout logic.
+
+
+///////////////////////////////////////////////////////
+
+
 # Module 1: Enterprise Foundation & Security Architecture (Complete — All 27 Points)
 
 **Goal**: Build a rock-solid, secure, horizontally-scalable backend foundation for a Nepal-based e-commerce platform (Flipkart/Amazon-style), built correctly from day one without over-engineering for traffic you don't have yet.

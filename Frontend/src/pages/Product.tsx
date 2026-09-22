@@ -1,122 +1,108 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ShopContext } from '../context/ShopContext'
-import { assets } from '../assets/frontend_assets/assets'
-import RelatedProducts from '../components/RelatedProducts';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { getProductBySlug, addToCart } from '../api/consumer.api';
+import { toast } from 'react-toastify';
 
-const Product = () => {
-
-  const { productId } = useParams();
-  const { products, currency, addToCart } = useContext(ShopContext);
-  const [productData, setProductData] = useState(false);
-  const [image, setImage] = useState('');
-  const [size, setSize] = useState('');
-
-  const fetchProductData = async () => {
-    products.map((item) => {
-        if (item._id === productId) {
-            setProductData(item);
-            setImage(item.image[0]);
-            return null;
-        }
-    })
-  }
-
+export default function Product() {
+  const { slug } = useParams();
+  const [product, setProduct] = useState<any>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState('');
+  
   useEffect(() => {
-    fetchProductData();
-  }, [productId, products])
+    if (slug) {
+      getProductBySlug(slug).then((res: any) => {
+        setProduct(res.data);
+        if (res.data?.variants?.length > 0) {
+          setSelectedVariantId(res.data.variants[0].id);
+        }
+      }).catch(() => toast.error("Product not found"));
+    }
+  }, [slug]);
 
-  return productData ? (
-    <div className='border-t-2 border-gray-800 pt-10 transition-opacity ease-in duration-500 opacity-100'>
-      
-      {/* --- PRODUCT DATA --- */}
-      <div className='flex gap-12 sm:gap-12 flex-col sm:flex-row'>
+  const handleAddToCart = async (listingId: string) => {
+    try {
+      await addToCart({ sellerListingId: listingId, variantId: selectedVariantId, quantity: 1 });
+      toast.success("Added to cart!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Failed to add to cart. Are you logged in?");
+    }
+  };
 
-        {/* --- LEFT: IMAGES --- */}
-        <div className='flex-1 flex flex-col-reverse gap-3 sm:flex-row'>
-            <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full'>
-                {productData.image.map((item, index) => (
-                    <img 
-                        onClick={() => setImage(item)} 
-                        src={item} 
-                        key={index} 
-                        className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer rounded-md border border-gray-700 hover:border-amber-500 transition-all opacity-80 hover:opacity-100' 
-                        alt="" 
-                    />
-                ))}
-            </div>
-            <div className='w-full sm:w-[80%]'>
-                <img className='w-full h-auto rounded-lg border border-gray-800 bg-[#1a1a1a]' src={image} alt="" />
-            </div>
+  if (!product) return <div className="text-center py-20 text-white">Loading...</div>;
+
+  const currentVariant = product.variants?.find((v: any) => v.id === selectedVariantId);
+  const listings = currentVariant?.listings || [];
+
+  return (
+    <div className="max-w-7xl mx-auto py-10 px-4 flex flex-col md:flex-row gap-12">
+      <div className="w-full md:w-1/2">
+        <div className="w-full aspect-square bg-gray-900 rounded-2xl border border-gray-800 flex items-center justify-center overflow-hidden">
+           {currentVariant?.images?.[0]?.url ? (
+             <img src={currentVariant.images[0].url} alt="" className="w-full h-full object-cover" />
+           ) : <span className="text-gray-600">No Image</span>}
+        </div>
+      </div>
+      <div className="w-full md:w-1/2 text-white">
+        <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+        <p className="text-gray-400 mb-6">{product.brand?.name} | {product.category?.name}</p>
+        
+        <p className="text-gray-300 mb-8">{product.description}</p>
+        
+        <div className="mb-8">
+          <p className="font-medium text-gray-400 mb-3">Select Variant</p>
+          <div className="flex gap-3">
+            {product.variants?.map((v: any) => (
+              <button 
+                key={v.id} 
+                onClick={() => setSelectedVariantId(v.id)}
+                className={`px-4 py-2 rounded-lg border ${selectedVariantId === v.id ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' : 'border-gray-700 text-gray-400 bg-gray-900'}`}
+              >
+                {v.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* --- RIGHT: PRODUCT DETAILS --- */}
-        <div className='flex-1'>
-            <h1 className='font-medium text-2xl mt-2 text-white tracking-wide'>{productData.name}</h1>
-            
-            <div className='flex items-center gap-1 mt-2 text-amber-500'>
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_dull_icon} alt="" className="w-3.5" />
-                <p className='pl-2 text-gray-400 text-sm'>(122)</p>
-            </div>
-
-            <p className='mt-5 text-3xl font-medium text-amber-500'>{currency}{productData.price}</p>
-            <p className='mt-5 text-gray-400 md:w-4/5 leading-7 font-light'>{productData.description}</p>
-
-            <div className='flex flex-col gap-4 my-8'>
-                <p className='text-gray-200 font-medium text-sm uppercase tracking-wide'>Select Size</p>
-                <div className='flex gap-2'>
-                    {productData.sizes.map((item, index) => (
-                        <button 
-                            onClick={() => setSize(item)}
-                            className={`py-2 px-4 bg-[#1A1A1A] border text-sm font-medium rounded transition-all duration-300
-                            ${item === size ? 'border-amber-500 text-amber-500 bg-[#252525]' : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'}`} 
-                            key={index}
-                        >
-                            {item}
-                        </button>
-                    ))}
+        <div className="mb-8">
+          <button 
+            onClick={async () => {
+              try {
+                await import('../api/consumer.api').then(m => m.addToWishlist(selectedVariantId));
+                toast.success("Added to Wishlist! 💖");
+              } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || "Failed to add to wishlist. Are you logged in?");
+              }
+            }}
+            className="flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors border border-gray-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-red-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+            </svg>
+            Add to Wishlist
+          </button>
+        </div>
+        
+        <div className="border-t border-gray-800 pt-6">
+          <h3 className="font-bold text-xl mb-4">Sellers</h3>
+          {listings.length === 0 ? (
+            <p className="text-red-500">Currently out of stock from all sellers.</p>
+          ) : (
+            <div className="space-y-4">
+              {listings.map((l: any) => (
+                <div key={l.id} className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-lg text-white">NPR {l.price}</p>
+                    <p className="text-sm text-gray-400">Sold by: {l.sellerProfile?.shopName}</p>
+                  </div>
+                  <button onClick={() => handleAddToCart(l.id)} className="bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2 rounded-lg font-bold transition-colors">
+                    Add to Cart
+                  </button>
                 </div>
+              ))}
             </div>
-
-            {/* 🔥 ADD TO CART BUTTON IS NOW ACTIVE */}
-            <button 
-                onClick={() => addToCart(productData._id, size)} 
-                className='bg-amber-500 text-black px-8 py-3 text-sm font-bold uppercase rounded hover:bg-amber-600 active:scale-95 transition-all shadow-lg hover:shadow-amber-500/20'
-            >
-                Add to Cart
-            </button>
-
-            <hr className='mt-8 sm:w-4/5 border-gray-700' />
-
-            <div className='text-sm text-gray-500 mt-5 flex flex-col gap-1 font-light'>
-                <p>100% Original product.</p>
-                <p>Cash on delivery is available on this product.</p>
-                <p>Easy return and exchange policy within 7 days.</p>
-            </div>
+          )}
         </div>
       </div>
-
-      {/* --- DESCRIPTION & REVIEW SECTION --- */}
-      <div className='mt-20'>
-        <div className='flex'>
-            <b className='border border-gray-700 px-5 py-3 text-sm text-white border-b-0 cursor-pointer'>Description</b>
-            <p className='border border-gray-700 border-l-0 px-5 py-3 text-sm text-gray-500 border-b-0 cursor-pointer hover:text-white transition-colors'>Reviews (122)</p>
-        </div>
-        <div className='flex flex-col gap-4 border border-gray-700 px-6 py-6 text-sm text-gray-400 leading-6 bg-[#121212] rounded-b-lg rounded-tr-lg'>
-            <p>An e-commerce website is an online platform that facilitates the buying and selling of products or services over the internet. It serves as a virtual marketplace where businesses and individuals can showcase their products, interact with customers, and conduct transactions without the need for a physical presence.</p>
-            <p>E-commerce websites typically display products or services along with detailed descriptions, images, prices, and any available variations (e.g., sizes, colors). Each product usually has its own dedicated page with relevant information.</p>
-        </div>
-      </div>
-
-      {/* --- RELATED PRODUCTS --- */}
-      <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
-
     </div>
-  ) : <div className='opacity-0'></div>
+  );
 }
-
-export default Product

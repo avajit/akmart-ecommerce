@@ -32,6 +32,13 @@ model User {
   refreshTokens    RefreshToken[]
   auditLogs        AuditLog[]
 
+  // Module 2 relations
+  sellerProfile    SellerProfile?
+  cart             Cart?
+  wishlist         Wishlist?
+  reviews          Review[]
+  products         Product[]      @relation("ProductCreator")
+
   // App-level rule (#13): enforce in service layer, not DB constraint —
   // every user must have at least one of passwordHash / googleId / phoneNumber+OTP
 
@@ -93,4 +100,268 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id])
 
   @@id([roleId, permissionId])
+}
+
+// ============================================================
+// MODULE 2: CORE COMMERCE
+// ============================================================
+
+// ── Category (hierarchical tree) ────────────────────────────
+model Category {
+  id               String                    @id @default(uuid())
+  name             String
+  slug             String                    @unique
+  description      String?
+  imageUrl         String?
+  parentId         String?
+  parent           Category?                 @relation("CategoryTree", fields: [parentId], references: [id])
+  children         Category[]                @relation("CategoryTree")
+  attributeConfigs CategoryAttributeConfig[]
+  products         Product[]
+  isActive         Boolean                   @default(true)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  @@index([parentId])
+  @@index([slug])
+}
+
+// Defines which JSON keys are filterable per category
+model CategoryAttributeConfig {
+  id         String     @id @default(uuid())
+  categoryId String
+  category   Category   @relation(fields: [categoryId], references: [id])
+  key        String     // JSON key: "ram", "color", "size"
+  label      String     // Display label: "RAM", "Color", "Size"
+  filterType FilterType @default(MULTISELECT)
+  unit       String?    // "GB", "mAh", "inches"
+  order      Int        @default(0)
+
+  @@unique([categoryId, key])
+  @@index([categoryId])
+}
+
+enum FilterType {
+  MULTISELECT
+  RANGE
+  BOOLEAN
+}
+
+// ── Brand ────────────────────────────────────────────────────
+model Brand {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  logoUrl   String?
+  isActive  Boolean   @default(true)
+  products  Product[]
+  createdAt DateTime  @default(now())
+
+  @@index([slug])
+}
+
+// ── SellerProfile (minimal onboarding → payout verification) ─
+model SellerProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id])
+
+  // Required BEFORE first listing
+  shopName           String
+  shopDescription    String?
+  shopLogoUrl        String?
+  phoneNumber        String
+  address            String
+  city               String
+  state              String
+  pincode            String
+  country            String             @default("NP")
+
+  // Required BEFORE first payout (not before listing)
+  gstNumber          String?
+  panNumber          String?
+  bankAccountNumber  String?
+  bankIfscCode       String?
+  bankAccountName    String?
+
+  verificationStatus SellerVerification @default(PENDING)
+  isPayoutEnabled    Boolean            @default(false)
+
+  listings           SellerListing[]
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+enum SellerVerification {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+// ── Product (shared catalog — requires admin approval) ────────
+model Product {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique // auto-generated: slugify(name) + nanoid(6)
+  description     String
+  categoryId      String
+  category        Category         @relation(fields: [categoryId], references: [id])
+  brandId         String?
+  brand           Brand?           @relation(fields: [brandId], references: [id])
+  variants        ProductVariant[]
+  images          ProductImage[]
+  reviews         Review[]
+  status          ProductStatus    @default(DRAFT)
+  rejectionReason String?
+  createdById     String
+  createdBy       User             @relation("ProductCreator", fields: [createdById], references: [id])
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([status])
+  @@index([slug])
+  @@index([createdById])
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+// ── ProductVariant (SKU level) ────────────────────────────────
+model ProductVariant {
+  id            String          @id @default(uuid())
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id])
+  name          String          // "Black / 256GB / 8GB RAM"
+  sku           String          @unique
+  attributes    Json            @default("{}") // JSONB: { "color": "Black", "ram": "8" }
+  images        ProductImage[]
+  listings      SellerListing[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  deletedAt     DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([productId])
+  @@index([sku])
+}
+
+// ── ProductImage ──────────────────────────────────────────────
+model ProductImage {
+  id        String          @id @default(uuid())
+  productId String?
+  product   Product?        @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+  url       String          // placeholder URL for now; S3 wired later
+  altText   String?
+  isPrimary Boolean         @default(false)
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+
+  @@index([productId])
+  @@index([variantId])
+}
+
+// ── SellerListing (the actual offer: seller + variant + price + stock) ─
+model SellerListing {
+  id              String         @id @default(uuid())
+  sellerProfileId String
+  sellerProfile   SellerProfile  @relation(fields: [sellerProfileId], references: [id])
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id])
+  price           Decimal        @db.Decimal(10, 2)
+  mrp             Decimal        @db.Decimal(10, 2)
+  // reservedStock touched ONLY at checkout (Module 3), NOT at add-to-cart
+  stock           Int            @default(0)
+  reservedStock   Int            @default(0)
+  isActive        Boolean        @default(true)
+  cartItems       CartItem[]
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([sellerProfileId, variantId])
+  @@index([variantId])
+  @@index([sellerProfileId])
+  @@index([isActive])
+}
+
+// ── Cart ──────────────────────────────────────────────────────
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id              String        @id @default(uuid())
+  cartId          String
+  cart            Cart          @relation(fields: [cartId], references: [id])
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id])
+  sellerListingId String
+  sellerListing   SellerListing @relation(fields: [sellerListingId], references: [id])
+  quantity        Int           @default(1)
+  priceAtAddTime  Decimal       @db.Decimal(10, 2) // price snapshot — immune to seller changes
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([cartId, sellerListingId])
+  @@index([cartId])
+  @@index([sellerListingId])
+}
+
+// ── Wishlist ──────────────────────────────────────────────────
+model Wishlist {
+  id        String         @id @default(uuid())
+  userId    String         @unique
+  user      User           @relation(fields: [userId], references: [id])
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+}
+
+model WishlistItem {
+  id         String         @id @default(uuid())
+  wishlistId String
+  wishlist   Wishlist       @relation(fields: [wishlistId], references: [id])
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id])
+  createdAt  DateTime       @default(now())
+
+  @@unique([wishlistId, variantId])
+  @@index([wishlistId])
+}
+
+// ── Review ────────────────────────────────────────────────────
+model Review {
+  id                 String    @id @default(uuid())
+  productId          String
+  product            Product   @relation(fields: [productId], references: [id])
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  rating             Int       // 1–5 (validated in service layer)
+  title              String?
+  body               String?
+  isVerifiedPurchase Boolean   @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
 }

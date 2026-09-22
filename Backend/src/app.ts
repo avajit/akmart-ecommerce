@@ -44,6 +44,12 @@ app.use(globalLimiter);
 // --- ROUTES ---
 import authRoutes from './routes/auth.routes';
 import sessionRoutes from './routes/session.routes';
+import sellerRoutes from './routes/seller.routes';
+import adminRoutes from './routes/admin.routes';
+import categoryRoutes from './routes/category.routes';
+import productRoutes from './routes/product.routes';
+import cartRoutes from './routes/cart.routes';
+import wishlistRoutes from './routes/wishlist.routes';
 
 // Health Check Endpoint (For orchestrators/load balancers)
 app.get('/health', async (req, res) => {
@@ -61,6 +67,12 @@ app.get('/health', async (req, res) => {
 // Register API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/sessions', sessionRoutes);
+app.use('/api/v1/seller', sellerRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/cart', cartRoutes);
+app.use('/api/v1/wishlist', wishlistRoutes);
 
 // --- ERROR HANDLING ---
 

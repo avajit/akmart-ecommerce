@@ -1,5 +1,5 @@
 import React from "react";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/NavBar";
 import AppRoutes from "./routes/AppRoutes";
 import ScrollToTop from "./components/ScrollToTop";
 import Footer from "./components/Footer";
@@ -15,15 +15,8 @@ function App() {
       <ToastContainer position="bottom-right" theme="dark" />
       <SearchOverlay />
 
-      <Navbar />
-
-      {/* FIX APPLIED BELOW: added 'pt-24' */}
-      <div className="flex-grow px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] pt-24">
+      <div className="flex-grow w-full h-full">
         <AppRoutes />
-      </div>
-
-      <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] mt-auto">
-         <Footer />
       </div>
 
     </div>

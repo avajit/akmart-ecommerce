@@ -2,15 +2,15 @@ import React, { useContext } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { Link } from "react-router-dom";
 
-const ProductItem = ({ id, image, name, price, bestseller }) => {
+const ProductItem = ({ slug, image, name, price, bestseller }) => {
   const { currency } = useContext(ShopContext);
 
   return (
     <Link 
       className="group relative block overflow-hidden cursor-pointer" 
-      to={`/product/${id}`}
+      to={`/product/${slug}`}
     >
-      <div className="relative overflow-hidden rounded-lg bg-[#111]">
+      <div className="relative overflow-hidden rounded-lg bg-[#111] aspect-square flex items-center justify-center">
         
         {bestseller && (
           <div className="absolute top-2 left-2 z-10">
@@ -20,11 +20,15 @@ const ProductItem = ({ id, image, name, price, bestseller }) => {
           </div>
         )}
 
-        <img
-          className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-500"
-          src={image[0]}
-          alt={name}
-        />
+        {image ? (
+          <img
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            src={image}
+            alt={name}
+          />
+        ) : (
+          <span className="text-gray-600">No Image</span>
+        )}
 
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition duration-300"></div>
 
