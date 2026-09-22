@@ -2,6 +2,7 @@ import React from 'react';
 
 interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  error?: string;
 }
 
 const InputField: React.FC<InputFieldProps> = ({ label, ...props }) => {

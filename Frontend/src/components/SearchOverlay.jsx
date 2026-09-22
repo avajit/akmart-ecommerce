@@ -1,18 +1,20 @@
-import React, { useContext, useEffect, useRef } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { ShopContext } from '../context/ShopContext'
 import { useLocation, Link } from 'react-router-dom'
 import { FiX, FiSearch } from "react-icons/fi"; 
+import { browseProducts } from '../api/consumer.api';
 import SearchSuggestions from './SearchSuggestions';
 
 const SearchOverlay = () => {
-
     const { 
         search, setSearch, showSearch, setShowSearch, 
-        navigate, addToHistory, searchResults 
+        navigate, addToHistory
     } = useContext(ShopContext);
     
     const location = useLocation();
     const inputRef = useRef(null);
+    const [searchResults, setSearchResults] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if(showSearch && inputRef.current) inputRef.current.focus();
@@ -21,6 +23,22 @@ const SearchOverlay = () => {
     useEffect(() => {
         setShowSearch(false); 
     }, [location])
+
+    // Debounced search fetch
+    useEffect(() => {
+        if (!search.trim()) {
+            setSearchResults([]);
+            return;
+        }
+        setLoading(true);
+        const timer = setTimeout(() => {
+            browseProducts({ search, limit: 6 }).then((res) => {
+                setSearchResults(res?.data?.products || []);
+                setLoading(false);
+            }).catch(() => setLoading(false));
+        }, 300); // 300ms debounce
+        return () => clearTimeout(timer);
+    }, [search]);
 
     // Perform Search
     const handleSearch = (term) => {
@@ -63,30 +81,33 @@ const SearchOverlay = () => {
                 {/* --- RESULTS AREA --- */}
                 <div className="overflow-y-auto max-h-[60vh] custom-scrollbar">
                     
-                    {/* LOGIC FIX: Only show suggestions if NO products found (or if typing) */}
                     {searchResults.length === 0 ? (
                         <div className="p-4">
                              <SearchSuggestions onSearch={handleSearch} />
-                             {search.length > 0 && <p className="text-center text-gray-500 mt-4">No products found.</p>}
+                             {search.length > 0 && !loading && <p className="text-center text-gray-500 mt-4">No products found.</p>}
+                             {loading && <p className="text-center text-gray-500 mt-4">Searching...</p>}
                         </div>
                     ) : (
-                        /* CLEAN PRODUCT LIST (No heavy boxes) */
                         <div className="flex flex-col">
-                            {searchResults.slice(0, 6).map((item) => (
+                            {searchResults.map((item) => (
                                 <Link
-                                    key={item._id}
-                                    to={`/product/${item._id}`} 
+                                    key={item.id}
+                                    to={`/product/${item.slug}`} 
                                     onClick={() => setShowSearch(false)} 
                                     className="flex items-center gap-4 p-4 hover:bg-[#1f1f1f] transition-colors border-b border-gray-800 last:border-0 group cursor-pointer"
                                 >
-                                    <img 
-                                        src={item.image[0]} 
-                                        alt={item.name} 
-                                        className="w-12 h-12 object-cover rounded bg-gray-800"
-                                    />
+                                    {item.primaryImage ? (
+                                        <img 
+                                            src={item.primaryImage} 
+                                            alt={item.name} 
+                                            className="w-12 h-12 object-cover rounded bg-gray-800"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 bg-gray-800 rounded flex items-center justify-center text-xs text-gray-500">No Img</div>
+                                    )}
                                     <div className="flex-1">
                                         <p className="text-gray-200 text-sm font-medium group-hover:text-amber-500 transition-colors">{item.name}</p>
-                                        <p className="text-gray-500 text-xs mt-0.5">${item.price}</p>
+                                        <p className="text-gray-500 text-xs mt-0.5">Starting at NPR {item.cheapestPrice ?? 0}</p>
                                     </div>
                                     <span className="text-xs text-gray-600 group-hover:text-amber-500">View</span>
                                 </Link>

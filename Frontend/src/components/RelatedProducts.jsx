@@ -1,27 +1,22 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
+import React, { useEffect, useState } from 'react'
 import Title from './Title';
 import ProductItem from './ProductItem';
+import { browseProducts } from '../api/consumer.api';
 
 const RelatedProducts = ({category, subCategory}) => {
-
-    const { products } = useContext(ShopContext);
     const [related, setRelated] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(()=>{
-        if (products.length > 0) {
-            let productsCopy = products.slice();
-            
-            // 1. Filter by same Category (Men/Women/Kids)
-            productsCopy = productsCopy.filter((item) => category === item.category);
-            
-            // 2. Filter by same Type (Topwear/Bottomwear)
-            productsCopy = productsCopy.filter((item) => subCategory === item.subCategory);
-
-            // 3. Take the top 5 results
-            setRelated(productsCopy.slice(0,5)); 
+        if (category) {
+            // Fetch products in the same category
+            // Our backend accepts category slug. Assuming `category` prop is the slug.
+            browseProducts({ category, limit: 5 }).then((res) => {
+                setRelated(res?.data?.products || []);
+                setLoading(false);
+            }).catch(() => setLoading(false));
         }
-    },[products, category, subCategory])
+    }, [category, subCategory])
 
   return (
     <div className='my-24'>
@@ -31,11 +26,23 @@ const RelatedProducts = ({category, subCategory}) => {
       </div>
 
       {/* Grid Display */}
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6'>
-        {related.map((item,index)=>(
-            <ProductItem key={index} id={item._id} name={item.name} price={item.price} image={item.image}/>
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center text-gray-400 py-10">Loading related products...</div>
+      ) : related.length === 0 ? (
+        <div className="text-center text-gray-500 py-10">No related products found.</div>
+      ) : (
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6'>
+          {related.map((item,index)=>(
+              <ProductItem 
+                  key={item.id || index} 
+                  slug={item.slug} 
+                  name={item.name} 
+                  price={item.cheapestPrice ?? 0} 
+                  image={item.primaryImage}
+              />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

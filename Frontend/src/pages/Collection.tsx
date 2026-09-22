@@ -1,153 +1,79 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import { assets } from "../assets/frontend_assets/assets";
-import Title from '../components/Title'
-import ProductItem from '../components/ProductItem'
-import { RiArrowDropRightLine } from "react-icons/ri";
+import React, { useEffect, useState, useContext } from 'react';
+import { browseProducts, getCategoryTree } from '../api/consumer.api';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShopContext } from '../context/ShopContext';
 
-const Collection = () => {
+export default function Collection() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ category: '', minPrice: '', maxPrice: '' });
+  const navigate = useNavigate();
 
-  const { products, search, showSearch } = useContext(ShopContext);
-  const [showFilter, setShowFilter] = useState(false);
-  const [filterProducts, setFilterProducts] = useState([]);
-  const [category, setCategory] = useState([]);
-  const [subCategory, setSubCategory] = useState([]);
-  const [sortType, setSortType] = useState('relavent');
-
-  // --- FILTER LOGIC: CATEGORY ---
-  const toggleCategory = (e) => {
-    if (category.includes(e.target.value)) {
-        setCategory(prev => prev.filter(item => item !== e.target.value))
-    }
-    else{
-      setCategory(prev => [...prev,e.target.value])
-    }
-  }
-
-  // --- FILTER LOGIC: TYPE ---
-  const toggleSubCategory = (e) => {
-    if (subCategory.includes(e.target.value)) {
-      setSubCategory(prev => prev.filter(item => item !== e.target.value))
-    }
-    else{
-      setSubCategory(prev => [...prev,e.target.value])
-    }
-  }
-
-  // --- MAIN FILTER FUNCTION ---
-  const applyFilter = () => {
-    let productsCopy = products.slice();
-
-    // 1. Search Filter
-    if (showSearch && search) {
-      productsCopy = productsCopy.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
-    }
-
-    // 2. Category Filter
-    if (category.length > 0) {
-      productsCopy = productsCopy.filter(item => category.includes(item.category));
-    }
-
-    // 3. SubCategory Filter
-    if (subCategory.length > 0) {
-      productsCopy = productsCopy.filter(item => subCategory.includes(item.subCategory));
-    }
-
-    setFilterProducts(productsCopy)
-  }
-
-  // --- SORT FUNCTION ---
-  const sortProduct = () => {
-    let fpCopy = filterProducts.slice();
-    switch (sortType) {
-      case 'low-high':
-        setFilterProducts(fpCopy.sort((a,b)=>(a.price - b.price)));
-        break;
-      case 'high-low':
-        setFilterProducts(fpCopy.sort((a,b)=>(b.price - a.price)));
-        break;
-      default:
-        applyFilter();
-        break;
-    }
-  }
-
-  // --- EFFECT HOOKS ---
+  const { search } = useContext(ShopContext) || { search: '' };
+  
   useEffect(() => {
-    applyFilter();
-  }, [category, subCategory, search, showSearch, products])
+    getCategoryTree().then((res: any) => setCategories(res.data || []));
+  }, []);
 
   useEffect(() => {
-    sortProduct();
-  }, [sortType])
+    setLoading(true);
+    // Merge local filters with global search
+    const apiFilters = { ...filters };
+    if (search) (apiFilters as any).search = search;
+    
+    browseProducts(apiFilters).then((res: any) => {
+      setProducts(res.data?.products || []);
+      setLoading(false);
+    });
+  }, [filters, search]);
 
   return (
-    <div className='flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t border-gray-800 items-start'>
-      
-      {/* --- LEFT SIDEBAR (FILTERS) --- */}
-      {/* Sticky makes it stay visible while scrolling */}
-      <div className='min-w-60 sticky top-20'>
-        
-        {/* Mobile Toggle Button */}
-        <p onClick={()=>setShowFilter(!showFilter)} className='my-2 text-xl flex items-center cursor-pointer gap-2 text-white uppercase font-medium'>
-            Filters
-            <RiArrowDropRightLine className={`sm:hidden text-2xl transition-transform ${showFilter ? 'rotate-90' : ''}`}/>
-        </p>
-        
-        {/* Filter 1: CATEGORY */}
-        {/* Clean Design: No box, just clean lines and typography */}
-        <div className={`border-b border-gray-800 py-6 mt-6 ${showFilter ? '' :'hidden'} sm:block`}>
-          <p className='mb-3 text-xs font-bold text-gray-200 uppercase tracking-widest'>Categories</p>
-          <div className='flex flex-col gap-2 text-sm font-light text-gray-400'>
-            {['Men', 'Women', 'Kids'].map((cat) => (
-               <label key={cat} className='flex gap-3 items-center cursor-pointer hover:text-amber-500 transition-colors'>
-                 <input className='w-3 h-3 accent-amber-500 bg-gray-800 border-gray-600 rounded' type="checkbox" value={cat} onChange={toggleCategory}/> 
-                 {cat}
-               </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Filter 2: TYPE */}
-        <div className={`border-b border-gray-800 py-6 ${showFilter ? '' :'hidden'} sm:block`}>
-          <p className='mb-3 text-xs font-bold text-gray-200 uppercase tracking-widest'>Type</p>
-          <div className='flex flex-col gap-2 text-sm font-light text-gray-400'>
-             {['Topwear', 'Bottomwear', 'Winterwear'].map((type) => (
-               <label key={type} className='flex gap-3 items-center cursor-pointer hover:text-amber-500 transition-colors'>
-                 <input className='w-3 h-3 accent-amber-500 bg-gray-800 border-gray-600 rounded' type="checkbox" value={type} onChange={toggleSubCategory}/> 
-                 {type}
-               </label>
+    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t border-gray-800 items-start max-w-7xl mx-auto px-4">
+      <div className="min-w-60 sticky top-20 text-white">
+        <p className="my-2 text-xl font-medium uppercase">Filters</p>
+        <div className="border-b border-gray-800 py-6">
+          <p className="mb-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Categories</p>
+          <div className="flex flex-col gap-2">
+            <label className="flex gap-3 cursor-pointer text-sm">
+              <input type="radio" name="cat" value="" onChange={() => setFilters({...filters, category: ''})} /> All
+            </label>
+            {categories.map(c => (
+              <label key={c.id} className="flex gap-3 cursor-pointer text-sm hover:text-emerald-500">
+                <input type="radio" name="cat" value={c.slug} onChange={() => setFilters({...filters, category: c.slug})} /> {c.name}
+              </label>
             ))}
           </div>
         </div>
       </div>
 
-      {/* --- RIGHT SIDE (PRODUCT GRID) --- */}
-      <div className='flex-1'>
-
-        <div className='flex justify-between text-base sm:text-2xl mb-4'>
-            <Title text1={'ALL'} text2={'COLLECTIONS'} />
-            
-            {/* Sort Dropdown */}
-            <select onChange={(e)=>setSortType(e.target.value)} className='border border-gray-800 bg-black text-sm px-4 py-2 text-gray-300 outline-none focus:border-amber-500 transition-colors cursor-pointer'>
-              <option value="relavent">Sort by: Relevant</option>
-              <option value="low-high">Sort by: Low to High</option>
-              <option value="high-low">Sort by: High to Low</option>
-            </select>
+      <div className="flex-1">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl text-white font-bold">ALL COLLECTIONS</h1>
         </div>
-
-        {/* Products */}
-        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6'>
-          {
-            filterProducts.map((item,index)=>(
-              <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image}/>
-            ))
-          }
-        </div>
+        
+        {loading ? (
+          <div className="text-gray-400">Loading products...</div>
+        ) : products.length === 0 ? (
+          <div className="text-gray-400">No products found.</div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map(p => (
+              <Link key={p.id} to={`/product/${p.slug}`} className="group cursor-pointer">
+                <div className="overflow-hidden rounded-lg bg-gray-900 border border-gray-800 aspect-square flex items-center justify-center">
+                  {p.primaryImage ? (
+                    <img src={p.primaryImage} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  ) : (
+                     <span className="text-gray-600">No Image</span>
+                  )}
+                </div>
+                <p className="pt-3 pb-1 text-sm text-gray-300 font-medium truncate">{p.name}</p>
+                <p className="text-sm text-emerald-500 font-bold">Starting at NPR {p.variants?.[0]?.listings?.[0]?.price || 'N/A'}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-
     </div>
-  )
+  );
 }
-
-export default Collection

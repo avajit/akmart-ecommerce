@@ -1,115 +1,100 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import Title from '../components/Title';
-import { assets } from '../assets/frontend_assets/assets';
-import { RiDeleteBin6Line } from "react-icons/ri";
-import CartTotal from '../components/CartTotal';
+import React, { useEffect, useState } from 'react';
+import { getCart, updateCartItem, removeCartItem } from '../api/consumer.api';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import { FiTrash2 } from 'react-icons/fi';
 
-const Cart = () => {
+export default function Cart() {
+  const [cart, setCart] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const { products, currency, cartItems, updateQuantity, navigate } = useContext(ShopContext);
-  const [cartData, setCartData] = useState([]);
+  const fetchCart = () => {
+    getCart().then((res: any) => {
+      setCart(res.data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    if (products.length > 0) {
-      const tempData = [];
-      for(const items in cartItems){
-          for(const item in cartItems[items]){
-              if (cartItems[items][item] > 0) {
-                  tempData.push({
-                      _id: items,
-                      size: item,
-                      quantity: cartItems[items][item]
-                  })
-              }
-          }
-      }
-      setCartData(tempData);
+  useEffect(() => fetchCart(), []);
+
+  const handleUpdate = async (id: string, qty: number) => {
+    if (qty < 1) return handleRemove(id);
+    try {
+      await updateCartItem(id, qty);
+      fetchCart();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Failed to update quantity");
     }
-  }, [cartItems, products])
+  };
+
+  const handleRemove = async (id: string) => {
+    try {
+      await removeCartItem(id);
+      fetchCart();
+    } catch (err: any) {
+      toast.error("Failed to remove item");
+    }
+  };
+
+  if (loading) return <div className="text-center py-20 text-white">Loading Cart...</div>;
+  if (!cart || !cart.items || cart.items.length === 0) return <div className="text-center py-20 text-gray-400">Your cart is empty.</div>;
+
+  const total = cart.items.reduce((sum: number, item: any) => sum + (item.priceAtAddTime * item.quantity), 0);
 
   return (
-    <div className='border-t border-gray-700 pt-14'>
-      
-      <div className='text-2xl mb-3'>
-        <Title text1={'YOUR'} text2={'CART'} />
-      </div>
-
-      <div>
-        {cartData.map((item, index) => {
-            const productData = products.find((product) => product._id === item._id);
-
-            return (
-                <div key={index} className='py-4 border-t border-b border-gray-700 text-gray-200 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4'>
-                    
-                    {/* Product Info */}
-                    <div className='flex items-start gap-6'>
-                        <img className='w-16 sm:w-20 rounded-md' src={productData.image[0]} alt="" />
-                        <div>
-                            <p className='text-sm sm:text-lg font-medium text-white'>{productData.name}</p>
-                            <div className='flex items-center gap-5 mt-2'>
-                                <p className='text-amber-500 font-bold'>{currency}{productData.price}</p>
-                                <p className='px-2 sm:px-3 sm:py-1 border border-gray-600 bg-[#1A1A1A] rounded-sm text-xs'>{item.size}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 🔥 NEW PROFESSIONAL QUANTITY SELECTOR */}
-                    {/* Replaces the ugly input box with custom buttons */}
-                    <div className='flex items-center gap-2'>
-                        {/* DECREASE BUTTON */}
-                        <button 
-                            onClick={() => {
-                                // If qty is 1, decrementing makes it 0 (delete)
-                                const newQty = item.quantity - 1;
-                                updateQuantity(item._id, item.size, newQty);
-                            }}
-                            className='w-8 h-8 flex items-center justify-center border border-gray-700 bg-[#1A1A1A] hover:bg-amber-500 hover:text-black hover:border-amber-500 transition-all rounded'
-                        >
-                            -
-                        </button>
-
-                        {/* NUMBER DISPLAY */}
-                        <span className='w-10 h-8 flex items-center justify-center border border-gray-700 bg-[#121212] text-white rounded text-sm font-medium'>
-                            {item.quantity}
-                        </span>
-
-                        {/* INCREASE BUTTON */}
-                        <button 
-                            onClick={() => updateQuantity(item._id, item.size, item.quantity + 1)}
-                            className='w-8 h-8 flex items-center justify-center border border-gray-700 bg-[#1A1A1A] hover:bg-amber-500 hover:text-black hover:border-amber-500 transition-all rounded'
-                        >
-                            +
-                        </button>
-                    </div>
-
-                    {/* DELETE ICON */}
-                    <RiDeleteBin6Line 
-                        onClick={()=> updateQuantity(item._id, item.size, 0)} 
-                        className='w-5 h-5 cursor-pointer hover:text-red-500 transition-colors text-gray-400' 
-                    />
-                </div>
-            )
-        })}
-      </div>
-
-      {/* Checkout Section */}
-      <div className='flex justify-end my-20'>
-        <div className='w-full sm:w-[450px]'>
-            <CartTotal />
-            <div className='w-full text-end'>
-                <button 
-                    onClick={()=>navigate('/place-order')} 
-                    className='bg-amber-500 text-black text-sm my-8 px-8 py-3 uppercase font-bold rounded hover:bg-white transition-all shadow-lg'
-                >
-                    Proceed to Checkout
-                </button>
+    <div className="max-w-7xl mx-auto py-10 px-4">
+      <h1 className="text-3xl font-bold text-white mb-8">Your Cart</h1>
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex-1 space-y-4">
+          {cart.items.map((item: any) => (
+            <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex gap-6 items-center">
+               <div className="w-20 h-20 bg-black rounded-lg overflow-hidden flex-shrink-0">
+                 {item.variant?.images?.[0]?.url ? (
+                   <img src={item.variant.images[0].url} alt="" className="w-full h-full object-cover" />
+                 ) : <span className="text-xs text-gray-600 flex items-center justify-center h-full">No Img</span>}
+               </div>
+               <div className="flex-1">
+                 <p className="text-white font-bold text-lg">{item.variant?.product?.name}</p>
+                 <p className="text-gray-400 text-sm">{item.variant?.name} | Sold by {item.sellerListing?.sellerProfile?.shopName}</p>
+                 <p className="text-emerald-500 font-bold mt-1">NPR {item.priceAtAddTime}</p>
+                 {item.sellerListing?.price !== item.priceAtAddTime && (
+                    <p className="text-yellow-500 text-xs">Price changed from {item.sellerListing?.price}</p>
+                 )}
+                 {!item.isAvailable && <p className="text-red-500 text-xs mt-1">Item is no longer available.</p>}
+                 {item.isAvailable && item.availableStock < item.quantity && (
+                    <p className="text-red-500 text-xs mt-1">Only {item.availableStock} available.</p>
+                 )}
+               </div>
+               <div className="flex items-center gap-4">
+                 <div className="flex items-center bg-black border border-gray-700 rounded-lg">
+                   <button onClick={() => handleUpdate(item.id, item.quantity - 1)} className="px-3 py-1 text-white hover:text-emerald-500">-</button>
+                   <span className="text-white px-2">{item.quantity}</span>
+                   <button onClick={() => handleUpdate(item.id, item.quantity + 1)} className="px-3 py-1 text-white hover:text-emerald-500">+</button>
+                 </div>
+                 <button onClick={() => handleRemove(item.id)} className="text-gray-500 hover:text-red-500 transition-colors"><FiTrash2 size={18} /></button>
+               </div>
             </div>
+          ))}
+        </div>
+        
+        <div className="w-full lg:w-96">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sticky top-20">
+            <h2 className="text-xl font-bold text-white mb-6">Order Summary</h2>
+            <div className="flex justify-between text-gray-400 mb-4">
+              <span>Subtotal ({cart.items.length} items)</span>
+              <span>NPR {total}</span>
+            </div>
+            <div className="flex justify-between text-white font-bold text-lg border-t border-gray-800 pt-4 mb-6">
+              <span>Total</span>
+              <span>NPR {total}</span>
+            </div>
+            <button onClick={() => navigate('/checkout')} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-3 rounded-lg hover:scale-[1.02] transition-transform">
+              Proceed to Checkout
+            </button>
+          </div>
         </div>
       </div>
-
     </div>
-  )
+  );
 }
-
-export default Cart

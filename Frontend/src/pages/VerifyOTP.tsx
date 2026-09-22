@@ -23,7 +23,7 @@ const VerifyOTP: React.FC = () => {
   }, [email, navigate]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (timer > 0) {
       interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
     }

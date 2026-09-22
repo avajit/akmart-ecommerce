@@ -1,18 +1,20 @@
-import React, { useContext, useEffect, useState } from "react";
-import { ShopContext } from "../context/ShopContext";
+import React, { useEffect, useState } from "react";
 import Title from "./Title";
 import ProductItem from "./ProductItem";
+import { browseProducts } from "../api/consumer.api";
 
 const LatestCollection = () => {
-  const { products } = useContext(ShopContext);
   const [latestProducts, setLatestProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLatestProducts(products.slice(0, 10));
-  }, [products]);
+    browseProducts({ sort: 'newest', limit: 10 }).then((res) => {
+      setLatestProducts(res?.data?.products || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
   return (
-    // Added 'container mx-auto' to center the whole section on ultra-wide screens
     <div className="my-10 px-4 sm:px-6 lg:px-8 container mx-auto">
       
       {/* HEADER SECTION */}
@@ -24,22 +26,23 @@ const LatestCollection = () => {
       </div>
 
       {/* PRODUCT GRID */}
-      {/* grid-cols-2: Mobile (iPhone)
-         sm:grid-cols-3: Small Tablets
-         md:grid-cols-4: Laptops
-         lg:grid-cols-5: Large Screens
-      */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 sm:gap-6">
-        {latestProducts.map((item) => (
-          <ProductItem
-            key={item._id}
-            id={item._id}
-            image={item.image}
-            name={item.name}
-            price={item.price}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center text-gray-400 py-10">Loading latest products...</div>
+      ) : latestProducts.length === 0 ? (
+        <div className="text-center text-gray-500 py-10">No products found.</div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 sm:gap-6">
+          {latestProducts.map((item) => (
+            <ProductItem
+              key={item.id}
+              slug={item.slug}
+              image={item.primaryImage}
+              name={item.name}
+              price={item.cheapestPrice ?? 0}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
