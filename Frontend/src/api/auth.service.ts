@@ -56,4 +56,14 @@ export const authService = {
     const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/google', data);
     return response.data.data;
   },
+
+  getMe: async (): Promise<any> => {
+    const response = await apiClient.get('/auth/me');
+    return response.data.data;
+  },
+
+  updateMe: async (data: { fullName?: string; avatarUrl?: string }): Promise<any> => {
+    const response = await apiClient.put('/auth/me', data);
+    return response.data.data;
+  }
 };

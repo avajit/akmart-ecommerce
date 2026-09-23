@@ -25,6 +25,12 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   // Clean dynamic tables before every test
+  await prismaTest.cartItem.deleteMany();
+  await prismaTest.cart.deleteMany();
+  await prismaTest.sellerListing.deleteMany();
+  await prismaTest.productVariant.deleteMany();
+  await prismaTest.product.deleteMany();
+  await prismaTest.sellerProfile.deleteMany();
   await prismaTest.refreshToken.deleteMany();
   await prismaTest.user.deleteMany();
   await redisTest.flushall();

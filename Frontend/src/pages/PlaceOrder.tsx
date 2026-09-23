@@ -13,7 +13,7 @@ const PlaceOrder = () => {
   // 1. New State to track if order is done
   const [orderPlaced, setOrderPlaced] = useState(false);
 
-  const onSubmitHandler = (event) => {
+  const onSubmitHandler = (event: any) => {
     event.preventDefault();
     
     // 2. Instead of navigating, we set the state to TRUE

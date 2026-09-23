@@ -1,122 +1,295 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ShopContext } from '../context/ShopContext'
-import { assets } from '../assets/frontend_assets/assets'
-import RelatedProducts from '../components/RelatedProducts';
+import React, { useEffect, useState, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getProductBySlug, addToCart, addToWishlist } from '../api/consumer.api';
+import { ShopContext } from '../context/ShopContext';
+import { toast } from 'react-toastify';
+import { FiShoppingBag, FiHeart, FiCheck, FiTruck, FiShield, FiArrowRight } from 'react-icons/fi';
 
-const Product = () => {
+export default function Product() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { currency } = useContext(ShopContext) || { currency: 'NPR ' };
 
-  const { productId } = useParams();
-  const { products, currency, addToCart } = useContext(ShopContext);
-  const [productData, setProductData] = useState(false);
-  const [image, setImage] = useState('');
-  const [size, setSize] = useState('');
-
-  const fetchProductData = async () => {
-    products.map((item) => {
-        if (item._id === productId) {
-            setProductData(item);
-            setImage(item.image[0]);
-            return null;
-        }
-    })
-  }
+  const [product, setProduct] = useState<any>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    fetchProductData();
-  }, [productId, products])
+    if (slug) {
+      setLoading(true);
+      getProductBySlug(slug)
+        .then((res: any) => {
+          setProduct(res.data);
+          if (res.data?.variants?.length > 0) {
+            setSelectedVariantId(res.data.variants[0].id);
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          toast.error("Product not found");
+          setLoading(false);
+        });
+    }
+  }, [slug]);
 
-  return productData ? (
-    <div className='border-t-2 border-gray-800 pt-10 transition-opacity ease-in duration-500 opacity-100'>
-      
-      {/* --- PRODUCT DATA --- */}
-      <div className='flex gap-12 sm:gap-12 flex-col sm:flex-row'>
+  const currentVariant = product?.variants?.find((v: any) => v.id === selectedVariantId) || product?.variants?.[0];
+  const listings = currentVariant?.listings?.filter((l: any) => l.isActive && !l.deletedAt) || [];
+  const primaryListing = listings[0]; // Lowest price / default seller
 
-        {/* --- LEFT: IMAGES --- */}
-        <div className='flex-1 flex flex-col-reverse gap-3 sm:flex-row'>
-            <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full'>
-                {productData.image.map((item, index) => (
-                    <img 
-                        onClick={() => setImage(item)} 
-                        src={item} 
-                        key={index} 
-                        className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer rounded-md border border-gray-700 hover:border-amber-500 transition-all opacity-80 hover:opacity-100' 
-                        alt="" 
-                    />
-                ))}
-            </div>
-            <div className='w-full sm:w-[80%]'>
-                <img className='w-full h-auto rounded-lg border border-gray-800 bg-[#1a1a1a]' src={image} alt="" />
-            </div>
+  const handleAddToCart = async (listingId?: string) => {
+    const targetListingId = listingId || primaryListing?.id;
+    if (!targetListingId) {
+      return toast.error("No active seller available for this variant.");
+    }
+    setActionLoading(true);
+    try {
+      await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
+      toast.success(`Added ${quantity} item(s) to cart! 🛒`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Failed to add to cart. Are you logged in?");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBuyNow = async (listingId?: string) => {
+    const targetListingId = listingId || primaryListing?.id;
+    if (!targetListingId) {
+      return toast.error("No active seller available for this variant.");
+    }
+    setActionLoading(true);
+    try {
+      await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
+      navigate('/checkout');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Failed to proceed to checkout. Are you logged in?");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleWishlist = async () => {
+    if (!currentVariant?.id) return;
+    try {
+      await addToWishlist(currentVariant.id);
+      toast.success("Added to Wishlist! 💖");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Failed to update wishlist. Are you logged in?");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto py-20 px-4 text-center">
+        <div className="inline-block w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-400 mt-4">Loading product details...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="max-w-7xl mx-auto py-20 px-4 text-center">
+        <h2 className="text-2xl font-bold text-white mb-2">Product Not Found</h2>
+        <button onClick={() => navigate('/collection')} className="text-emerald-400 hover:underline">
+          Browse all products
+        </button>
+      </div>
+    );
+  }
+
+  const imageUrl = currentVariant?.images?.[0]?.url || product.primaryImage || product.images?.[0]?.url;
+
+  return (
+    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        {/* Product Images */}
+        <div className="space-y-4">
+          <div className="w-full aspect-square bg-gray-900 rounded-2xl border border-gray-800 flex items-center justify-center overflow-hidden shadow-2xl">
+            {imageUrl ? (
+              <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-gray-600">No Image Available</span>
+            )}
+          </div>
         </div>
 
-        {/* --- RIGHT: PRODUCT DETAILS --- */}
-        <div className='flex-1'>
-            <h1 className='font-medium text-2xl mt-2 text-white tracking-wide'>{productData.name}</h1>
-            
-            <div className='flex items-center gap-1 mt-2 text-amber-500'>
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_icon} alt="" className="w-3.5" />
-                <img src={assets.star_dull_icon} alt="" className="w-3.5" />
-                <p className='pl-2 text-gray-400 text-sm'>(122)</p>
+        {/* Product Details & Actions */}
+        <div className="text-white space-y-6">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-emerald-400 font-medium mb-2">
+              <span>{product.brand?.name || "Generic"}</span>
+              <span>•</span>
+              <span>{product.category?.name || "Catalog"}</span>
             </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{product.name}</h1>
+          </div>
 
-            <p className='mt-5 text-3xl font-medium text-amber-500'>{currency}{productData.price}</p>
-            <p className='mt-5 text-gray-400 md:w-4/5 leading-7 font-light'>{productData.description}</p>
-
-            <div className='flex flex-col gap-4 my-8'>
-                <p className='text-gray-200 font-medium text-sm uppercase tracking-wide'>Select Size</p>
-                <div className='flex gap-2'>
-                    {productData.sizes.map((item, index) => (
-                        <button 
-                            onClick={() => setSize(item)}
-                            className={`py-2 px-4 bg-[#1A1A1A] border text-sm font-medium rounded transition-all duration-300
-                            ${item === size ? 'border-amber-500 text-amber-500 bg-[#252525]' : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'}`} 
-                            key={index}
-                        >
-                            {item}
-                        </button>
-                    ))}
+          {/* Pricing Header */}
+          <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-5">
+            {primaryListing ? (
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-bold text-emerald-400">
+                    {currency}{Number(primaryListing.price).toLocaleString()}
+                  </span>
+                  {primaryListing.mrp && Number(primaryListing.mrp) > Number(primaryListing.price) && (
+                    <span className="text-sm text-gray-500 line-through">
+                      {currency}{Number(primaryListing.mrp).toLocaleString()}
+                    </span>
+                  )}
                 </div>
-            </div>
+                <p className="text-xs text-gray-400">
+                  Sold by <span className="text-white font-medium">{primaryListing.sellerProfile?.shopName || "Verified Seller"}</span>
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-lg font-bold text-red-400">Currently Out of Stock</p>
+                <p className="text-xs text-gray-400 mt-1">Check back later or select a different variant.</p>
+              </div>
+            )}
+          </div>
 
-            {/* 🔥 ADD TO CART BUTTON IS NOW ACTIVE */}
-            <button 
-                onClick={() => addToCart(productData._id, size)} 
-                className='bg-amber-500 text-black px-8 py-3 text-sm font-bold uppercase rounded hover:bg-amber-600 active:scale-95 transition-all shadow-lg hover:shadow-amber-500/20'
+          {/* Variants Selector */}
+          {product.variants && product.variants.length > 0 && (
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                Select Variant
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {product.variants.map((v: any) => {
+                  const isSelected = selectedVariantId === v.id;
+                  const hasStock = v.listings && v.listings.some((l: any) => l.isActive && !l.deletedAt);
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => {
+                        setSelectedVariantId(v.id);
+                        setQuantity(1);
+                      }}
+                      className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-md ring-1 ring-emerald-500'
+                          : 'border-gray-800 bg-gray-900 text-gray-300 hover:border-gray-700'
+                      }`}
+                    >
+                      <span>{v.name}</span>
+                      {!hasStock && <span className="ml-1.5 text-[10px] text-red-400 font-bold">(Out of Stock)</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity and Purchase Buttons */}
+          {primaryListing && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-400 font-medium">Quantity:</span>
+                <div className="flex items-center bg-black border border-gray-700 rounded-lg">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-1 text-white hover:text-emerald-400 text-base"
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <span className="px-4 text-white font-medium text-sm">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-3 py-1 text-white hover:text-emerald-400 text-base"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons: Buy Now & Add to Cart */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => handleBuyNow()}
+                  disabled={actionLoading}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-base uppercase tracking-wider"
+                >
+                  <FiShoppingBag className="w-5 h-5" />
+                  Buy Now
+                </button>
+
+                <button
+                  onClick={() => handleAddToCart()}
+                  disabled={actionLoading}
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all border border-gray-700 flex items-center justify-center gap-2 text-base uppercase tracking-wider"
+                >
+                  Add To Cart
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Wishlist Button */}
+          <div>
+            <button
+              onClick={handleWishlist}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 border border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white rounded-lg text-sm transition"
             >
-                Add to Cart
+              <FiHeart className="text-rose-500" />
+              Save to Wishlist
             </button>
+          </div>
 
-            <hr className='mt-8 sm:w-4/5 border-gray-700' />
-
-            <div className='text-sm text-gray-500 mt-5 flex flex-col gap-1 font-light'>
-                <p>100% Original product.</p>
-                <p>Cash on delivery is available on this product.</p>
-                <p>Easy return and exchange policy within 7 days.</p>
+          {/* Additional Seller Offers */}
+          {listings.length > 1 && (
+            <div className="border-t border-gray-800 pt-6 space-y-3">
+              <h3 className="font-bold text-base text-white">Other Seller Offers</h3>
+              <div className="space-y-2">
+                {listings.slice(1).map((l: any) => (
+                  <div key={l.id} className="bg-gray-900/60 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-emerald-400">{currency}{Number(l.price).toLocaleString()}</p>
+                      <p className="text-xs text-gray-400">Sold by {l.sellerProfile?.shopName || "Seller"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAddToCart(l.id)}
+                        className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg border border-gray-700 font-medium"
+                      >
+                        Add to Cart
+                      </button>
+                      <button
+                        onClick={() => handleBuyNow(l.id)}
+                        className="text-xs bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-1.5 rounded-lg font-bold"
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Description & Value Props */}
+          <div className="border-t border-gray-800 pt-6 space-y-4">
+            <h3 className="font-bold text-base text-white">Product Description</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">{product.description || "No description provided."}</p>
+
+            <div className="grid grid-cols-2 gap-3 pt-4 text-xs text-gray-400">
+              <div className="flex items-center gap-2 bg-gray-900/40 p-3 rounded-lg border border-gray-800/50">
+                <FiTruck className="text-emerald-400 w-4 h-4" />
+                <span>Fast Nationwide Delivery</span>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-900/40 p-3 rounded-lg border border-gray-800/50">
+                <FiShield className="text-emerald-400 w-4 h-4" />
+                <span>100% Genuine Guarantee</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* --- DESCRIPTION & REVIEW SECTION --- */}
-      <div className='mt-20'>
-        <div className='flex'>
-            <b className='border border-gray-700 px-5 py-3 text-sm text-white border-b-0 cursor-pointer'>Description</b>
-            <p className='border border-gray-700 border-l-0 px-5 py-3 text-sm text-gray-500 border-b-0 cursor-pointer hover:text-white transition-colors'>Reviews (122)</p>
-        </div>
-        <div className='flex flex-col gap-4 border border-gray-700 px-6 py-6 text-sm text-gray-400 leading-6 bg-[#121212] rounded-b-lg rounded-tr-lg'>
-            <p>An e-commerce website is an online platform that facilitates the buying and selling of products or services over the internet. It serves as a virtual marketplace where businesses and individuals can showcase their products, interact with customers, and conduct transactions without the need for a physical presence.</p>
-            <p>E-commerce websites typically display products or services along with detailed descriptions, images, prices, and any available variations (e.g., sizes, colors). Each product usually has its own dedicated page with relevant information.</p>
-        </div>
-      </div>
-
-      {/* --- RELATED PRODUCTS --- */}
-      <RelatedProducts category={productData.category} subCategory={productData.subCategory} />
-
     </div>
-  ) : <div className='opacity-0'></div>
+  );
 }
-
-export default Product

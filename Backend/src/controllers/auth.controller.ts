@@ -210,3 +210,48 @@ export const deleteAccount = async (req: AuthenticatedRequest, res: Response, ne
     next(error);
   }
 };
+
+export const me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../app');
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        fullName: true,
+        avatarUrl: true,
+        role: { select: { name: true } },
+      }
+    });
+
+    if (!user) throw new AppError('User not found', 404);
+
+    res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateMe = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { fullName, avatarUrl } = req.body;
+    const { prisma } = await import('../app');
+    const user = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { fullName, avatarUrl },
+      select: {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        fullName: true,
+        avatarUrl: true,
+        role: { select: { name: true } },
+      }
+    });
+    res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+};
