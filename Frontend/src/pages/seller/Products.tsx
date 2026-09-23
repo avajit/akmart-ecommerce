@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { getSellerProducts } from '../../api/seller.api';
-import { Link } from 'react-router-dom';
+import { getSellerProducts, createListing, submitProduct } from '../../api/seller.api';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showListingModal, setShowListingModal] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [listingForm, setListingForm] = useState({ price: '', stock: '' });
+  const navigate = useNavigate();
 
   useEffect(() => {
     getSellerProducts().then((res: any) => {
@@ -20,6 +25,24 @@ export default function Products() {
       case 'APPROVED': return <span className="bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold">APPROVED</span>;
       case 'REJECTED': return <span className="bg-red-500/20 text-red-500 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold">REJECTED</span>;
       default: return null;
+    }
+  };
+
+  const handleCreateListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVariant) return;
+    try {
+      await createListing({
+        variantId: selectedVariant.id,
+        price: Number(listingForm.price),
+        mrp: Number(listingForm.price) + 500,
+        stock: Number(listingForm.stock)
+      });
+      toast.success("Listing created successfully!");
+      setShowListingModal(false);
+      navigate('/seller/listings');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Error creating listing");
     }
   };
 
@@ -73,17 +96,17 @@ export default function Products() {
                      {p.variants?.length || 0}
                   </td>
                   <td className="p-4">
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 items-center">
                       <button className="text-emerald-500 hover:text-emerald-400 font-medium text-sm">View</button>
                       {p.status === 'DRAFT' && (
                         <button 
                           onClick={async () => {
                             try {
-                              await import('../../api/seller.api').then(m => m.submitProduct(p.id));
-                              import('react-toastify').then(m => m.toast.success("Submitted for review"));
+                              await submitProduct(p.id);
+                              toast.success("Submitted for review");
                               window.location.reload();
                             } catch (err: any) {
-                              import('react-toastify').then(m => m.toast.error(err.response?.data?.error?.message || "Error submitting"));
+                              toast.error(err.response?.data?.error?.message || "Error submitting");
                             }
                           }}
                           className="text-blue-500 hover:text-blue-400 font-medium text-sm"
@@ -91,27 +114,20 @@ export default function Products() {
                           Submit
                         </button>
                       )}
-                      {p.status === 'APPROVED' && (
+                      {p.status === 'APPROVED' && p.variants?.[0]?.hasListing && (
+                        <Link to="/seller/listings" className="bg-gray-800 text-gray-300 border border-gray-700 px-3 py-1.5 rounded hover:bg-gray-700 font-medium text-sm transition-colors">
+                          Manage Listing
+                        </Link>
+                      )}
+                      {p.status === 'APPROVED' && !p.variants?.[0]?.hasListing && (
                         <button 
-                          onClick={async () => {
-                            if (!p.variants?.[0]?.id) return import('react-toastify').then(m => m.toast.error("No variant found"));
-                            const price = prompt("Enter Price (NPR):", "1000");
-                            if (!price) return;
-                            const stock = prompt("Enter Stock:", "10");
-                            if (!stock) return;
-                            try {
-                              await import('../../api/seller.api').then(m => m.createListing({
-                                variantId: p.variants[0].id,
-                                price: Number(price),
-                                mrp: Number(price) + 500,
-                                stock: Number(stock)
-                              }));
-                              import('react-toastify').then(m => m.toast.success("Listing created! Go to Listings tab to manage it."));
-                            } catch (err: any) {
-                              import('react-toastify').then(m => m.toast.error(err.response?.data?.error?.message || "Error creating listing"));
-                            }
+                          onClick={() => {
+                            if (!p.variants?.[0]?.id) return toast.error("No variant found");
+                            setSelectedVariant(p.variants[0]);
+                            setListingForm({ price: '', stock: '' });
+                            setShowListingModal(true);
                           }}
-                          className="text-amber-500 hover:text-amber-400 font-medium text-sm"
+                          className="bg-amber-500/20 text-amber-500 border border-amber-500/50 px-3 py-1.5 rounded hover:bg-amber-500 hover:text-black font-medium text-sm transition-colors"
                         >
                           Create Listing
                         </button>
@@ -124,6 +140,48 @@ export default function Products() {
           </tbody>
         </table>
       </div>
+
+      {/* Create Listing Modal */}
+      {showListingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-gray-800">
+              <h2 className="text-xl font-bold text-white">Create Listing</h2>
+              <p className="text-sm text-gray-400 mt-1">Set your selling price and inventory stock.</p>
+            </div>
+            <form onSubmit={handleCreateListing} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Selling Price (NPR)</label>
+                <input 
+                  type="number" 
+                  required
+                  min="1"
+                  value={listingForm.price}
+                  onChange={e => setListingForm({...listingForm, price: e.target.value})}
+                  className="w-full bg-black border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-emerald-500" 
+                  placeholder="e.g. 1500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Available Stock</label>
+                <input 
+                  type="number" 
+                  required
+                  min="1"
+                  value={listingForm.stock}
+                  onChange={e => setListingForm({...listingForm, stock: e.target.value})}
+                  className="w-full bg-black border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-emerald-500" 
+                  placeholder="e.g. 50"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setShowListingModal(false)} className="px-4 py-2 rounded-lg font-medium text-gray-400 hover:text-white">Cancel</button>
+                <button type="submit" className="bg-emerald-500 text-black px-6 py-2 rounded-lg font-bold hover:bg-emerald-400">Launch Listing</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

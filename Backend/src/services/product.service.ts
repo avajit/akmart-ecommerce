@@ -220,6 +220,12 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
       primaryImage: p.images[0]?.url ?? p.variants[0]?.images[0]?.url ?? null,
       cheapestPrice: cheapestListing?.price ?? null,
       reviewCount: p._count.reviews,
+      variants: p.variants.map(v => ({ 
+        id: v.id, 
+        name: v.name, 
+        sku: v.sku,
+        hasListing: v.listings && v.listings.length > 0 
+      })),
     };
   });
 

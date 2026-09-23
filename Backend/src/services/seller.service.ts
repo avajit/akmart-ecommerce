@@ -137,3 +137,43 @@ export const deleteSellerListing = async (userId: string, listingId: string) => 
     data: { deletedAt: new Date(), isActive: false },
   });
 };
+
+// ── SellerOrders ──────────────────────────────────────────────
+
+export const getSellerOrders = async (userId: string) => {
+  const profile = await prisma.sellerProfile.findUnique({ where: { userId } });
+  if (!profile) throw new AppError("Seller profile not found", 404, "PROFILE_NOT_FOUND");
+
+  return prisma.orderItem.findMany({
+    where: { sellerId: profile.id },
+    include: {
+      order: {
+        include: {
+          user: { select: { fullName: true, email: true, phoneNumber: true } },
+          shippingAddress: true
+        }
+      },
+      sellerListing: {
+        include: {
+          variant: { include: { product: { select: { name: true, slug: true } } } }
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const updateSellerOrderStatus = async (userId: string, orderItemId: string, status: any) => {
+  const profile = await prisma.sellerProfile.findUnique({ where: { userId } });
+  if (!profile) throw new AppError("Seller profile not found", 404, "PROFILE_NOT_FOUND");
+
+  const orderItem = await prisma.orderItem.findFirst({
+    where: { id: orderItemId, sellerId: profile.id },
+  });
+  if (!orderItem) throw new AppError("Order item not found", 404, "NOT_FOUND");
+
+  return prisma.orderItem.update({
+    where: { id: orderItemId },
+    data: { status },
+  });
+};

@@ -1,83 +1,207 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import Title from '../components/Title';
-import { toast } from 'react-toastify'; // 1. Import Toast
+import React, { useContext } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getMyOrders } from '../api/order.api';
+import { ShopContext } from '../context/ShopContext';
+import { Link } from 'react-router-dom';
+import { FiPackage, FiTruck, FiCheckCircle, FiClock, FiShoppingBag, FiArrowRight } from 'react-icons/fi';
 
-const Orders = () => {
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'PENDING':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <FiClock className="w-3.5 h-3.5" /> Order Placed
+        </span>
+      );
+    case 'PROCESSING':
+    case 'CONFIRMED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <FiPackage className="w-3.5 h-3.5" /> Confirmed / Packing
+        </span>
+      );
+    case 'SHIPPED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <FiTruck className="w-3.5 h-3.5" /> Out for Delivery
+        </span>
+      );
+    case 'DELIVERED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <FiCheckCircle className="w-3.5 h-3.5" /> Delivered
+        </span>
+      );
+    case 'CANCELLED':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+          Cancelled
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-700 text-gray-300">
+          {status}
+        </span>
+      );
+  }
+};
 
-  const { products, currency } = useContext(ShopContext);
-  
-  // Load initial data
-  const [orderData, setOrderData] = useState([]);
+export default function Orders() {
+  const { currency } = useContext(ShopContext) || { currency: 'NPR ' };
 
-  useEffect(() => {
-    if (products.length > 0) {
-        // Simulate fetching orders from database
-        setOrderData(products.slice(1, 4));
-    }
-  }, [products]);
+  const { data: ordersRes, isLoading } = useQuery({
+    queryKey: ['my-orders'],
+    queryFn: getMyOrders,
+  });
 
-  // 2. TRACK ORDER FUNCTION (Simulates API Call)
-  const handleTrackOrder = (index) => {
-      // Show user something is happening
-      toast.info("Checking delivery status...", { autoClose: 1000 });
-      
-      // Simulate network delay
-      setTimeout(() => {
-          toast.success(`Order #${index + 1240} is Ready to Ship!`);
-      }, 1500);
+  const orders = (ordersRes as any)?.data || [];
+
+  if (isLoading) {
+    return (
+      <div className="max-w-5xl mx-auto py-20 px-4 text-center">
+        <div className="inline-block w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-400 mt-4">Loading your orders...</p>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto py-20 px-4 text-center">
+        <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-800">
+          <FiPackage className="w-10 h-10 text-gray-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">No Orders Yet</h2>
+        <p className="text-gray-400 max-w-md mx-auto mb-6">
+          You haven't placed any orders yet. Check out our latest products and exclusive deals.
+        </p>
+        <Link
+          to="/collection"
+          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20"
+        >
+          Start Shopping <FiArrowRight />
+        </Link>
+      </div>
+    );
   }
 
   return (
-    <div className='border-t border-gray-700 pt-16 min-h-[60vh]'>
-      
-      <div className='text-2xl mb-8'>
-          <Title text1={'MY'} text2={'ORDERS'}/>
+    <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">My Orders</h1>
+          <p className="text-sm text-gray-400 mt-1">Track and manage your order history</p>
+        </div>
+        <Link to="/collection" className="text-sm text-emerald-400 hover:underline">
+          Shop More &rarr;
+        </Link>
       </div>
 
-      <div className='flex flex-col gap-6'>
-        {orderData.map((item, index) => (
-          
-          <div key={index} className='py-4 border-t border-b border-gray-700 text-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
-             
-             {/* Product Info */}
-             <div className='flex items-start gap-6 text-sm'>
-                 <img className='w-16 sm:w-20 object-cover rounded-lg border border-gray-700' src={item.image[0]} alt="" />
-                 <div>
-                     <p className='sm:text-base font-medium text-white'>{item.name}</p>
-                     <div className='flex items-center gap-3 mt-1 text-base text-gray-400'>
-                         <p className='text-lg text-amber-500 font-bold'>{currency}{item.price}</p>
-                         <p>Quantity: 1</p>
-                         <p>Size: M</p>
-                     </div>
-                     <p className='mt-1 text-gray-500'>Date: <span className='text-gray-300'>25 Jul, 2025</span></p>
-                     <p className='text-gray-500'>Payment: <span className='text-gray-300'>COD</span></p>
-                 </div>
-             </div>
+      <div className="space-y-6">
+        {orders.map((order: any) => {
+          const items = order.items || [];
+          const address = order.shippingAddress;
+          const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          });
 
-             {/* Status & Action */}
-             <div className='md:w-1/2 flex justify-between items-center'>
-                 
-                 <div className='flex items-center gap-2'>
-                     <p className='min-w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]'></p>
-                     <p className='text-sm md:text-base text-gray-300'>Ready to ship</p>
-                 </div>
+          return (
+            <div
+              key={order.id}
+              className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-xl"
+            >
+              {/* Order Card Header */}
+              <div className="bg-black/60 px-6 py-4 border-b border-gray-800 flex flex-wrap justify-between items-center gap-4 text-sm">
+                <div className="flex flex-wrap gap-6 items-center">
+                  <div>
+                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Order Placed</p>
+                    <p className="text-white font-medium mt-0.5">{orderDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Total Amount</p>
+                    <p className="text-emerald-400 font-bold mt-0.5">
+                      {currency}{Number(order.totalAmount).toLocaleString()}
+                    </p>
+                  </div>
+                  {address && (
+                    <div>
+                      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Ship To</p>
+                      <p className="text-gray-300 font-medium mt-0.5 truncate max-w-xs">{address.fullName}</p>
+                    </div>
+                  )}
+                </div>
 
-                 {/* 3. BUTTON WITH CLICK EVENT */}
-                 <button 
-                    onClick={() => handleTrackOrder(index)}
-                    className='border border-gray-600 px-6 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-[#1A1A1A] hover:text-amber-500 hover:border-amber-500 transition-all duration-300 active:scale-95'
-                 >
-                     Track Order
-                 </button>
-             </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Order Reference</p>
+                  <p className="text-gray-400 font-mono text-xs mt-0.5">#{order.id.slice(0, 8)}</p>
+                </div>
+              </div>
 
-          </div>
-        ))}
+              {/* Order Items */}
+              <div className="p-6 divide-y divide-gray-800/60">
+                {items.map((item: any) => {
+                  const productName = item.productName || item.sellerListing?.variant?.product?.name || "Product";
+                  const productSlug = item.productSlug || item.sellerListing?.variant?.product?.slug || "";
+                  const variantName = item.variantName || item.sellerListing?.variant?.name || "Default";
+                  const shopName = item.shopName || item.sellerListing?.sellerProfile?.shopName || "Seller";
+                  const imageUrl =
+                    item.imageUrl ||
+                    item.sellerListing?.variant?.images?.[0]?.url ||
+                    item.sellerListing?.variant?.product?.images?.[0]?.url;
+                  const itemPrice = Number(item.priceAtPurchase || 0);
+
+                  return (
+                    <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row gap-5 items-start sm:items-center justify-between">
+                      <div className="flex gap-4 items-center">
+                        <div className="w-16 h-16 bg-black rounded-xl border border-gray-800 overflow-hidden flex-shrink-0">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={productName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] text-gray-600 flex items-center justify-center h-full">No Img</span>
+                          )}
+                        </div>
+
+                        <div>
+                          {productSlug ? (
+                            <Link to={`/product/${productSlug}`} className="text-white font-bold hover:text-emerald-400 transition text-sm">
+                              {productName}
+                            </Link>
+                          ) : (
+                            <span className="text-white font-bold text-sm">{productName}</span>
+                          )}
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {variantName} &bull; Sold by <span className="text-gray-300">{shopName}</span>
+                          </p>
+                          <p className="text-xs text-emerald-400 font-semibold mt-1">
+                            Qty: {item.quantity} &times; {currency}{itemPrice.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <StatusBadge status={item.status || order.status} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Delivery Details Footer */}
+              {address && (
+                <div className="bg-black/30 px-6 py-3 border-t border-gray-800/60 text-xs text-gray-400 flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    📍 Delivery Address: {address.street}, {address.city}, {address.state} - {address.zipCode} (Phone: {address.phone})
+                  </span>
+                  <span className="text-emerald-400 font-medium">Payment: {order.paymentMethod}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-
     </div>
-  )
+  );
 }
-
-export default Orders

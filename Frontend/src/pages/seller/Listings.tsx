@@ -73,7 +73,7 @@ export default function Listings() {
                       type="number" 
                       defaultValue={l.price} 
                       onBlur={(e) => {
-                         if(Number(e.target.value) !== l.price) handleUpdate(l.id, 'price', e.target.value)
+                         if(Number(e.target.value) !== Number(l.price)) handleUpdate(l.id, 'price', e.target.value)
                       }}
                       className="bg-black border border-gray-700 rounded p-2 text-white w-24 text-sm focus:ring-2 focus:ring-emerald-500"
                     />
@@ -83,7 +83,7 @@ export default function Listings() {
                       type="number" 
                       defaultValue={l.stock} 
                       onBlur={(e) => {
-                         if(Number(e.target.value) !== l.stock) handleUpdate(l.id, 'stock', e.target.value)
+                         if(Number(e.target.value) !== Number(l.stock)) handleUpdate(l.id, 'stock', e.target.value)
                       }}
                       className="bg-black border border-gray-700 rounded p-2 text-white w-24 text-sm focus:ring-2 focus:ring-emerald-500"
                     />

@@ -29,6 +29,7 @@ import SellerProducts from "../pages/seller/Products";
 import SellerCreateProduct from "../pages/seller/CreateProduct";
 import SellerListings from "../pages/seller/Listings";
 import SellerSettings from "../pages/seller/Settings";
+import SellerOrders from "../pages/seller/Orders";
 
 // Admin Pages
 import AdminDashboard from "../pages/admin/Dashboard";
@@ -80,6 +81,7 @@ function AppRoutes() {
           <Route path="/seller/products" element={<SellerProducts />} />
           <Route path="/seller/products/new" element={<SellerCreateProduct />} />
           <Route path="/seller/listings" element={<SellerListings />} />
+          <Route path="/seller/orders" element={<SellerOrders />} />
           <Route path="/seller/settings" element={<SellerSettings />} />
         </Route>
       </Route>

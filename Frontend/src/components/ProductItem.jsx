@@ -45,9 +45,15 @@ const ProductItem = ({ slug, image, name, price, bestseller }) => {
         </h3>
 
         <div className="flex items-center justify-between mt-1">
-          <p className="text-base font-bold text-yellow-400">
-            {currency}{price}
-          </p>
+          {price && Number(price) > 0 ? (
+            <p className="text-base font-bold text-emerald-400">
+              {currency}{Number(price).toLocaleString()}
+            </p>
+          ) : (
+            <p className="text-xs font-semibold text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded">
+              Out of Stock
+            </p>
+          )}
           <p className="text-xs text-gray-500">★★★★☆</p>
         </div>
       </div>
