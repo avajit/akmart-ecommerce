@@ -21,6 +21,8 @@ export interface UserDTO {
   phoneNumber?: string;
   fullName: string;
   roleId: string;
+  role?: string;
+  roleName?: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isActive: boolean;

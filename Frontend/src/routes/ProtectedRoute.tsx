@@ -1,13 +1,21 @@
-import React from 'react';
+﻿import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
-const ProtectedRoute: React.FC = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+interface ProtectedRouteProps {
+  allowedRoles?: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
+  const { isAuthenticated, user } = useAuthStore();
 
   if (!isAuthenticated) {
-    // Flipkart style: Kicked back to login when they try to checkout
     return <Navigate to="/login" replace />;
+  }
+
+  const userRole = user?.roleName || user?.role;
+  if (allowedRoles && user && !allowedRoles.includes(userRole as string)) {
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;
