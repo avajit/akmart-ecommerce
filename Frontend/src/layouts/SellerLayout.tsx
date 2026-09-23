@@ -26,6 +26,7 @@ export default function SellerLayout() {
 
         <nav className="flex-1 mt-6">
           <NavLink to="/seller/dashboard" className={navClass} end><FiHome /> Dashboard</NavLink>
+          <NavLink to="/seller/orders" className={navClass}><FiBox /> Orders</NavLink>
           <NavLink to="/seller/products" className={navClass}><FiBox /> My Products</NavLink>
           <NavLink to="/seller/listings" className={navClass}><FiList /> Manage Listings</NavLink>
           <NavLink to="/seller/settings" className={navClass}><FiSettings /> Shop Settings</NavLink>

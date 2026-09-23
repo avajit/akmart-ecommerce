@@ -1,7 +1,8 @@
-﻿import { Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import * as sellerService from "../services/seller.service";
 import { createSellerProfileSchema, updateSellerProfileSchema, createSellerListingSchema, updateSellerListingSchema } from "../dtos/seller.dto";
+import { updateOrderStatusSchema, toOrderItemResponseDTO } from "../dtos/order.dto";
 
 // ── SellerProfile controllers ─────────────────────────────────
 
@@ -59,5 +60,23 @@ export const deleteListing = async (req: AuthenticatedRequest, res: Response, ne
     const listingId = req.params.id as string;
     await sellerService.deleteSellerListing(req.user!.userId, listingId);
     res.json({ success: true, message: "Listing deactivated" });
+  } catch (err) { next(err); }
+};
+
+// ── SellerOrder controllers ───────────────────────────────────
+
+export const getOrders = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const orders = await sellerService.getSellerOrders(req.user!.userId);
+    res.json({ success: true, data: orders.map(toOrderItemResponseDTO) });
+  } catch (err) { next(err); }
+};
+
+export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const orderItemId = req.params.id as string;
+    const dto = updateOrderStatusSchema.parse(req.body);
+    const orderItem = await sellerService.updateSellerOrderStatus(req.user!.userId, orderItemId, dto.status);
+    res.json({ success: true, message: "Order status updated", data: toOrderItemResponseDTO(orderItem) });
   } catch (err) { next(err); }
 };

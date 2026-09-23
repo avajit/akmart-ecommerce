@@ -39,6 +39,10 @@ model User {
   reviews          Review[]
   products         Product[]      @relation("ProductCreator")
 
+  // Module 3 relations
+  addresses        Address[]
+  orders           Order[]
+
   // App-level rule (#13): enforce in service layer, not DB constraint —
   // every user must have at least one of passwordHash / googleId / phoneNumber+OTP
 
@@ -287,6 +291,7 @@ model SellerListing {
   reservedStock   Int            @default(0)
   isActive        Boolean        @default(true)
   cartItems       CartItem[]
+  orderItems      OrderItem[]
   deletedAt       DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -365,3 +370,74 @@ model Review {
   @@index([productId])
   @@index([userId])
 }
+
+// ============================================================
+// MODULE 3: ORDERS & CHECKOUT
+// ============================================================
+
+model Address {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  fullName  String
+  phone     String
+  street    String
+  city      String
+  state     String
+  zipCode   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+
+  @@index([userId])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  shippingAddressId String
+  shippingAddress Address     @relation(fields: [shippingAddressId], references: [id])
+  status          OrderStatus @default(PENDING) // PENDING means pending confirmation/payment
+  paymentMethod   String      @default("COD")   // "COD" only for now
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model OrderItem {
+  id              String         @id @default(uuid())
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id])
+  sellerListingId String
+  sellerListing   SellerListing  @relation(fields: [sellerListingId], references: [id])
+  sellerId        String         // To easily query orders by seller without deep joins
+  quantity        Int
+  priceAtPurchase Decimal        @db.Decimal(10, 2) // Snapshotted price
+  status          FulfillmentStatus @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([sellerListingId])
+}
+
+enum FulfillmentStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+

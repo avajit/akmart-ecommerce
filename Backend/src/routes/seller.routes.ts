@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { requireAuth, requireRole } from "../middlewares/auth.middleware";
 import * as sellerController from "../controllers/seller.controller";
 
@@ -12,10 +12,14 @@ router.post("/profile", sellerController.createProfile);
 router.get("/profile", sellerController.getProfile);
 router.patch("/profile", sellerController.updateProfile);
 
-// ── SellerListing ──────────────────────────────────────────────
+// ── SellerListings ─────────────────────────────────────────────
 router.post("/listings", sellerController.createListing);
 router.get("/listings", sellerController.getListings);
 router.patch("/listings/:id", sellerController.updateListing);
 router.delete("/listings/:id", sellerController.deleteListing);
+
+// ── SellerOrders ───────────────────────────────────────────────
+router.get("/orders", sellerController.getOrders);
+router.patch("/orders/:id/status", sellerController.updateOrderStatus);
 
 export default router;

@@ -1,30 +1,26 @@
-﻿import { AppError } from "../utils/AppError";
+import { AppError } from "../utils/AppError";
 import { prisma } from "../app";
 
 // Auto-creates cart if user has none, returns it
 const getOrCreateCart = async (userId: string) => {
+  const itemInclude = {
+    variant: { include: { product: { select: { name: true, slug: true } }, images: { where: { isPrimary: true }, take: 1 } } },
+    sellerListing: { 
+      include: { 
+        sellerProfile: { select: { shopName: true } },
+        variant: { include: { product: { select: { name: true, slug: true } }, images: { where: { isPrimary: true }, take: 1 } } }
+      } 
+    },
+  };
+
   let cart = await prisma.cart.findUnique({
     where: { userId },
-    include: {
-      items: {
-        include: {
-          variant: { include: { product: { select: { name: true, slug: true } }, images: { where: { isPrimary: true }, take: 1 } } },
-          sellerListing: { include: { sellerProfile: { select: { shopName: true } } } },
-        },
-      },
-    },
+    include: { items: { include: itemInclude } },
   });
   if (!cart) {
     cart = await prisma.cart.create({
       data: { userId },
-      include: {
-        items: {
-          include: {
-            variant: { include: { product: { select: { name: true, slug: true } }, images: { where: { isPrimary: true }, take: 1 } } },
-            sellerListing: { include: { sellerProfile: { select: { shopName: true } } } },
-          },
-        },
-      },
+      include: { items: { include: itemInclude } },
     });
   }
   return cart;
