@@ -34,7 +34,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
       maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
     });
 
@@ -66,7 +66,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
       maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
     });
 
@@ -108,7 +108,7 @@ export const googleSSO = async (req: Request, res: Response, next: NextFunction)
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
       maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
     });
 
@@ -160,7 +160,7 @@ export const verifyAccount = async (req: Request, res: Response, next: NextFunct
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
       maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
     });
 
@@ -222,7 +222,10 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
         phoneNumber: true,
         fullName: true,
         avatarUrl: true,
-        role: { select: { name: true } },
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        createdAt: true,
+        role: { select: { name: true, description: true } },
       }
     });
 
@@ -236,21 +239,28 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
 
 export const updateMe = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { fullName, avatarUrl } = req.body;
+    const { fullName, phoneNumber, avatarUrl } = req.body;
     const { prisma } = await import('../app');
     const user = await prisma.user.update({
       where: { id: req.user!.userId },
-      data: { fullName, avatarUrl },
+      data: { 
+        ...(fullName && { fullName }),
+        ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(avatarUrl !== undefined && { avatarUrl }),
+      },
       select: {
         id: true,
         email: true,
         phoneNumber: true,
         fullName: true,
         avatarUrl: true,
-        role: { select: { name: true } },
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        createdAt: true,
+        role: { select: { name: true, description: true } },
       }
     });
-    res.status(200).json({ success: true, data: user });
+    res.status(200).json({ success: true, message: 'Profile updated successfully', data: user });
   } catch (err) {
     next(err);
   }
