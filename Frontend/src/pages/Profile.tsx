@@ -1,34 +1,43 @@
-import React, { useEffect, useState } from 'react'
-import Title from '../components/Title'
-import { assets } from '../assets/frontend_assets/assets'
+import React, { useEffect, useState } from 'react';
+import Title from '../components/Title';
+import { assets } from '../assets/frontend_assets/assets';
 import { authService } from '../api/auth.service';
 import { toast } from 'react-toastify';
+import { FiUser, FiMail, FiPhone, FiShield, FiCheckCircle, FiCalendar, FiEdit2, FiSave, FiX } from 'react-icons/fi';
 
 const Profile = () => {
-
   const [isEdit, setIsEdit] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [userData, setUserData] = useState({
-    name: "",
-    image: assets.profile_icon, 
-    email: "",
-    phone: "",
-    role: "",
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    role: '',
+    roleDescription: '',
+    isEmailVerified: false,
+    isPhoneVerified: false,
+    createdAt: '',
+    avatarUrl: '',
   });
 
   const fetchProfile = async () => {
     try {
       const me = await authService.getMe();
       setUserData({
-        name: me.fullName,
-        image: me.avatarUrl || assets.profile_icon,
-        email: me.email || "",
-        phone: me.phoneNumber || "",
-        role: me.role?.name || "User",
+        fullName: me.fullName || '',
+        email: me.email || '',
+        phoneNumber: me.phoneNumber || '',
+        role: me.role?.name || 'CONSUMER',
+        roleDescription: me.role?.description || 'Standard customer account',
+        isEmailVerified: !!me.isEmailVerified,
+        isPhoneVerified: !!me.isPhoneVerified,
+        createdAt: me.createdAt ? new Date(me.createdAt).toLocaleDateString() : 'N/A',
+        avatarUrl: me.avatarUrl || '',
       });
-    } catch (err) {
-      toast.error("Failed to load profile");
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -39,107 +48,199 @@ const Profile = () => {
   }, []);
 
   const handleSave = async () => {
+    if (!userData.fullName.trim()) {
+      toast.error('Full name cannot be empty');
+      return;
+    }
+
+    setSaving(true);
     try {
-      await authService.updateMe({ fullName: userData.name });
-      toast.success("Profile updated");
+      await authService.updateMe({
+        fullName: userData.fullName.trim(),
+        phoneNumber: userData.phoneNumber.trim() || null,
+        avatarUrl: userData.avatarUrl.trim() || null,
+      });
+      toast.success('Profile updated successfully!');
       setIsEdit(false);
       fetchProfile();
-    } catch (err) {
-      toast.error("Failed to update profile");
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (loading) return <div className='py-20 text-center text-white'>Loading profile...</div>;
+  if (loading) {
+    return (
+      <div className='py-28 text-center text-gray-400 text-lg flex items-center justify-center gap-3'>
+        <div className='w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin'></div>
+        Loading your profile...
+      </div>
+    );
+  }
 
   return (
-    <div className='border-t border-gray-700 pt-10 mb-20'>
+    <div className='border-t border-gray-800 pt-10 pb-24 px-4 sm:px-6 max-w-4xl mx-auto'>
       
-      {/* --- PAGE HEADER --- */}
-      <div className='text-2xl mb-8'>
-          <Title text1={'MY'} text2={'PROFILE'} />
+      {/* --- TITLE HEADER --- */}
+      <div className='text-2xl mb-8 text-center sm:text-left'>
+        <Title text1={'ACCOUNT'} text2={'SETTINGS'} />
       </div>
 
-      {/* --- PROFILE CARD --- */}
-      <div className='max-w-3xl mx-auto bg-[#121212] rounded-2xl p-8 md:p-12 border border-gray-800 shadow-[0_0_20px_rgba(0,0,0,0.5)]'>
-          
-          {/* --- TOP SECTION: AVATAR & NAME --- */}
-          <div className='flex flex-col items-center gap-6 mb-10'>
-              {/* Avatar with Premium Glow */}
-              <div className='relative group'>
-                { isEdit ? (
-                    <>
-                        <img className='w-32 h-32 rounded-full object-cover border-4 border-gray-800 opacity-50' src={userData.image} alt="" />
-                        <div className='absolute inset-0 flex items-center justify-center cursor-pointer'>
-                            <p className='text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm'>Upload</p>
-                        </div>
-                    </>
-                ) : (
-                    <img className='w-32 h-32 rounded-full object-cover border-4 border-amber-500/20 shadow-xl shadow-amber-500/10' src={userData.image} alt="" />
-                )}
-              </div>
+      {/* --- PROFILE CARD CONTAINER --- */}
+      <div className='bg-[#141414] border border-gray-800 rounded-2xl p-6 sm:p-10 shadow-2xl relative overflow-hidden'>
+        
+        {/* Top Header Banner */}
+        <div className='flex flex-col sm:flex-row items-center justify-between gap-6 pb-8 border-b border-gray-800'>
+          <div className='flex items-center gap-5'>
+            <div className='relative'>
+              <img 
+                src={userData.avatarUrl || assets.profile_icon} 
+                alt="Profile Avatar" 
+                className='w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-orange-500/30 shadow-lg'
+              />
+              <span className='absolute bottom-0 right-0 bg-orange-500 text-white p-1 rounded-full text-xs shadow'>
+                <FiShield className='w-3.5 h-3.5' />
+              </span>
+            </div>
 
-              {/* Name Display / Edit */}
-              { isEdit ? (
-                <input 
-                    className='bg-[#1A1A1A] border border-gray-700 text-white text-center text-2xl font-medium px-4 py-2 rounded-lg outline-none focus:border-amber-500 transition-colors w-full max-w-sm' 
-                    type="text" 
-                    value={userData.name} 
-                    onChange={e => setUserData(prev => ({...prev, name: e.target.value}))}
-                />
-              ) : (
-                <h2 className='text-3xl font-medium text-white tracking-wide'>{userData.name}</h2>
-              )}
-              <p className='text-gray-500 font-bold uppercase tracking-widest text-sm'>{userData.role}</p>
+            <div>
+              <h2 className='text-2xl font-bold text-white capitalize'>
+                {userData.fullName || 'Valued User'}
+              </h2>
+              <p className='text-orange-400 text-xs font-semibold tracking-wider uppercase mt-1 flex items-center gap-1.5'>
+                <span>{userData.role}</span>
+                <span className='text-gray-500'>•</span>
+                <span className='text-gray-400 font-normal'>{userData.roleDescription}</span>
+              </p>
+              <p className='text-gray-500 text-xs mt-1 flex items-center gap-1'>
+                <FiCalendar className='w-3.5 h-3.5' /> Member since {userData.createdAt}
+              </p>
+            </div>
           </div>
 
-          <hr className='border-gray-800 mb-10' />
-
-          {/* --- DETAILS GRID --- */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8'>
-             
-             {/* 1. CONTACT INFO */}
-             <div>
-                 <p className='text-gray-500 uppercase tracking-widest text-xs font-bold mb-6 border-b border-gray-800 pb-2'>Contact Information</p>
-                 <div className='flex flex-col gap-5'>
-                    
-                    {/* Email */}
-                    <div>
-                        <p className='text-xs text-gray-400 mb-1'>Email Address</p>
-                        <p className='text-white text-lg'>{userData.email || 'N/A'}</p>
-                    </div>
-
-                    {/* Phone */}
-                    <div>
-                        <p className='text-xs text-gray-400 mb-1'>Phone Number</p>
-                        <p className='text-white text-lg'>{userData.phone || 'N/A'}</p>
-                    </div>
-                 </div>
-             </div>
-
-          </div>
-
-          {/* --- ACTION BUTTONS --- */}
-          <div className='mt-12 flex justify-center'>
-            { isEdit ? (
-                <button 
-                    onClick={handleSave} 
-                    className='bg-white text-black px-10 py-3 rounded-full font-bold hover:bg-gray-200 transition-all shadow-lg'
-                >
-                    Save Information
-                </button>
+          <div>
+            {!isEdit ? (
+              <button 
+                onClick={() => setIsEdit(true)}
+                className='flex items-center gap-2 bg-[#222222] hover:bg-orange-500 hover:text-white text-gray-200 px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm border border-gray-700'
+              >
+                <FiEdit2 className='w-4 h-4' /> Edit Profile
+              </button>
             ) : (
+              <div className='flex items-center gap-3'>
                 <button 
-                    onClick={()=> setIsEdit(true)} 
-                    className='bg-amber-500 text-black px-10 py-3 rounded-full font-bold hover:bg-amber-600 transition-all shadow-lg hover:shadow-amber-500/20'
+                  onClick={() => setIsEdit(false)}
+                  disabled={saving}
+                  className='flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors'
                 >
-                    Edit Profile
+                  <FiX className='w-4 h-4' /> Cancel
                 </button>
+                <button 
+                  onClick={handleSave}
+                  disabled={saving}
+                  className='flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-orange-500/20'
+                >
+                  <FiSave className='w-4 h-4' /> {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* --- INFORMATION FORM / DISPLAY --- */}
+        <div className='pt-8 grid grid-cols-1 md:grid-cols-2 gap-8'>
+          
+          {/* Full Name */}
+          <div className='space-y-2'>
+            <label className='text-xs uppercase tracking-wider text-gray-400 font-semibold flex items-center gap-1.5'>
+              <FiUser className='text-orange-500 w-3.5 h-3.5' /> Full Name
+            </label>
+            {isEdit ? (
+              <input 
+                type="text" 
+                value={userData.fullName}
+                onChange={(e) => setUserData({...userData, fullName: e.target.value})}
+                className='w-full bg-[#1F1F1F] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-orange-500 transition-colors'
+                placeholder="Enter your full name"
+              />
+            ) : (
+              <p className='text-white text-base bg-[#1A1A1A] border border-gray-800/80 rounded-xl px-4 py-3'>
+                {userData.fullName || 'Not provided'}
+              </p>
             )}
           </div>
 
-      </div>
-    </div>
-  )
-}
+          {/* Email Address */}
+          <div className='space-y-2'>
+            <label className='text-xs uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between'>
+              <span className='flex items-center gap-1.5'>
+                <FiMail className='text-orange-500 w-3.5 h-3.5' /> Email Address
+              </span>
+              {userData.isEmailVerified && (
+                <span className='text-green-400 text-[11px] flex items-center gap-1 font-normal'>
+                  <FiCheckCircle className='w-3 h-3' /> Verified
+                </span>
+              )}
+            </label>
+            <input 
+              type="email" 
+              disabled={true}
+              value={userData.email}
+              className='w-full bg-[#1A1A1A]/60 border border-gray-800 rounded-xl px-4 py-3 text-gray-400 text-sm cursor-not-allowed select-none'
+            />
+            <p className='text-[11px] text-gray-500 pl-1'>Email cannot be changed directly for security reasons.</p>
+          </div>
 
-export default Profile
+          {/* Phone Number */}
+          <div className='space-y-2'>
+            <label className='text-xs uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between'>
+              <span className='flex items-center gap-1.5'>
+                <FiPhone className='text-orange-500 w-3.5 h-3.5' /> Phone Number
+              </span>
+              {userData.isPhoneVerified && (
+                <span className='text-green-400 text-[11px] flex items-center gap-1 font-normal'>
+                  <FiCheckCircle className='w-3 h-3' /> Verified
+                </span>
+              )}
+            </label>
+            {isEdit ? (
+              <input 
+                type="text" 
+                value={userData.phoneNumber}
+                onChange={(e) => setUserData({...userData, phoneNumber: e.target.value})}
+                className='w-full bg-[#1F1F1F] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-orange-500 transition-colors'
+                placeholder="Enter phone number"
+              />
+            ) : (
+              <p className='text-white text-base bg-[#1A1A1A] border border-gray-800/80 rounded-xl px-4 py-3'>
+                {userData.phoneNumber || 'Not provided'}
+              </p>
+            )}
+          </div>
+
+          {/* Avatar URL / Profile Picture */}
+          {isEdit && (
+            <div className='space-y-2'>
+              <label className='text-xs uppercase tracking-wider text-gray-400 font-semibold flex items-center gap-1.5'>
+                <FiUser className='text-orange-500 w-3.5 h-3.5' /> Avatar Image URL
+              </label>
+              <input 
+                type="text" 
+                value={userData.avatarUrl}
+                onChange={(e) => setUserData({...userData, avatarUrl: e.target.value})}
+                className='w-full bg-[#1F1F1F] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-orange-500 transition-colors'
+                placeholder="https://example.com/avatar.jpg"
+              />
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+};
+
+export default Profile;

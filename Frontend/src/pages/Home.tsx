@@ -7,12 +7,13 @@ import { FiTruck, FiShield, FiLock, FiArrowRight } from 'react-icons/fi';
 import { assets } from '../assets/frontend_assets/assets';
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  men: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=600&auto=format&fit=crop",
-  women: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
-  kids: "https://images.unsplash.com/photo-1502781255441-4ba0046d16e8?q=80&w=600&auto=format&fit=crop",
-  home: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=600&auto=format&fit=crop",
-  beauty: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=600&auto=format&fit=crop",
-  electronics: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600&auto=format&fit=crop",
+  men: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop", // High fashion men editorial
+  women: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop", // Haute couture women editorial
+  kids: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?q=80&w=800&auto=format&fit=crop", // Kids style
+  home: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop", // Luxury interior / home decor
+  beauty: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=800&auto=format&fit=crop", // Luxury cosmetics & beauty
+  electronics: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?q=80&w=800&auto=format&fit=crop", // High-end tech
+  groceries: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop", // Gourmet groceries
 };
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=600&auto=format&fit=crop";
@@ -22,7 +23,10 @@ const Home = () => {
 
   useEffect(() => {
     getCategoryTree().then((res: any) => {
-      setCategories(res.data || []);
+      const allCats = res.data || [];
+      // Filter out junk/test categories
+      const cleanCats = allCats.filter((c: any) => !c.name?.toLowerCase().includes('fasttest') && !c.name?.toLowerCase().includes('test'));
+      setCategories(cleanCats);
     }).catch(() => {});
   }, []);
 

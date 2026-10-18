@@ -4,7 +4,7 @@ RUN apk add --no-cache git build-base
 WORKDIR /app
 
 COPY Backend/package*.json ./
-COPY Backend/package-lock.json ./ 2>/dev/null || true
+COPY Backend/package-lock.json ./
 RUN npm ci
 
 COPY Backend/ ./
