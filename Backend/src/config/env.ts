@@ -36,9 +36,9 @@ const envSchema = z.object({
   FRONTEND_MOBILE_URL: z.string().default('com.akmart.app'),
   
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default(60000 as never),
-  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default(100 as never),
-  AUTH_RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default(900000 as never),
-  AUTH_RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default(5 as never),
+  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default(1000 as never),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default(60000 as never),
+  AUTH_RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default(100 as never),
   
   AWS_REGION: z.string().optional(),
   AWS_ACCESS_KEY_ID: z.string().optional(),
