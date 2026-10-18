@@ -5,16 +5,10 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-function makeSlug(name: string): string {
-  return slugify(name, { lower: true, strict: true }) + '-' + nanoid(6);
-}
-
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('🌱 Starting comprehensive marketplace database seed...');
 
-  // ─────────────────────────────────────────────
   // 1. ROLES
-  // ─────────────────────────────────────────────
   const adminRole = await prisma.role.upsert({
     where: { name: 'ADMIN' },
     update: {},
@@ -33,59 +27,7 @@ async function main() {
     create: { name: 'CONSUMER', description: 'Standard user who can buy products', isSystem: true },
   });
 
-  console.log('✅ Roles seeded');
-
-  // ─────────────────────────────────────────────
-  // 2. PERMISSIONS
-  // ─────────────────────────────────────────────
-  const permissionDefs = [
-    { action: 'CREATE_PRODUCT',    description: 'Can create a new product' },
-    { action: 'UPDATE_PRODUCT',    description: 'Can update their own product' },
-    { action: 'DELETE_PRODUCT',    description: 'Can delete their own product' },
-    { action: 'DELETE_ANY_PRODUCT',description: 'Can delete any product (Admin)' },
-    { action: 'APPROVE_PRODUCT',   description: 'Can approve or reject products (Admin)' },
-    { action: 'UPDATE_ORDER_STATUS',description: 'Can update status of their shop orders' },
-    { action: 'VIEW_ALL_ORDERS',   description: 'Can view all platform orders (Admin)' },
-    { action: 'MANAGE_ROLES',      description: 'Can create or modify roles and permissions' },
-    { action: 'BAN_USER',          description: 'Can ban or unban a user' },
-    { action: 'VERIFY_SELLER',     description: 'Can verify a seller for payout (Admin)' },
-    { action: 'MANAGE_CATEGORIES', description: 'Can create/edit/delete categories (Admin)' },
-  ];
-
-  for (const perm of permissionDefs) {
-    await prisma.permission.upsert({
-      where: { action: perm.action },
-      update: {},
-      create: perm,
-    });
-  }
-
-  // Assign all permissions to ADMIN
-  const allPermissions = await prisma.permission.findMany();
-  for (const perm of allPermissions) {
-    await prisma.rolePermission.upsert({
-      where: { roleId_permissionId: { roleId: adminRole.id, permissionId: perm.id } },
-      update: {},
-      create: { roleId: adminRole.id, permissionId: perm.id },
-    });
-  }
-
-  // Assign relevant permissions to SELLER
-  const sellerPermActions = ['CREATE_PRODUCT', 'UPDATE_PRODUCT', 'DELETE_PRODUCT', 'UPDATE_ORDER_STATUS'];
-  for (const action of sellerPermActions) {
-    const perm = allPermissions.find(p => p.action === action)!;
-    await prisma.rolePermission.upsert({
-      where: { roleId_permissionId: { roleId: sellerRole.id, permissionId: perm.id } },
-      update: {},
-      create: { roleId: sellerRole.id, permissionId: perm.id },
-    });
-  }
-
-  console.log('✅ Permissions seeded');
-
-  // ─────────────────────────────────────────────
-  // 3. USERS
-  // ─────────────────────────────────────────────
+  // 2. USERS
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@akmart.com' },
     update: {},
@@ -103,7 +45,7 @@ async function main() {
     update: {},
     create: {
       email: 'seller@techmart.com',
-      fullName: 'TechMart Owner',
+      fullName: 'TechMart & Style Vendor',
       passwordHash: await bcrypt.hash('Seller@123', 12),
       roleId: sellerRole.id,
       isEmailVerified: true,
@@ -122,155 +64,69 @@ async function main() {
     },
   });
 
-  console.log('✅ Users seeded');
-
-  // ─────────────────────────────────────────────
-  // 4. BRANDS
-  // ─────────────────────────────────────────────
-  const samsung = await prisma.brand.upsert({
-    where: { slug: 'samsung' },
-    update: {},
-    create: { name: 'Samsung', slug: 'samsung', logoUrl: 'https://placehold.co/100x40?text=Samsung' },
-  });
-
-  await prisma.brand.upsert({
-    where: { slug: 'apple' },
-    update: {},
-    create: { name: 'Apple', slug: 'apple', logoUrl: 'https://placehold.co/100x40?text=Apple' },
-  });
-
-  await prisma.brand.upsert({
-    where: { slug: 'nike' },
-    update: {},
-    create: { name: 'Nike', slug: 'nike', logoUrl: 'https://placehold.co/100x40?text=Nike' },
-  });
-
-  await prisma.brand.upsert({
-    where: { slug: 'generic' },
-    update: {},
-    create: { name: 'Generic', slug: 'generic', logoUrl: 'https://placehold.co/100x40?text=Generic' },
-  });
-
-  console.log('✅ Brands seeded');
-
-  // ─────────────────────────────────────────────
-  // 5. CATEGORY TREE
-  // ─────────────────────────────────────────────
-  const electronics = await prisma.category.upsert({
-    where: { slug: 'electronics' },
-    update: {},
-    create: { name: 'Electronics', slug: 'electronics', imageUrl: 'https://placehold.co/200x200?text=Electronics' },
-  });
-
-  const smartphones = await prisma.category.upsert({
-    where: { slug: 'smartphones' },
-    update: {},
-    create: { name: 'Smartphones', slug: 'smartphones', parentId: electronics.id, imageUrl: 'https://placehold.co/200x200?text=Smartphones' },
-  });
-
-  await prisma.category.upsert({
-    where: { slug: 'laptops' },
-    update: {},
-    create: { name: 'Laptops', slug: 'laptops', parentId: electronics.id, imageUrl: 'https://placehold.co/200x200?text=Laptops' },
-  });
-
-  await prisma.category.upsert({
-    where: { slug: 'android-phones' },
-    update: {},
-    create: { name: 'Android Phones', slug: 'android-phones', parentId: smartphones.id },
-  });
-
-  const clothing = await prisma.category.upsert({
-    where: { slug: 'clothing' },
-    update: {},
-    create: { name: 'Clothing', slug: 'clothing', imageUrl: 'https://placehold.co/200x200?text=Clothing' },
-  });
-
-  const mens = await prisma.category.upsert({
-    where: { slug: 'mens-clothing' },
-    update: {},
-    create: { name: "Men's", slug: 'mens-clothing', parentId: clothing.id },
-  });
-
-  const tshirts = await prisma.category.upsert({
-    where: { slug: 'mens-tshirts' },
-    update: {},
-    create: { name: 'T-Shirts', slug: 'mens-tshirts', parentId: mens.id },
-  });
-
-  await prisma.category.upsert({
-    where: { slug: 'womens-clothing' },
-    update: {},
-    create: { name: "Women's", slug: 'womens-clothing', parentId: clothing.id },
-  });
-
-  const groceries = await prisma.category.upsert({
-    where: { slug: 'groceries' },
-    update: {},
-    create: { name: 'Groceries', slug: 'groceries', imageUrl: 'https://placehold.co/200x200?text=Groceries' },
-  });
-
-  await prisma.category.upsert({
-    where: { slug: 'snacks-beverages' },
-    update: {},
-    create: { name: 'Snacks & Beverages', slug: 'snacks-beverages', parentId: groceries.id },
-  });
-
-  await prisma.category.upsert({
-    where: { slug: 'home-kitchen' },
-    update: {},
-    create: { name: 'Home & Kitchen', slug: 'home-kitchen', imageUrl: 'https://placehold.co/200x200?text=Home+%26+Kitchen' },
-  });
-
-  console.log('✅ Category tree seeded');
-
-  // ─────────────────────────────────────────────
-  // 6. CATEGORY ATTRIBUTE CONFIGS
-  // ─────────────────────────────────────────────
-  const smartphoneAttrs = [
-    { key: 'color',   label: 'Color',   filterType: 'MULTISELECT' as const, unit: null,   order: 1 },
-    { key: 'ram',     label: 'RAM',     filterType: 'MULTISELECT' as const, unit: 'GB',   order: 2 },
-    { key: 'storage', label: 'Storage', filterType: 'MULTISELECT' as const, unit: 'GB',   order: 3 },
-    { key: 'battery', label: 'Battery', filterType: 'RANGE'       as const, unit: 'mAh',  order: 4 },
-    { key: 'is5g',    label: '5G',      filterType: 'BOOLEAN'     as const, unit: null,   order: 5 },
+  // 3. BRANDS
+  const brandsData = [
+    { name: 'Samsung', slug: 'samsung' },
+    { name: 'Apple', slug: 'apple' },
+    { name: 'Nike', slug: 'nike' },
+    { name: 'Zara', slug: 'zara' },
+    { name: 'Sony', slug: 'sony' },
+    { name: 'IKEA', slug: 'ikea' },
+    { name: 'Lakme', slug: 'lakme' },
+    { name: 'Generic', slug: 'generic' },
   ];
 
-  for (const attr of smartphoneAttrs) {
-    await prisma.categoryAttributeConfig.upsert({
-      where: { categoryId_key: { categoryId: smartphones.id, key: attr.key } },
+  const brandMap: Record<string, string> = {};
+  for (const b of brandsData) {
+    const brand = await prisma.brand.upsert({
+      where: { slug: b.slug },
       update: {},
-      create: { categoryId: smartphones.id, ...attr },
+      create: { name: b.name, slug: b.slug, logoUrl: `https://placehold.co/100x40?text=${b.name}` },
     });
+    brandMap[b.slug] = brand.id;
   }
 
-  const tshirtAttrs = [
-    { key: 'color',    label: 'Color',    filterType: 'MULTISELECT' as const, unit: null, order: 1 },
-    { key: 'size',     label: 'Size',     filterType: 'MULTISELECT' as const, unit: null, order: 2 },
-    { key: 'material', label: 'Material', filterType: 'MULTISELECT' as const, unit: null, order: 3 },
+  // 4. CATEGORIES (Men, Women, Kids, Home, Beauty, Electronics)
+  const categoriesData = [
+    { name: 'Men', slug: 'men', children: ['Clothing', 'Footwear', 'Accessories'] },
+    { name: 'Women', slug: 'women', children: ['Clothing', 'Footwear', 'Handbags', 'Beauty'] },
+    { name: 'Kids', slug: 'kids', children: ['Boys Clothing', 'Girls Clothing', 'Toys & Footwear'] },
+    { name: 'Home', slug: 'home', children: ['Decor', 'Kitchenware', 'Bedding'] },
+    { name: 'Beauty', slug: 'beauty', children: ['Skincare', 'Makeup', 'Fragrances'] },
+    { name: 'Electronics', slug: 'electronics', children: ['Smartphones', 'Laptops', 'Audio'] },
   ];
 
-  for (const attr of tshirtAttrs) {
-    await prisma.categoryAttributeConfig.upsert({
-      where: { categoryId_key: { categoryId: tshirts.id, key: attr.key } },
+  const categoryMap: Record<string, string> = {};
+
+  for (const parentCat of categoriesData) {
+    const parent = await prisma.category.upsert({
+      where: { slug: parentCat.slug },
       update: {},
-      create: { categoryId: tshirts.id, ...attr },
+      create: { name: parentCat.name, slug: parentCat.slug, imageUrl: `https://placehold.co/200x200?text=${parentCat.name}` },
     });
+    categoryMap[parentCat.slug] = parent.id;
+
+    for (const childName of parentCat.children) {
+      const childSlug = slugify(childName, { lower: true, strict: true });
+      const child = await prisma.category.upsert({
+        where: { slug: childSlug },
+        update: {},
+        create: { name: childName, slug: childSlug, parentId: parent.id },
+      });
+      categoryMap[childSlug] = child.id;
+    }
   }
 
-  console.log('✅ Category attribute configs seeded');
-
-  // ─────────────────────────────────────────────
-  // 7. SELLER PROFILE
-  // ─────────────────────────────────────────────
+  // 5. SELLER PROFILE
   const sellerProfile = await prisma.sellerProfile.upsert({
     where: { userId: sellerUser.id },
     update: {},
     create: {
       userId: sellerUser.id,
-      shopName: 'TechMart Nepal',
-      shopDescription: 'Your trusted gadget store in Nepal',
+      shopName: 'AkMart Official Hub',
+      shopDescription: 'Verified multi-category official store',
       phoneNumber: '+977-9801234567',
-      address: 'New Baneshwor',
+      address: 'Durbar Marg',
       city: 'Kathmandu',
       state: 'Bagmati',
       pincode: '44600',
@@ -280,95 +136,144 @@ async function main() {
     },
   });
 
-  console.log('✅ Seller profile seeded');
-
-  // ─────────────────────────────────────────────
-  // 8. SAMPLE PRODUCT (APPROVED)
-  // ─────────────────────────────────────────────
-  const productSlug = 'samsung-galaxy-s24-' + nanoid(6);
-
-  const product = await prisma.product.create({
-    data: {
-      name: 'Samsung Galaxy S24',
-      slug: productSlug,
-      description: 'The latest Samsung flagship with Snapdragon 8 Gen 3, 50MP camera, and a stunning 6.2" AMOLED display.',
-      categoryId: smartphones.id,
-      brandId: samsung.id,
-      createdById: sellerUser.id,
-      status: 'APPROVED',
+  // 6. RICH PRODUCTS WITH MATCHING IMAGES & PRICES
+  const sampleProducts = [
+    {
+      name: 'Classic Leather Bomber Jacket',
+      category: 'clothing',
+      brand: 'zara',
+      price: 6999,
+      mrp: 9999,
+      image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800&auto=format&fit=crop',
+      desc: 'Premium black leather jacket designed for ultimate comfort and timeless style.',
+      variants: ['Black / M', 'Black / L']
     },
-  });
-
-  // Variant 1: Black / 256GB
-  const variantBlack = await prisma.productVariant.create({
-    data: {
-      productId: product.id,
-      name: 'Phantom Black / 256GB',
-      sku: 'SGS24-BLK-256',
-      attributes: { color: 'Phantom Black', ram: '8', storage: '256', battery: '4000', is5g: true },
+    {
+      name: 'Nike Air Max Runner Sneakers',
+      category: 'footwear',
+      brand: 'nike',
+      price: 12499,
+      mrp: 15999,
+      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop',
+      desc: 'Lightweight cushioning and sleek athletic design for everyday performance.',
+      variants: ['Red / US 9', 'Red / US 10']
     },
-  });
-
-  await prisma.productImage.createMany({
-    data: [
-      { variantId: variantBlack.id, productId: product.id, url: 'https://placehold.co/600x600?text=S24+Black+Front', altText: 'S24 Black Front', isPrimary: true, order: 1 },
-      { variantId: variantBlack.id, productId: product.id, url: 'https://placehold.co/600x600?text=S24+Black+Back', altText: 'S24 Black Back', order: 2 },
-    ],
-  });
-
-  // Variant 2: Marble Gray / 128GB
-  const variantGray = await prisma.productVariant.create({
-    data: {
-      productId: product.id,
-      name: 'Marble Gray / 128GB',
-      sku: 'SGS24-GRY-128',
-      attributes: { color: 'Marble Gray', ram: '8', storage: '128', battery: '4000', is5g: true },
+    {
+      name: 'Floral Summer Wrap Dress',
+      category: 'clothing',
+      brand: 'zara',
+      price: 4499,
+      mrp: 5999,
+      image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?q=80&w=800&auto=format&fit=crop',
+      desc: 'Breezy floral wrap dress perfect for sunny days and casual outings.',
+      variants: ['Floral Blue / S', 'Floral Blue / M']
     },
-  });
+    {
+      name: 'Designer Leather Tote Bag',
+      category: 'handbags',
+      brand: 'zara',
+      price: 8999,
+      mrp: 11999,
+      image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop',
+      desc: 'Spacious handcrafted leather tote with multiple compartments.',
+      variants: ['Tan Brown', 'Jet Black']
+    },
+    {
+      name: 'Apple MacBook Pro M3 14"',
+      category: 'laptops',
+      brand: 'apple',
+      price: 215000,
+      mrp: 235000,
+      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=800&auto=format&fit=crop',
+      desc: 'Supercharged by M3 chip for exceptional pro workflows and stunning Liquid Retina XDR display.',
+      variants: ['Space Gray / 16GB / 512GB']
+    },
+    {
+      name: 'Sony WH-1000XM5 Wireless Headphones',
+      category: 'audio',
+      brand: 'sony',
+      price: 42999,
+      mrp: 49999,
+      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
+      desc: 'Industry-leading noise canceling with two processors and 8 microphones.',
+      variants: ['Silver', 'Midnight Black']
+    },
+    {
+      name: 'Minimalist Ceramic Table Lamp',
+      category: 'decor',
+      brand: 'ikea',
+      price: 3499,
+      mrp: 4999,
+      image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800&auto=format&fit=crop',
+      desc: 'Elegant ambient lighting crafted from matte ceramic and warm brass accents.',
+      variants: ['Warm White']
+    },
+    {
+      name: 'Matte Luxury Lipstick Set',
+      category: 'makeup',
+      brand: 'lakme',
+      price: 2299,
+      mrp: 2999,
+      image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?q=80&w=800&auto=format&fit=crop',
+      desc: 'Long-lasting velvety matte finish infused with nourishing vitamin E.',
+      variants: ['Ruby Red Collection', 'Nude Palette']
+    }
+  ];
 
-  await prisma.productImage.createMany({
-    data: [
-      { variantId: variantGray.id, productId: product.id, url: 'https://placehold.co/600x600?text=S24+Gray+Front', altText: 'S24 Gray Front', isPrimary: true, order: 1 },
-      { variantId: variantGray.id, productId: product.id, url: 'https://placehold.co/600x600?text=S24+Gray+Back', altText: 'S24 Gray Back', order: 2 },
-    ],
-  });
+  for (const item of sampleProducts) {
+    const slug = slugify(item.name, { lower: true, strict: true }) + '-' + nanoid(5);
+    const categoryId = categoryMap[item.category] || categoryMap['men'];
+    const brandId = brandMap[item.brand] || brandMap['generic'];
 
-  console.log('✅ Sample product + variants + images seeded');
-
-  // ─────────────────────────────────────────────
-  // 9. SELLER LISTINGS
-  // ─────────────────────────────────────────────
-  await prisma.sellerListing.createMany({
-    data: [
-      {
-        sellerProfileId: sellerProfile.id,
-        variantId: variantBlack.id,
-        price: 74999,
-        mrp: 89999,
-        stock: 50,
-        reservedStock: 0,
-        isActive: true,
+    const product = await prisma.product.create({
+      data: {
+        name: item.name,
+        slug,
+        description: item.desc,
+        categoryId,
+        brandId,
+        createdById: sellerUser.id,
+        status: 'APPROVED',
       },
-      {
-        sellerProfileId: sellerProfile.id,
-        variantId: variantGray.id,
-        price: 64999,
-        mrp: 79999,
-        stock: 30,
-        reservedStock: 0,
-        isActive: true,
-      },
-    ],
-  });
+    });
 
-  console.log('✅ Seller listings seeded');
+    for (const vName of item.variants) {
+      const sku = slugify(item.name + '-' + vName, { lower: true, strict: true }) + '-' + nanoid(4);
+      const variant = await prisma.productVariant.create({
+        data: {
+          productId: product.id,
+          name: vName,
+          sku,
+          attributes: { edition: 'Standard' },
+        },
+      });
 
-  console.log('\n🎉 Seeding completed successfully!');
-  console.log('─────────────────────────────────────────────');
-  console.log('  Admin:    admin@akmart.com    / Admin@123');
-  console.log('  Seller:   seller@techmart.com / Seller@123');
-  console.log('  Consumer: consumer@akmart.com / Consumer@123');
-  console.log('─────────────────────────────────────────────');
+      await prisma.productImage.create({
+        data: {
+          variantId: variant.id,
+          productId: product.id,
+          url: item.image,
+          altText: item.name,
+          isPrimary: true,
+          order: 1,
+        },
+      });
+
+      await prisma.sellerListing.create({
+        data: {
+          sellerProfileId: sellerProfile.id,
+          variantId: variant.id,
+          price: item.price,
+          mrp: item.mrp,
+          stock: 50,
+          reservedStock: 0,
+          isActive: true,
+        },
+      });
+    }
+  }
+
+  console.log('✅ Comprehensive marketplace products seeded successfully!');
 }
 
 main()
@@ -379,4 +284,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

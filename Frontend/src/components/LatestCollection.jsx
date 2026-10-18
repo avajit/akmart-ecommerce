@@ -1,37 +1,42 @@
 import React, { useEffect, useState } from "react";
-import Title from "./Title";
 import ProductItem from "./ProductItem";
 import { browseProducts } from "../api/consumer.api";
+import { Link } from "react-router-dom";
+import { FiArrowRight } from "react-icons/fi";
 
 const LatestCollection = () => {
   const [latestProducts, setLatestProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    browseProducts({ sort: 'newest', limit: 10 }).then((res) => {
+    browseProducts({ sort: 'newest', limit: 8 }).then((res) => {
       setLatestProducts(res?.data?.products || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
   return (
-    <div className="my-10 px-4 sm:px-6 lg:px-8 container mx-auto">
+    <div className="py-10">
       
       {/* HEADER SECTION */}
-      <div className="text-center py-10">
-        <Title text1="LATEST" text2="COLLECTIONS" />
-        <p className="w-full sm:w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-400 max-w-2xl">
-          Discover the season's hottest trends. From casual wear to evening elegance, find your perfect look.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+        <div>
+          <span className="text-orange-500 text-xs font-bold tracking-widest uppercase">Handpicked</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1">Featured Products</h2>
+        </div>
+        <Link to="/collection" className="mt-4 md:mt-0 text-sm font-semibold text-orange-500 hover:text-orange-400 flex items-center gap-2 group">
+          <span>View all</span>
+          <FiArrowRight className="transition-transform group-hover:translate-x-1" />
+        </Link>
       </div>
 
       {/* PRODUCT GRID */}
       {loading ? (
-        <div className="text-center text-gray-400 py-10">Loading latest products...</div>
+        <div className="text-center text-gray-400 py-12">Loading featured products...</div>
       ) : latestProducts.length === 0 ? (
-        <div className="text-center text-gray-500 py-10">No products found.</div>
+        <div className="text-center text-gray-500 py-12">No products available.</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {latestProducts.map((item) => (
             <ProductItem
               key={item.id}
@@ -39,6 +44,7 @@ const LatestCollection = () => {
               image={item.primaryImage}
               name={item.name}
               price={item.cheapestPrice ?? 0}
+              brand={item.brand?.name || "AkMart"}
             />
           ))}
         </div>

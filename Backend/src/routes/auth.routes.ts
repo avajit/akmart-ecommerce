@@ -8,8 +8,8 @@ import { registerSchema, loginSchema, googleSSOSchema, forgotPasswordSchema, res
 const router = Router();
 
 // 1. Account Management
-router.post('/register', validateRequest(registerSchema), register);
-router.post('/verify-account', validateRequest(verifyAccountSchema), verifyAccount);
+router.post('/register', authLimiter, validateRequest(registerSchema), register);
+router.post('/verify-account', authLimiter, validateRequest(verifyAccountSchema), verifyAccount);
 router.post('/resend-otp', authLimiter, validateRequest(resendOTPSchema), resendOTP);
 router.delete('/account', requireAuth, deleteAccount as any); // Soft deletes user and revokes sessions
 
