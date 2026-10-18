@@ -1,7 +1,21 @@
-import { beforeAll, afterAll, beforeEach } from 'vitest';
+import { beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 import { env } from '../config/env';
+
+// Mock Google SSO library globally
+vi.mock('google-auth-library', () => {
+  return {
+    OAuth2Client: vi.fn().mockImplementation(() => {
+      return {
+        getTokenInfo: vi.fn().mockResolvedValue({
+          email: 'test-google@example.com',
+          sub: 'google-sub-123',
+        }),
+      };
+    }),
+  };
+});
 
 export const prismaTest = new PrismaClient({
   datasources: { db: { url: env.DATABASE_URL } },

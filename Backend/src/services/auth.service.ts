@@ -155,11 +155,9 @@ export class AuthService {
 
     try {
       // getTokenInfo works with access_token from the @react-oauth/google popup flow.
-      // It calls Google's tokeninfo endpoint to validate and decode the token.
       const tokenInfo = await client.getTokenInfo(data.idToken);
       googleEmail = tokenInfo.email;
       googleSub = tokenInfo.sub;
-      // name and picture are not returned by tokeninfo — we'll use email as fallback
     } catch (error) {
       throw new AppError('Invalid Google Token', 401, 'UNAUTHORIZED');
     }
@@ -168,7 +166,6 @@ export class AuthService {
       throw new AppError('Invalid Google Token Payload', 401, 'UNAUTHORIZED');
     }
 
-    // Build a payload-like object for the rest of the logic
     const payload = { email: googleEmail, sub: googleSub, name: googleName, picture: googlePicture };
 
     // 1. Check if user already exists with this googleId
@@ -190,8 +187,8 @@ export class AuthService {
           where: { id: user.id },
           data: { 
             googleId: payload.sub, 
-            avatarUrl: user.avatarUrl || payload.picture, // Only override if they don't have one
-            isEmailVerified: true // Google guarantees the email is verified
+            avatarUrl: user.avatarUrl || payload.picture,
+            isEmailVerified: true
           },
           include: { role: true }
         });
@@ -202,13 +199,12 @@ export class AuthService {
 
         user = await prisma.user.create({
           data: {
-            fullName: payload.name || 'Google User',
+            fullName: payload.name || payload.email.split('@')[0],
             email: payload.email,
             googleId: payload.sub,
             avatarUrl: payload.picture,
-            isEmailVerified: true, // Google already verified it
+            isEmailVerified: true,
             roleId: role.id,
-            // passwordHash is left null implicitly!
           },
           include: { role: true }
         });
@@ -243,7 +239,7 @@ export class AuthService {
     });
 
     if (!user) {
-      return; // Security: Don't reveal if user exists or not
+      return;
     }
 
     if (!user.passwordHash) {
@@ -261,7 +257,6 @@ export class AuthService {
       throw new AppError('Invalid or expired reset token', 400, 'INVALID_TOKEN');
     }
 
-    // Verify it through OTP service to ensure it gets deleted properly
     await OTPService.verifyOTP(identifier, data.token, 'PASSWORD_RESET');
 
     const passwordHash = await bcrypt.hash(data.newPassword, env.BCRYPT_SALT_ROUNDS);
@@ -280,7 +275,6 @@ export class AuthService {
 
     const updateData = isEmail ? { isEmailVerified: true } : { isPhoneVerified: true };
     
-    // Update and return the full user since we need to generate tokens
     const user = await prisma.user.findFirst({
       where: isEmail ? { email: identifier } : { phoneNumber: identifier },
       include: { role: true }
@@ -293,7 +287,6 @@ export class AuthService {
       data: updateData
     });
 
-    // Auto-login the user
     const { accessToken, refreshToken } = generateTokens(user.id, user.roleId);
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
@@ -315,7 +308,6 @@ export class AuthService {
     });
 
     if (!user) {
-      // Don't leak if user exists
       return; 
     }
 
@@ -328,7 +320,6 @@ export class AuthService {
   }
 
   static async deleteAccount(userId: string) {
-    // Soft delete the user account
     await prisma.user.update({
       where: { id: userId },
       data: { 
@@ -337,7 +328,6 @@ export class AuthService {
       },
     });
 
-    // Revoke all their active sessions
     await SessionService.revokeAllSessions(userId);
   }
 }

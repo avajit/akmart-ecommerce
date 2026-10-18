@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
 })
 
 // ShopContextProvider is temporarily kept until we migrate Cart state to Zustand fully.
-import { ShopContextProvider } from './context/ShopContext.jsx'
+import { ShopContextProvider } from './context/ShopContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -5,14 +5,12 @@ import Footer from '../components/Footer';
 
 export default function ConsumerLayout() {
   return (
-    <>
+    <div className="min-h-screen bg-[#0D0D0D] text-white flex flex-col font-poppins selection:bg-orange-500 selection:text-white">
       <Navbar />
-      <div className="flex-grow px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] pt-24">
+      <main className="flex-grow w-full">
         <Outlet />
-      </div>
-      <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] mt-auto">
-        <Footer />
-      </div>
-    </>
+      </main>
+      <Footer />
+    </div>
   );
 }

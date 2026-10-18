@@ -37,10 +37,10 @@ export const authLimiter = rateLimit({
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
-  max: 1000,
+  max: env.AUTH_RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => env.NODE_ENV === 'test',
+  skip: () => env.NODE_ENV === 'test' && !process.env.ENABLE_RATE_LIMIT_TEST,
   message: {
     success: false,
     error: {

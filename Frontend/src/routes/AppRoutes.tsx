@@ -59,6 +59,7 @@ function AppRoutes() {
         
         {/* ----- Authentication ----- */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login />} />
         <Route path="/verify" element={<VerifyOTP />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
