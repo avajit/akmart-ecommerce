@@ -106,6 +106,9 @@ apiClient.interceptors.response.use(
       } catch (refreshError: any) {
         processQueue(refreshError, null);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        // Clear zustand auth storage if present
+        localStorage.removeItem('auth-storage');
         window.location.href = '/login';
         return Promise.reject(normalizeError(refreshError as AxiosError<ApiErrorResponse>));
       } finally {

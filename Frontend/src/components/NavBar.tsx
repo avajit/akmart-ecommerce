@@ -1,18 +1,25 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
-import { FiMenu, FiX, FiShoppingCart, FiUser, FiSearch, FiHeart } from "react-icons/fi";
+import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
+import { FiMenu, FiX, FiShoppingCart, FiUser, FiSearch, FiHeart, FiChevronDown } from "react-icons/fi";
 import { assets } from "../assets/frontend_assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import { useAuthStore } from "../store/authStore";
 import { useLogout } from "../hooks/useAuth";
+import { getCategoryTree } from "../api/consumer.api";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<any[]>([]);
   
   const profileRef = useRef<HTMLDivElement>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const currentCategory = queryParams.get('category');
 
   const { setShowSearch, getCartCount } = useContext(ShopContext) as any;
   const { user, isAuthenticated } = useAuthStore();
@@ -21,11 +28,20 @@ function Navbar() {
   const role = user?.roleName || user?.role || 'CONSUMER';
   const cartCount = typeof getCartCount === 'function' ? getCartCount() : 0;
 
-  // Close profile dropdown on outside click
+  useEffect(() => {
+    getCategoryTree().then((res: any) => {
+      setCategories(res.data || []);
+    }).catch(() => {});
+  }, []);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setProfileOpen(false);
+      }
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setCategoryOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -35,6 +51,7 @@ function Navbar() {
   const closeAll = () => {
     setMenuOpen(false);
     setProfileOpen(false);
+    setCategoryOpen(false);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -63,47 +80,73 @@ function Navbar() {
         </Link>
 
         {/* CENTER: CATEGORY LINKS */}
-        <ul className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide">
+        <ul className="hidden md:flex items-center gap-7 text-sm font-medium tracking-wide">
           <li>
             <NavLink 
-              to="/collection?category=men" 
-              className={({ isActive }) => `relative py-1 transition-colors hover:text-orange-500 ${isActive ? 'text-orange-500 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-orange-500' : 'text-gray-300'}`}
-            >
-              Men
-            </NavLink>
-          </li>
-          <li>
-            <NavLink 
-              to="/collection?category=women" 
-              className={({ isActive }) => `relative py-1 transition-colors hover:text-orange-500 ${isActive ? 'text-orange-500 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-orange-500' : 'text-gray-300'}`}
-            >
-              Women
-            </NavLink>
-          </li>
-          <li>
-            <NavLink 
-              to="/collection?category=kids" 
-              className={({ isActive }) => `relative py-1 transition-colors hover:text-orange-500 ${isActive ? 'text-orange-500 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-orange-500' : 'text-gray-300'}`}
-            >
-              Kids
-            </NavLink>
-          </li>
-          <li>
-            <NavLink 
-              to="/collection?category=home" 
+              to="/" 
+              end
               className={({ isActive }) => `relative py-1 transition-colors hover:text-orange-500 ${isActive ? 'text-orange-500 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-orange-500' : 'text-gray-300'}`}
             >
               Home
             </NavLink>
           </li>
           <li>
-            <NavLink 
-              to="/collection?category=beauty" 
-              className={({ isActive }) => `relative py-1 transition-colors hover:text-orange-500 ${isActive ? 'text-orange-500 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-orange-500' : 'text-gray-300'}`}
+            <Link 
+              to="/collection" 
+              className={`relative py-1 transition-colors hover:text-orange-500 ${location.pathname === '/collection' && !currentCategory ? 'text-orange-500 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-orange-500' : 'text-gray-300'}`}
             >
-              Beauty
-            </NavLink>
+              Shop All
+            </Link>
           </li>
+          
+          {/* Shop By Category Dropdown */}
+          <div className="relative" ref={categoryRef}>
+            <button 
+              onClick={() => setCategoryOpen(!categoryOpen)}
+              className={`flex items-center gap-1.5 py-1 transition-colors hover:text-orange-500 ${currentCategory ? 'text-orange-500 font-semibold' : 'text-gray-300'}`}
+            >
+              <span>Shop By Category</span>
+              <FiChevronDown className={`w-4 h-4 transition-transform duration-200 ${categoryOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {categoryOpen && (
+              <div className="absolute left-0 top-11 bg-[#121212] border border-gray-800 rounded-2xl w-64 shadow-[0_10px_30px_rgba(0,0,0,0.8)] py-3 text-sm z-50 animate-fadeIn max-h-96 overflow-y-auto">
+                <div className="px-4 py-2 border-b border-gray-800 text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Categories
+                </div>
+                <div className="py-1">
+                  <Link 
+                    to="/collection" 
+                    onClick={closeAll}
+                    className="block px-5 py-2.5 text-gray-300 hover:bg-[#1F1F1F] hover:text-orange-500 transition-colors"
+                  >
+                    All Products
+                  </Link>
+                  {categories.map((cat: any) => (
+                    <div key={cat.id}>
+                      <Link 
+                        to={`/collection?category=${cat.slug}`} 
+                        onClick={closeAll}
+                        className={`block px-5 py-2.5 font-medium transition-colors ${currentCategory === cat.slug ? 'text-orange-500 bg-[#1F1F1F]/60' : 'text-gray-300 hover:bg-[#1F1F1F] hover:text-orange-500'}`}
+                      >
+                        {cat.name}
+                      </Link>
+                      {cat.children && cat.children.map((sub: any) => (
+                        <Link 
+                          key={sub.id}
+                          to={`/collection?category=${sub.slug}`} 
+                          onClick={closeAll}
+                          className={`block pl-9 pr-5 py-2 text-xs transition-colors ${currentCategory === sub.slug ? 'text-orange-500 bg-[#1F1F1F]/60' : 'text-gray-400 hover:bg-[#1F1F1F] hover:text-orange-500'}`}
+                        >
+                          ↳ {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </ul>
 
         {/* RIGHT: DESKTOP SEARCH, WISHLIST, CART, PROFILE */}
@@ -155,30 +198,39 @@ function Navbar() {
             </button>
 
             {isAuthenticated && profileOpen && (
-              <div className="absolute right-0 top-11 bg-[#141414] border border-gray-800 rounded-xl w-52 shadow-2xl py-2 text-xs z-50 animate-fadeIn">
-                <div className="px-4 py-2 border-b border-gray-800 text-gray-400 truncate">
-                  Signed in as <br />
-                  <span className="font-semibold text-white">{user?.fullName || user?.email || 'User'}</span>
+              <div className="absolute right-0 top-12 bg-[#121212] border border-gray-800 rounded-2xl w-60 shadow-[0_10px_30px_rgba(0,0,0,0.8)] py-3 text-sm z-50 animate-fadeIn">
+                <div className="px-5 py-3 border-b border-gray-800 text-gray-400">
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-gray-500">Signed in as</p>
+                  <p className="font-bold text-white text-base capitalize truncate mt-0.5">
+                    {user?.fullName && user.fullName.length > 2 ? user.fullName : (user?.email?.split('@')[0] || 'Valued User')}
+                  </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-bold rounded uppercase tracking-wider">
+                    {role}
+                  </span>
                 </div>
-                {role === 'CONSUMER' && (
-                  <>
-                    <NavLink to="/profile" className="block px-4 py-2.5 hover:bg-[#222222] hover:text-orange-500 transition-colors" onClick={closeAll}>My Profile</NavLink>
-                    <NavLink to="/orders" className="block px-4 py-2.5 hover:bg-[#222222] hover:text-orange-500 transition-colors" onClick={closeAll}>Orders</NavLink>
-                  </>
-                )}
-                {role === 'SELLER' && (
-                  <NavLink to="/seller/dashboard" className="block px-4 py-2.5 hover:bg-[#222222] hover:text-orange-500 transition-colors" onClick={closeAll}>Seller Dashboard</NavLink>
-                )}
-                {role === 'ADMIN' && (
-                  <NavLink to="/admin/dashboard" className="block px-4 py-2.5 hover:bg-[#222222] hover:text-orange-500 transition-colors" onClick={closeAll}>Admin Dashboard</NavLink>
-                )}
-                <button 
-                  onClick={() => { closeAll(); logout(); }}
-                  disabled={isLoggingOut}
-                  className="block w-full text-left px-4 py-2.5 hover:bg-[#222222] transition-colors border-t border-gray-800 text-red-400 font-medium"
-                >
-                  {isLoggingOut ? 'Logging out...' : 'Logout'}
-                </button>
+                <div className="py-1">
+                  {role === 'CONSUMER' && (
+                    <>
+                      <NavLink to="/profile" className="flex items-center gap-3 px-5 py-3 text-gray-300 hover:bg-[#1F1F1F] hover:text-orange-500 transition-colors font-medium" onClick={closeAll}>My Profile</NavLink>
+                      <NavLink to="/orders" className="flex items-center gap-3 px-5 py-3 text-gray-300 hover:bg-[#1F1F1F] hover:text-orange-500 transition-colors font-medium" onClick={closeAll}>Orders & History</NavLink>
+                    </>
+                  )}
+                  {role === 'SELLER' && (
+                    <NavLink to="/seller/dashboard" className="flex items-center gap-3 px-5 py-3 text-gray-300 hover:bg-[#1F1F1F] hover:text-orange-500 transition-colors font-medium" onClick={closeAll}>Seller Dashboard</NavLink>
+                  )}
+                  {role === 'ADMIN' && (
+                    <NavLink to="/admin/dashboard" className="flex items-center gap-3 px-5 py-3 text-gray-300 hover:bg-[#1F1F1F] hover:text-orange-500 transition-colors font-medium" onClick={closeAll}>Admin Dashboard</NavLink>
+                  )}
+                </div>
+                <div className="pt-1 border-t border-gray-800">
+                  <button 
+                    onClick={() => { closeAll(); logout(); }}
+                    disabled={isLoggingOut}
+                    className="w-full text-left px-5 py-3 hover:bg-red-500/10 transition-colors text-red-400 font-semibold flex items-center justify-between"
+                  >
+                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
