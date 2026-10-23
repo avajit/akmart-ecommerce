@@ -1,55 +1,64 @@
 services:
   - type: web
-    name: akmart-ecommerce-backend
+    name: akmart-backend
     env: node
-    plan: free
     rootDir: Backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npx prisma generate && npm run build
     startCommand: sh ./start.sh
-    healthCheckPath: /health
-
+    plan: free
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
-        value: "production"
+        value: production
       - key: PORT
-        value: "5000"
+        value: 5000
       - key: DATABASE_URL
-        value: "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+        sync: false
       - key: REDIS_URL
-        value: "redis://:PASSWORD@HOST:PORT"
+        sync: false
       - key: JWT_ACCESS_SECRET
-        value: "replace_with_strong_random_secret"
+        sync: false
       - key: JWT_REFRESH_SECRET
-        value: "replace_with_strong_random_secret"
-      - key: JWT_ACCESS_EXPIRES_IN
-        value: "15m"
-      - key: JWT_REFRESH_EXPIRES_IN
-        value: "7d"
+        sync: false
       - key: GOOGLE_CLIENT_ID
-        value: "your_google_client_id"
+        sync: false
       - key: GOOGLE_CLIENT_SECRET
-        value: "your_google_client_secret"
+        sync: false
       - key: GOOGLE_CALLBACK_URL
-        value: "https://your-backend-url.example.com/api/v1/auth/google/callback"
-      - key: FRONTEND_WEB_URL
-        value: "https://your-frontend-url.example.com"
-      - key: FRONTEND_MOBILE_URL
-        value: "com.akmart.app"
+        sync: false
       - key: SMTP_HOST
-        value: "smtp.gmail.com"
+        sync: false
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        value: "your_email@example.com"
+        sync: false
       - key: SMTP_PASS
-        value: "your_app_password_here"
+        sync: false
       - key: SMTP_FROM
-        value: "\"AKMart\" <noreply@akmart.com>"
-      - key: RATE_LIMIT_WINDOW_MS
-        value: "60000"
-      - key: RATE_LIMIT_MAX_REQUESTS
-        value: "1000"
-      - key: AUTH_RATE_LIMIT_WINDOW_MS
-        value: "60000"
-      - key: AUTH_RATE_LIMIT_MAX_REQUESTS
-        value: "100"
+        sync: false
+      - key: FRONTEND_WEB_URL
+        sync: false
+      - key: FRONTEND_MOBILE_URL
+        value: com.akmart.app
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET_NAME
+        sync: false
+
+  - type: web
+    name: akmart-frontend
+    env: static
+    rootDir: Frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
