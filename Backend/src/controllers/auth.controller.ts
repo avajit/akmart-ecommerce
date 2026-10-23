@@ -4,6 +4,14 @@ import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
 import { toUserResponseDTO, AuthResponseDTO } from '../dtos/auth.dto';
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  path: '/',
+  maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
+};
+
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await AuthService.register(req.body);
@@ -31,12 +39,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const result = await AuthService.login(identifier, password, deviceInfo, ip);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
-      maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
-    });
+    res.cookie('refreshToken', result.refreshToken, cookieOptions);
 
     const responseData: AuthResponseDTO = {
       accessToken: result.accessToken,
@@ -55,7 +58,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies.refreshToken || req.body.refreshToken;
+    const token = req.cookies?.refreshToken;
     if (!token) throw new AppError('No refresh token provided', 401);
 
     const deviceInfo = req.headers['user-agent'] || 'Unknown Device';
@@ -63,12 +66,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
     const result = await AuthService.rotateRefreshToken(token, deviceInfo, ip);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
-      maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
-    });
+    res.cookie('refreshToken', result.refreshToken, cookieOptions);
 
     res.status(200).json({
       success: true,
@@ -78,19 +76,19 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       },
     });
   } catch (error) {
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', { path: '/' });
     next(error);
   }
 };
 
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = req?.cookies?.refreshToken || req?.body?.refreshToken;
+    const token = req?.cookies?.refreshToken;
     if (token) {
       await AuthService.logout(token);
     }
 
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', { path: '/' });
     res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -105,12 +103,7 @@ export const googleSSO = async (req: Request, res: Response, next: NextFunction)
     const ip = req.ip || 'Unknown IP';
     const result = await AuthService.googleSSO(req.body, ip);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
-      maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
-    });
+    res.cookie('refreshToken', result.refreshToken, cookieOptions);
 
     res.status(200).json({
       success: true,
@@ -157,12 +150,7 @@ export const verifyAccount = async (req: Request, res: Response, next: NextFunct
 
     const result = await AuthService.verifyAccount(identifier, token, deviceInfo, ip);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: env.NODE_ENV === 'production' ? 'lax' : 'strict',
-      maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
-    });
+    res.cookie('refreshToken', result.refreshToken, cookieOptions);
 
     const responseData: AuthResponseDTO = {
       accessToken: result.accessToken,
@@ -200,7 +188,7 @@ export const deleteAccount = async (req: AuthenticatedRequest, res: Response, ne
     const userId = req.user!.userId;
     await AuthService.deleteAccount(userId);
     
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', { path: '/' });
     
     res.status(200).json({
       success: true,
