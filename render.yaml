@@ -14,25 +14,25 @@ services:
       - key: PORT
         value: "5000"
       - key: DATABASE_URL
-        value: "postgresql://user:password@host:5432/dbname?sslmode=require"
+        value: "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
       - key: REDIS_URL
-        value: "redis://default:password@host:6379"
+        value: "redis://:PASSWORD@HOST:PORT"
       - key: JWT_ACCESS_SECRET
-        value: "super_secret_access_key_change_me_in_prod"
+        value: "replace_with_strong_random_secret"
       - key: JWT_REFRESH_SECRET
-        value: "super_secret_refresh_key_change_me_in_prod"
+        value: "replace_with_strong_random_secret"
       - key: JWT_ACCESS_EXPIRES_IN
         value: "15m"
       - key: JWT_REFRESH_EXPIRES_IN
         value: "7d"
       - key: GOOGLE_CLIENT_ID
-        value: "dummy_google_client_id"
+        value: "your_google_client_id"
       - key: GOOGLE_CLIENT_SECRET
-        value: "dummy_google_client_secret"
+        value: "your_google_client_secret"
       - key: GOOGLE_CALLBACK_URL
-        value: "https://akmart-ecommerce-backend.onrender.com/api/v1/auth/google/callback"
+        value: "https://your-backend-url.example.com/api/v1/auth/google/callback"
       - key: FRONTEND_WEB_URL
-        value: "https://localhost:5173"
+        value: "https://your-frontend-url.example.com"
       - key: FRONTEND_MOBILE_URL
         value: "com.akmart.app"
       - key: SMTP_HOST
@@ -40,9 +40,9 @@ services:
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        value: "mandalavijeet12@gmail.com"
+        value: "your_email@example.com"
       - key: SMTP_PASS
-        value: "REDACTED_APP_PASSWORD"
+        value: "your_app_password_here"
       - key: SMTP_FROM
         value: "\"AKMart\" <noreply@akmart.com>"
       - key: RATE_LIMIT_WINDOW_MS
