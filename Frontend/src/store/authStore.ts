@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserDTO } from '../types/api.types';
+import { clearAccessToken, setAccessToken } from '../api/client';
 
 interface AuthState {
   user: UserDTO | null;
@@ -14,24 +15,19 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      
+
       setAuth: (user, accessToken) => {
-        // Tokens are typically stored in localStorage for the Axios interceptor
-        // We'll sync them here just in case, but Zustand doesn't strictly need to persist the tokens 
-        // if they are already in localStorage. We will persist the user object.
-        localStorage.setItem('accessToken', accessToken);
-        
+        setAccessToken(accessToken);
         set({ user, isAuthenticated: true });
       },
-      
+
       logout: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken'); // Clean up legacy token
+        clearAccessToken();
         set({ user: null, isAuthenticated: false });
       }
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
+      name: 'auth-storage',
       partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
