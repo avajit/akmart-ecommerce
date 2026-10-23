@@ -10,9 +10,9 @@ const SearchSuggestions = ({ onSearch }) => {
 
     return (
       // Removed bg, border, and shadow to blend with parent
-      <div className="pt-2"> 
+      <div className="pt-2">
         <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-4">Recent Searches</h4>
-        
+
         <div className="flex flex-wrap gap-3">
           {searchHistory.map((item, index) => (
             <button
@@ -31,7 +31,7 @@ const SearchSuggestions = ({ onSearch }) => {
   // 2. Show SUGGESTIONS (When typing)
   return (
     // Removed bg, border, and shadow
-    <div className="pt-2"> 
+    <div className="pt-2">
       <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Suggestions</h4>
 
       {searchSuggestions.length === 0 ? (
