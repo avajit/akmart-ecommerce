@@ -9,11 +9,12 @@ RUN npm ci
 
 COPY Backend/ ./
 
-RUN npm run build
 RUN npx prisma generate
+RUN npm run build
 RUN npm prune --production
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -26,3 +27,4 @@ RUN chmod +x ./start.sh
 
 EXPOSE 5000
 CMD ["sh", "./start.sh"]
+
