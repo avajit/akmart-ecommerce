@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError } from '../utils/ApiError';
 import { ApiErrorResponse } from '../types/api.types';
+import { clearPersistedAuthState } from '../utils/authSession';
 
 // Base URL for our backend API
 const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
@@ -98,6 +99,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError: any) {
         processQueue(refreshError, null);
         clearAccessToken();
+        clearPersistedAuthState();
         window.location.href = '/login';
         return Promise.reject(normalizeError(refreshError as AxiosError<ApiErrorResponse>));
       } finally {
