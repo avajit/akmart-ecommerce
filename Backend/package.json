@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && tsc-alias",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/server.js",
     "start:prod": "sh ./start.sh",
-    "test": "vitest run",
+    "test": "vitest run --exclude dist",
     "test:watch": "vitest",
     "postinstall": "prisma generate || exit 0"
   },
