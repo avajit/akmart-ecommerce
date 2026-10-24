@@ -1,10 +1,10 @@
 import { server } from './app';
 import { env } from './config/env';
 
-const PORT = env.PORT || 5000;
+const PORT = Number(env.PORT) || 5000;
 
-server.listen(PORT, () => {
-  console.log(`\n🚀 Server is running on http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n🚀 Server is running on http://0.0.0.0:${PORT}`);
   console.log(`🌍 Environment: ${env.NODE_ENV}`);
-  console.log(`🩺 Health check: http://localhost:${PORT}/health\n`);
+  console.log(`🩺 Health check: http://0.0.0.0:${PORT}/health\n`);
 });
