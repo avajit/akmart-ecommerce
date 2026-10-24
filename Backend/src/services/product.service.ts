@@ -1,5 +1,5 @@
 import { AppError } from "../utils/AppError";
-import { prisma } from "../app";
+import { prisma, redis } from "../app";
 import slugify from "slugify";
 import { nanoid } from "nanoid";
 
@@ -89,13 +89,29 @@ export const updateProduct = async (userId: string, roleName: string, productId:
     updateData.rejectionReason = null;
   }
 
-  return prisma.product.update({ where: { id: productId }, data: updateData });
+  const updated = await prisma.product.update({ where: { id: productId }, data: updateData });
+
+  // Invalidate cached product by slug
+  try {
+    await redis.del(`cache:product:slug:${product.slug}`);
+  } catch {
+    // Non-fatal
+  }
+
+  return updated;
 };
 
 export const deleteProduct = async (userId: string, roleName: string, productId: string) => {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product || product.deletedAt) throw new AppError("Product not found", 404, "NOT_FOUND");
   if (roleName === "SELLER" && product.createdById !== userId) throw new AppError("Forbidden", 403, "FORBIDDEN");
+
+  // Invalidate cache before altering slug
+  try {
+    await redis.del(`cache:product:slug:${product.slug}`);
+  } catch {
+    // Non-fatal
+  }
 
   // Soft delete — free up slug by appending timestamp
   return prisma.product.update({
@@ -112,6 +128,23 @@ export const deleteProduct = async (userId: string, roleName: string, productId:
 export const browseProducts = async (userId: string | undefined, roleName: string | undefined, query: any) => {
   const { category, brand, sort, page = "1", limit = "20", ...attrFilters } = query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // Cache check for public consumer browse queries (sub-5ms response from Redis)
+  const isPublicQuery = !roleName || roleName === "CONSUMER";
+  const cacheKey = isPublicQuery
+    ? `cache:catalog:${JSON.stringify(query)}`
+    : null;
+
+  if (cacheKey) {
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch {
+      // Non-fatal: if Redis is temporarily unreachable, fallback to database
+    }
+  }
 
   // Role-based status filter
   let statusFilter: any;
@@ -229,10 +262,31 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     };
   });
 
-  return { products: shaped, total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)) };
+  const result = { products: shaped, total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)) };
+
+  // Cache public browse results for 2 minutes
+  if (cacheKey) {
+    try {
+      await redis.set(cacheKey, JSON.stringify(result), "EX", 120);
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  return result;
 };
 
 export const getProductBySlug = async (slug: string) => {
+  const cacheKey = `cache:product:slug:${slug}`;
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch {
+    // Non-fatal
+  }
+
   const product = await prisma.product.findUnique({
     where: { slug },
     include: {
@@ -269,6 +323,14 @@ export const getProductBySlug = async (slug: string) => {
       })),
     })),
   };
+
+  // Cache individual product details for 5 minutes
+  try {
+    await redis.set(cacheKey, JSON.stringify(shaped), "EX", 300);
+  } catch {
+    // Non-fatal
+  }
+
   return shaped;
 };
 
@@ -308,7 +370,7 @@ export const submitReview = async (userId: string, productId: string, body: { ra
   });
   if (existing) throw new AppError("You have already reviewed this product", 409, "ALREADY_REVIEWED");
 
-  return prisma.review.create({
+  const review = await prisma.review.create({
     data: {
       productId,
       userId,
@@ -318,4 +380,13 @@ export const submitReview = async (userId: string, productId: string, body: { ra
     },
     include: { user: { select: { fullName: true, avatarUrl: true } } },
   });
+
+  // Invalidate product cache so review counts reflect immediately
+  try {
+    await redis.del(`cache:product:slug:${product.slug}`);
+  } catch {
+    // Non-fatal
+  }
+
+  return review;
 };

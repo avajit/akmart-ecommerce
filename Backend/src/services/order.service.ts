@@ -46,14 +46,28 @@ export const checkout = async (userId: string, body: any) => {
 
   // Create order transaction
   const order = await prisma.$transaction(async (tx) => {
-    // Deduct stock
+    // Deduct stock atomically with conditional check (stock >= quantity)
+    // Prevents race conditions and overselling during flash-sales
     for (const item of cart.items) {
-      await tx.sellerListing.update({
-        where: { id: item.sellerListingId },
+      const updateResult = await tx.sellerListing.updateMany({
+        where: {
+          id: item.sellerListingId,
+          isActive: true,
+          deletedAt: null,
+          stock: { gte: item.quantity },
+        },
         data: {
-          stock: { decrement: item.quantity } // Hard decrement for simple inventory
-        }
+          stock: { decrement: item.quantity },
+        },
       });
+
+      if (updateResult.count === 0) {
+        throw new AppError(
+          "One or more items in your cart became unavailable or ran out of stock. Please review your cart.",
+          400,
+          "INSUFFICIENT_STOCK"
+        );
+      }
     }
 
     // Create Order
