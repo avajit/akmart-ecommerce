@@ -53,4 +53,11 @@ beforeEach(async () => {
 afterAll(async () => {
   await prismaTest.$disconnect();
   redisTest.disconnect();
+  try {
+    const { prisma, redis } = await import('../app');
+    await prisma.$disconnect();
+    redis.disconnect();
+  } catch {
+    // Ignore if not instantiated
+  }
 });
