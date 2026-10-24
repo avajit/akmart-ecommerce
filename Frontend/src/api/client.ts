@@ -112,9 +112,12 @@ apiClient.interceptors.response.use(
 );
 
 function normalizeError(error: AxiosError<ApiErrorResponse>): ApiError {
-  if (error.response?.data && error.response.data.error) {
-    const { code, message, details } = error.response.data.error;
-    return new ApiError(message, code, details);
+  if (error.response?.data) {
+    const data: any = error.response.data;
+    const message = data.message || data.error?.message || error.message || 'Something went wrong';
+    const code = data.error?.errorCode || data.error?.code || 'UNKNOWN_ERROR';
+    const details = data.errors || data.error?.details;
+    return new ApiError(message, String(code), details);
   }
   return new ApiError(error.message || 'Network Error', 'NETWORK_ERROR');
 }

@@ -43,7 +43,7 @@ export default function SellerSettings() {
       await updateSellerProfile(formData);
       toast.success("Profile updated successfully");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to update profile");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }

@@ -45,9 +45,8 @@ const VerifyOTP: React.FC = () => {
   };
 
   const handleResend = () => {
-    if (timer > 0) return;
-    const payload = email ? { email } : { phoneNumber };
-    resendOTP(payload, {
+    if (timer > 0 || !identifier) return;
+    resendOTP(identifier, {
       onSuccess: () => {
         setTimer(60);
       },

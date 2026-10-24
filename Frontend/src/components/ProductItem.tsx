@@ -10,7 +10,17 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=600&auto=format&fit=crop",
 ];
 
-const ProductItem = ({ slug, image, name, price, brand = "AkMart", oldPrice, discount = "15% OFF" }) => {
+export interface ProductItemProps {
+  slug: string;
+  image?: string;
+  name: string;
+  price: number | string;
+  brand?: string;
+  oldPrice?: number | string;
+  discount?: string;
+}
+
+const ProductItem: React.FC<ProductItemProps> = ({ slug, image, name, price, brand = "AkMart", oldPrice, discount = "15% OFF" }) => {
   const { currency } = useContext(ShopContext) as any;
   const [isWishlisted, setIsWishlisted] = useState(false);
 

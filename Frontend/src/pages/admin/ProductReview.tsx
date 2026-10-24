@@ -16,7 +16,7 @@ export default function ProductReview() {
       const p = res.data?.products?.find((p: any) => p.id === id);
       setProduct(p);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err: any) => { toast.error(err.response?.data?.message || err.message || 'Failed to load product'); setLoading(false); });
   }, [id]);
 
   const handleApprove = async () => {
@@ -25,7 +25,7 @@ export default function ProductReview() {
       toast.success("Product approved successfully!");
       navigate('/admin/products');
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Error approving product");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Error approving product");
     }
   };
 
@@ -36,7 +36,7 @@ export default function ProductReview() {
       toast.success("Product rejected");
       navigate('/admin/products');
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Error rejecting product");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Error rejecting product");
     }
   };
 

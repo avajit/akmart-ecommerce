@@ -325,7 +325,7 @@ const Login: React.FC = () => {
                   name="user_key_field"
                   label="Password"
                   type={showPassword ? 'text' : isPasswordActive ? 'password' : 'text'}
-                  style={!showPassword && !isPasswordActive ? { WebkitTextSecurity: 'disc' } : undefined}
+                  style={!showPassword && !isPasswordActive ? ({ WebkitTextSecurity: 'disc' } as React.CSSProperties) : undefined}
                   placeholder={tab === 'register' ? 'Min. 8 characters' : '••••••••'}
                   value={password}
                   onFocus={() => setIsPasswordActive(true)}

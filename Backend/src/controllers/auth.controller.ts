@@ -219,7 +219,7 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
 
     if (!user) throw new AppError('User not found', 404);
 
-    res.status(200).json({ success: true, data: user });
+    res.status(200).json({ success: true, message: 'Profile fetched successfully', data: user });
   } catch (err) {
     next(err);
   }

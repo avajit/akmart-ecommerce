@@ -27,8 +27,11 @@ const SearchOverlay = () => {
     // Debounced search fetch
     useEffect(() => {
         if (!search.trim()) {
-            setSearchResults([]);
-            return;
+            const resetTimer = setTimeout(() => {
+                setSearchResults([]);
+                setLoading(false);
+            }, 0);
+            return () => clearTimeout(resetTimer);
         }
         setLoading(true);
         const timer = setTimeout(() => {

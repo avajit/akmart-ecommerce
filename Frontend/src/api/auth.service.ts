@@ -62,7 +62,7 @@ export const authService = {
     return response.data.data;
   },
 
-  updateMe: async (data: { fullName?: string; avatarUrl?: string }): Promise<any> => {
+  updateMe: async (data: { fullName?: string; phoneNumber?: string | null; avatarUrl?: string | null }): Promise<any> => {
     const response = await apiClient.put('/auth/me', data);
     return response.data.data;
   }

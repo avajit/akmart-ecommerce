@@ -15,7 +15,7 @@ export default function Listings() {
     getListings().then((res: any) => {
       setListings(res.data || []);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err: any) => { toast.error(err.response?.data?.message || err.message || 'Failed to load listings'); setLoading(false); });
   };
 
   const handleUpdate = async (id: string, field: string, value: string) => {
@@ -26,7 +26,7 @@ export default function Listings() {
       toast.success("Updated successfully");
       fetchListings();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to update");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to update listing");
       fetchListings();
     }
   };
