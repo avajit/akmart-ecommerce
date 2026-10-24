@@ -7,7 +7,7 @@ import { assets } from '../assets/frontend_assets/assets' // Ensure you have a c
 
 const PlaceOrder = () => {
 
-  const { navigate, setCartItems } = useContext(ShopContext);
+  const { navigate } = useContext(ShopContext);
   const [method, setMethod] = useState('cod');
   
   // 1. New State to track if order is done

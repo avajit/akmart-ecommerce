@@ -32,7 +32,7 @@ export default function CreateProduct() {
       toast.success("Product drafted successfully!");
       navigate('/seller/products');
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to create product");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to create product");
     } finally {
       setLoading(false);
     }

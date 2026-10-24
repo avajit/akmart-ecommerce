@@ -48,7 +48,7 @@ export default function Product() {
       await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
       toast.success(`Added ${quantity} item(s) to cart! 🛒`);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to add to cart. Are you logged in?");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to add to cart. Are you logged in?");
     } finally {
       setActionLoading(false);
     }
@@ -64,7 +64,7 @@ export default function Product() {
       await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
       navigate('/checkout');
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to proceed to checkout. Are you logged in?");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to proceed to checkout. Are you logged in?");
     } finally {
       setActionLoading(false);
     }
@@ -76,7 +76,7 @@ export default function Product() {
       await addToWishlist(currentVariant.id);
       toast.success("Added to Wishlist! 💖");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to update wishlist. Are you logged in?");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to update wishlist. Are you logged in?");
     }
   };
 

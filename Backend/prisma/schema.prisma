@@ -230,6 +230,7 @@ model Product {
   @@index([status])
   @@index([slug])
   @@index([createdById])
+  @@index([createdAt])
 }
 
 enum ProductStatus {
@@ -315,7 +316,7 @@ model Cart {
 model CartItem {
   id              String        @id @default(uuid())
   cartId          String
-  cart            Cart          @relation(fields: [cartId], references: [id])
+  cart            Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variantId       String
   variant         ProductVariant @relation(fields: [variantId], references: [id])
   sellerListingId String
@@ -342,7 +343,7 @@ model Wishlist {
 model WishlistItem {
   id         String         @id @default(uuid())
   wishlistId String
-  wishlist   Wishlist       @relation(fields: [wishlistId], references: [id])
+  wishlist   Wishlist       @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
   variantId  String
   variant    ProductVariant @relation(fields: [variantId], references: [id])
   createdAt  DateTime       @default(now())
@@ -369,6 +370,7 @@ model Review {
   @@unique([productId, userId])
   @@index([productId])
   @@index([userId])
+  @@index([createdAt])
 }
 
 // ============================================================
@@ -391,6 +393,7 @@ model Address {
   orders    Order[]
 
   @@index([userId])
+  @@index([createdAt])
 }
 
 model Order {
@@ -407,6 +410,7 @@ model Order {
   updatedAt       DateTime    @updatedAt
 
   @@index([userId])
+  @@index([createdAt])
 }
 
 enum OrderStatus {
@@ -418,7 +422,7 @@ enum OrderStatus {
 model OrderItem {
   id              String         @id @default(uuid())
   orderId         String
-  order           Order          @relation(fields: [orderId], references: [id])
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sellerListingId String
   sellerListing   SellerListing  @relation(fields: [sellerListingId], references: [id])
   sellerId        String         // To easily query orders by seller without deep joins

@@ -18,7 +18,10 @@ export default function Cart() {
         setCart(res.data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err: any) => {
+        toast.error(err.response?.data?.message || err.message || "Failed to load shopping cart");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {

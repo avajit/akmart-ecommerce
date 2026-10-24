@@ -26,7 +26,7 @@ export default function AdminCategories() {
       setNewCategory({ name: '', parentId: '', imageUrl: '' });
       fetchCategories();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to create category");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to create category");
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ export default function AdminCategories() {
                                 toast.success("Category deactivated");
                                 fetchCategories();
                               } catch (err: any) {
-                                toast.error(err.response?.data?.error?.message || "Failed to deactivate category");
+                                toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to deactivate category");
                               }
                             }
                           }}

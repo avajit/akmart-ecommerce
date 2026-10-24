@@ -70,7 +70,7 @@ const Hero = () => {
             {desc}
           </p>
 
-          <Link to='/collection'>
+          <Link to={link || '/collection'}>
   <button className="mt-6 group relative px-8 py-3 bg-white text-black font-bold text-lg overflow-hidden rounded-none transition-all hover:scale-105">
     <span className="relative z-10 group-hover:text-white transition-colors duration-300">
       SHOP COLLECTION

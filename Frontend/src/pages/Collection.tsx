@@ -4,6 +4,7 @@ import { ShopContext } from '../context/ShopContext';
 import ProductItem from '../components/ProductItem';
 import { FiFilter, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 export default function Collection() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,7 +70,7 @@ export default function Collection() {
         setProducts(items);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err: any) => { toast.error(err.response?.data?.message || err.message || "Failed to load products"); setLoading(false); });
   };
 
   useEffect(() => {

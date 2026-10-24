@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSellerProfile } from '../../api/seller.api';
 import { toast } from 'react-toastify';
@@ -14,7 +14,7 @@ export default function Onboarding() {
       toast.success('Seller profile created!');
       navigate('/seller/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Failed to create profile');
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || 'Failed to create profile');
     }
   };
 

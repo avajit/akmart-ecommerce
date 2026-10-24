@@ -16,7 +16,7 @@ export default function Products() {
     getSellerProducts().then((res: any) => {
       setProducts(res.data?.products || []);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err: any) => { toast.error(err.response?.data?.message || err.message || 'Failed to load seller products'); setLoading(false); });
   }, []);
 
   const getStatusBadge = (status: string) => {

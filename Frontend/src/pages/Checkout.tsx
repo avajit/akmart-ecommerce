@@ -54,7 +54,7 @@ export default function Checkout() {
       setSelectedAddressId(res.data?.id);
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || "Failed to add address");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to add address");
     }
   });
 
@@ -67,7 +67,7 @@ export default function Checkout() {
       navigate('/orders');
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || "Failed to place order. Please try again.");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to place order. Please try again.");
     }
   });
 

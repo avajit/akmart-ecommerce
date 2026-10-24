@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import * as productService from "../services/product.service";
 import { z } from "zod";
@@ -20,7 +20,7 @@ export const browseProducts = async (req: AuthenticatedRequest, res: Response, n
       req.user?.roleName,
       req.query
     );
-    res.json({ success: true, data: result });
+    res.json({ success: true, message: "Products fetched successfully", data: result });
   } catch (err) { next(err); }
 };
 
@@ -28,7 +28,7 @@ export const browseProducts = async (req: AuthenticatedRequest, res: Response, n
 export const getProductBySlug = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const product = await productService.getProductBySlug(p(req.params.slug));
-    res.json({ success: true, data: product });
+    res.json({ success: true, message: "Product fetched successfully", data: product });
   } catch (err) { next(err); }
 };
 
@@ -68,7 +68,7 @@ export const deleteProduct = async (req: AuthenticatedRequest, res: Response, ne
 export const getProductReviews = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await productService.getProductReviews(p(req.params.id), qi(req.query.page), qi(req.query.limit, 10));
-    res.json({ success: true, data: result });
+    res.json({ success: true, message: "Products fetched successfully", data: result });
   } catch (err) { next(err); }
 };
 

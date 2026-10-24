@@ -23,8 +23,10 @@ export const globalLimiter = rateLimit({
   skip: () => env.NODE_ENV === 'test',
   message: {
     success: false,
+    message: 'Too many requests from this IP, please try again later.',
     error: {
       code: 429,
+      errorCode: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many requests from this IP, please try again later.',
     },
   },
@@ -43,8 +45,10 @@ export const authLimiter = rateLimit({
   skip: () => env.NODE_ENV === 'test' && !process.env.ENABLE_RATE_LIMIT_TEST,
   message: {
     success: false,
+    message: 'Too many authentication attempts from this IP, please try again later.',
     error: {
       code: 429,
+      errorCode: 'AUTH_RATE_LIMIT_EXCEEDED',
       message: 'Too many authentication attempts from this IP, please try again later.',
     },
   },
