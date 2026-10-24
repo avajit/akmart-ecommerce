@@ -7,7 +7,7 @@ import { toUserResponseDTO, AuthResponseDTO } from '../dtos/auth.dto';
 const cookieOptions = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: (env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
   path: '/',
   maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
 };
