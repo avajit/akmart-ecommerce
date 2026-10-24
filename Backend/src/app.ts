@@ -25,10 +25,26 @@ setupGracefulShutdown(server, prisma, redis);
 // 1. Security Headers (Helmet)
 app.use(helmet());
 
-// 2. CORS (Strict allowed origins for web & mobile)
+// 2. CORS (Strict allowed origins for web & mobile, plus Vercel previews)
+const allowedOrigins = [
+  env.FRONTEND_WEB_URL,
+  env.FRONTEND_MOBILE_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
 app.use(
   cors({
-    origin: [env.FRONTEND_WEB_URL, env.FRONTEND_MOBILE_URL],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isVercel = origin.endsWith('.vercel.app');
+      const isAllowed = allowedOrigins.includes(origin) || isVercel;
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true, // Required for HttpOnly cookies (Refresh Token)
   })
 );
