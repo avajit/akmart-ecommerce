@@ -111,6 +111,16 @@ export const checkout = async (userId: string, body: any) => {
 
     return newOrder;
   });
+  // Dispatch order confirmation email asynchronously
+  prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+    .then(user => {
+      if (user?.email) {
+        import('./email.service')
+          .then(({ EmailService }) => EmailService.sendOrderConfirmationEmail(user.email!, order))
+          .catch(() => {});
+      }
+    })
+    .catch(() => {});
 
   return order;
 };
@@ -172,6 +182,69 @@ export const getOrderById = async (userId: string, orderId: string) => {
   }
 
   return order;
+};
+
+export const cancelOrder = async (userId: string, orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+
+  if (!order || order.userId !== userId) {
+    throw new AppError("Order not found", 404, "NOT_FOUND");
+  }
+
+  if (order.status === "CANCELLED") {
+    throw new AppError("This order has already been cancelled", 400, "ALREADY_CANCELLED");
+  }
+
+  // Prevent cancellation if items are already shipped or delivered
+  const hasShipped = order.items.some(
+    (item: any) => item.status === "SHIPPED" || item.status === "DELIVERED"
+  );
+  if (hasShipped) {
+    throw new AppError("Cannot cancel order because one or more items are already shipped or delivered", 400, "ALREADY_SHIPPED");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Restore stock to seller listings
+    for (const item of order.items) {
+      if (item.status !== "CANCELLED") {
+        await tx.sellerListing.update({
+          where: { id: item.sellerListingId },
+          data: { stock: { increment: item.quantity } },
+        });
+
+        await tx.orderItem.update({
+          where: { id: item.id },
+          data: { status: "CANCELLED" },
+        });
+      }
+    }
+
+    // 2. Mark order as CANCELLED
+    return tx.order.update({
+      where: { id: orderId },
+      data: { status: "CANCELLED" },
+      include: {
+        items: {
+          include: {
+            sellerListing: {
+              include: {
+                variant: {
+                  include: {
+                    product: true,
+                  },
+                },
+                sellerProfile: { select: { shopName: true } },
+              },
+            },
+          },
+        },
+        shippingAddress: true,
+      },
+    });
+  });
 };
 
 // --- Address Management ---

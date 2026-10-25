@@ -17,3 +17,54 @@ input:-webkit-autofill:active {
   caret-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* --- Premium AKMart Toast Styling --- */
+.Toastify__toast {
+  background: #141722 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  color: #f3f4f6 !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 12px 18px !important;
+  margin-bottom: 10px !important;
+}
+
+.Toastify__toast--success {
+  border-left: 4px solid #f97316 !important;
+}
+
+.Toastify__toast--error {
+  border-left: 4px solid #ef4444 !important;
+}
+
+.Toastify__toast--info {
+  border-left: 4px solid #3b82f6 !important;
+}
+
+.Toastify__toast--warning {
+  border-left: 4px solid #f59e0b !important;
+}
+
+.Toastify__progress-bar--success {
+  background: #f97316 !important;
+}
+
+.Toastify__progress-bar--error {
+  background: #ef4444 !important;
+}
+
+.Toastify__progress-bar--info {
+  background: #3b82f6 !important;
+}
+
+.Toastify__close-button {
+  color: #94a3b8 !important;
+  opacity: 0.7 !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+}

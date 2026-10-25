@@ -80,3 +80,10 @@ export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response
     res.json({ success: true, message: "Order status updated", data: toOrderItemResponseDTO(orderItem) });
   } catch (err) { next(err); }
 };
+
+export const getMyProducts = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const products = await sellerService.getSellerProducts(req.user!.userId);
+    res.json({ success: true, message: "Seller products retrieved successfully", data: { products } });
+  } catch (err) { next(err); }
+};

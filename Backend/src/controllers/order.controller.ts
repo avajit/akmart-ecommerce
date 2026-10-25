@@ -26,6 +26,14 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response, nex
   } catch (err) { next(err); }
 };
 
+export const cancelOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const orderId = req.params.id as string;
+    const order = await orderService.cancelOrder(req.user!.userId, orderId);
+    res.json({ success: true, message: "Order cancelled successfully and stock restored", data: toOrderResponseDTO(order) });
+  } catch (err) { next(err); }
+};
+
 export const getAddresses = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const addresses = await orderService.getAddresses(req.user!.userId);

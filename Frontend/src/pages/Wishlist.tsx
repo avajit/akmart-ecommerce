@@ -68,7 +68,7 @@ export default function Wishlist() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+    <div className="max-w-7xl mx-auto pt-6 sm:pt-10 pb-28 md:pb-12 px-4 sm:px-6 lg:px-8 font-poppins text-white">
       <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase">My Wishlist</h1>
@@ -81,7 +81,7 @@ export default function Wishlist() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 sm:gap-6">
         {wishlist.items.map((item: any) => (
           <div
             key={item.id}
@@ -90,7 +90,7 @@ export default function Wishlist() {
             <button
               onClick={() => handleRemove(item.variantId)}
               disabled={removingId === item.variantId}
-              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-rose-400 hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100"
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-rose-400 hover:bg-black/80 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
               title="Remove from wishlist"
             >
               <FiTrash2 size={16} />

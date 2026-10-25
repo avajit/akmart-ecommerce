@@ -2,36 +2,35 @@ import apiClient from './client';
 import { 
   LoginRequestDTO, 
   RegisterRequestDTO, 
-  VerifyAccountRequestDTO 
-} from '../../../Backend/src/validators/auth.validator'; // Wait, sharing types from backend directly might be tricky in a monorepo without workspaces. 
-// Instead, I'll use the types defined in frontend.
-
-import { LoginResponseDTO, ApiResponse } from '../types/api.types';
+  VerifyAccountRequestDTO, 
+  LoginResponseDTO, 
+  ApiResponse 
+} from '../types/api.types';
 
 export const authService = {
   login: async (email?: string, phoneNumber?: string, password?: string): Promise<LoginResponseDTO> => {
-    const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/login', { 
-      email, 
-      phoneNumber, 
-      password 
+    const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/login', {
+      email,
+      phoneNumber,
+      password
     });
     return response.data.data;
   },
 
   register: async (fullName: string, password: string, email?: string, phoneNumber?: string, role?: string): Promise<void> => {
-    await apiClient.post('/auth/register', { 
-      fullName, 
-      password, 
-      email, 
+    await apiClient.post('/auth/register', {
+      fullName,
+      password,
+      email,
       phoneNumber,
       role
     });
   },
 
   verifyAccount: async (identifier: string, token: string): Promise<LoginResponseDTO> => {
-    const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/verify-account', { 
-      identifier, 
-      token 
+    const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/verify-account', {
+      identifier,
+      token
     });
     return response.data.data;
   },
@@ -48,8 +47,9 @@ export const authService = {
     await apiClient.post('/auth/forgot-password', data);
   },
 
-  resetPassword: async (data: { token: string; newPassword: string }): Promise<void> => {
-    await apiClient.post('/auth/reset-password', data);
+  resetPassword: async (data: { token: string; newPassword: string }): Promise<LoginResponseDTO> => {
+    const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/reset-password', data);
+    return response.data.data;
   },
 
   googleSSO: async (data: { idToken: string }): Promise<LoginResponseDTO> => {

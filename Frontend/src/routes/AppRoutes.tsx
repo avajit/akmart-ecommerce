@@ -41,6 +41,9 @@ const AdminBrands = React.lazy(() => import("../pages/admin/Brands"));
 
 // Fallback (Lazy Loaded)
 const NotFound = React.lazy(() => import("../pages/NotFound"));
+const About = React.lazy(() => import("../pages/About"));
+const Contact = React.lazy(() => import("../pages/Contact"));
+const Refund = React.lazy(() => import("../pages/Refund"));
 
 import ConsumerLayout from '../layouts/ConsumerLayout';
 import AdminLayout from '../layouts/AdminLayout';
@@ -48,7 +51,7 @@ import SellerLayout from '../layouts/SellerLayout';
 
 const RouteLoader = () => (
   <div className="w-full min-h-[50vh] flex flex-col items-center justify-center">
-    <div className="w-8 h-8 border-3 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-3 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
     <span className="mt-3 text-xs tracking-widest text-gray-400 uppercase">Loading...</span>
   </div>
 );
@@ -64,6 +67,9 @@ function AppRoutes() {
           <Route path="/product/:slug" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/refund" element={<Refund />} />
           
           {/* ----- Authentication ----- */}
           <Route path="/login" element={<Login />} />
@@ -72,20 +78,24 @@ function AppRoutes() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* ----- The "Auth Wall" (Consumer Protected) ----- */}
-          <Route element={<ProtectedRoute />}>
+          {/* ----- Consumer Protected Routes (Strictly CONSUMER only) ----- */}
+          <Route element={<ProtectedRoute allowedRoles={['CONSUMER']} />}>
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/place-order" element={<PlaceOrder />} />
             <Route path="/orders" element={<Orders />} />
-            <Route path="/profile" element={<Profile />} />
             <Route path="/wishlist" element={<Wishlist />} />
+          </Route>
+
+          {/* ----- General Authenticated User Account ----- */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
 
-        {/* ----- Seller Wall ----- */}
+        {/* ----- Seller Merchant Wall (Sellers & Admins Only) ----- */}
         <Route element={<ProtectedRoute allowedRoles={['SELLER', 'ADMIN']} />}>
+          <Route path="/seller/onboarding" element={<SellerOnboarding />} />
           <Route element={<SellerLayout />}>
-            <Route path="/seller/onboarding" element={<SellerOnboarding />} />
             <Route path="/seller/dashboard" element={<SellerDashboard />} />
             <Route path="/seller/products" element={<SellerProducts />} />
             <Route path="/seller/products/new" element={<SellerCreateProduct />} />

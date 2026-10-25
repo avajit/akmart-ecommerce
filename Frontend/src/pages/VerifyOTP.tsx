@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useVerifyOTP, useResendOTP } from '../hooks/useAuth';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { assets } from '../assets/frontend_assets/assets';
 import { FiShield } from 'react-icons/fi';
@@ -8,19 +8,23 @@ import { FiShield } from 'react-icons/fi';
 const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [timer, setTimer] = useState(60);
+  const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const email = location.state?.email;
-  const phoneNumber = location.state?.phoneNumber;
-  const identifier = email || phoneNumber;
+  const queryId = searchParams.get('email') || searchParams.get('identifier') || '';
+  const stateId = location.state?.email || location.state?.phoneNumber || location.state?.identifier || '';
+  const sessionId = typeof window !== 'undefined' ? sessionStorage.getItem('akmart_verify_identifier') || '' : '';
+  const identifier = stateId || queryId || sessionId;
 
   const { mutate: verifyOTP, isPending } = useVerifyOTP();
   const { mutate: resendOTP, isPending: isResending } = useResendOTP();
 
   useEffect(() => {
-    if (!identifier) {
-      toast.warn('No pending verification found. Please sign in or register.');
+    if (identifier) {
+      sessionStorage.setItem('akmart_verify_identifier', identifier);
+    } else {
+      toast.warn('No pending verification found. Please sign in or register.', { toastId: 'no-pending-verify' });
       navigate('/login');
     }
   }, [identifier, navigate]);

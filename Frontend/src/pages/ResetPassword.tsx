@@ -1,27 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useResetPassword, useForgotPassword } from '../hooks/useAuth';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import InputField from '../components/common/InputField';
 import { assets } from '../assets/frontend_assets/assets';
-import { FiLock, FiEye, FiEyeOff, FiCheckCircle } from 'react-icons/fi';
+import { FiLock, FiEye, FiEyeOff, FiCheckCircle, FiMail } from 'react-icons/fi';
 
 const ResetPassword = () => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Multi-tier prefilling: State -> URL Query Params -> SessionStorage
+  const queryId = searchParams.get('identifier') || searchParams.get('email') || '';
+  const stateId = location.state?.identifier || location.state?.email || '';
+  const sessionStoredId = typeof window !== 'undefined' ? sessionStorage.getItem('akmart_reset_identifier') || '' : '';
+
+  const [identifier, setIdentifier] = useState(stateId || queryId || sessionStoredId);
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [timer, setTimer] = useState(60);
 
-  const location = useLocation();
-  const navigate = useNavigate();
-  const identifier = location.state?.identifier || '';
+  // Persist to sessionStorage so page refresh never loses the email
+  useEffect(() => {
+    if (identifier) {
+      sessionStorage.setItem('akmart_reset_identifier', identifier);
+    }
+  }, [identifier]);
+
+  // 60-second cooldown timer matching backend Redis OTP cooldown
+  useEffect(() => {
+    let interval: any;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const { mutate: resetPassword, isPending: isResetting } = useResetPassword();
   const { mutate: forgotPassword, isPending: isResending } = useForgotPassword();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!identifier) {
+      setError('Please provide your email address or mobile number');
+      return;
+    }
     if (!token || token.length !== 6) {
       setError('Please enter the 6-digit reset code');
       return;
@@ -36,22 +66,21 @@ const ResetPassword = () => {
     }
     setError('');
 
-    const isPhone = /^\d{10}$/.test(identifier);
-    const payload = isPhone 
-      ? { phoneNumber: identifier, token, newPassword }
-      : { email: identifier, token, newPassword };
-
-    resetPassword(payload);
+    resetPassword({ token, newPassword });
   };
 
   const handleResend = () => {
-    if (!identifier) return;
+    if (timer > 0 || !identifier) return;
     const isPhone = /^\d{10}$/.test(identifier);
     const payload = isPhone 
       ? { phoneNumber: identifier }
       : { email: identifier };
 
-    forgotPassword(payload);
+    forgotPassword(payload, {
+      onSuccess: () => {
+        setTimer(60);
+      }
+    });
   };
 
   return (
@@ -92,14 +121,49 @@ const ResetPassword = () => {
             </Link>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Reset Password
             </h1>
             <p className="text-gray-400 mt-1 text-xs sm:text-sm">
-              We sent a 6-digit code to <span className="font-semibold text-gray-200">{identifier || 'your account'}</span>
+              Enter the 6-digit code sent to your email to create a new password.
             </p>
           </div>
+
+          {/* Pre-filled Account Badge */}
+          {identifier ? (
+            <div className="bg-[#171d2b] border border-gray-800/90 rounded-xl p-3 sm:p-3.5 flex items-center justify-between mb-5 shadow-sm">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-orange-500/10 text-orange-400 shrink-0">
+                  <FiMail className="w-3.5 h-3.5" />
+                </span>
+                <div className="truncate">
+                  <span className="text-[11px] text-gray-400 block leading-tight">Resetting password for</span>
+                  <span className="text-xs sm:text-sm font-semibold text-white tracking-wide truncate">{identifier}</span>
+                </div>
+              </div>
+              <Link to="/forgot-password" className="text-xs font-semibold text-orange-400 hover:text-orange-300 ml-3 shrink-0 hover:underline">
+                Change
+              </Link>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <InputField
+                id="identifier"
+                name="identifier"
+                label="Email Address or Mobile Number"
+                type="text"
+                placeholder="name@example.com or 98XXXXXXXX"
+                value={identifier}
+                onChange={(e) => {
+                  setIdentifier(e.target.value);
+                  if (error) setError('');
+                }}
+                startIcon={<FiMail className="w-4 h-4" />}
+                required
+              />
+            </div>
+          )}
 
           <form onSubmit={onSubmit} className="flex flex-col gap-4 text-left" autoComplete="off" noValidate>
             <InputField
@@ -182,10 +246,10 @@ const ResetPassword = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                   </svg>
-                  <span>Resetting Password...</span>
+                  <span>Updating & Logging in...</span>
                 </>
               ) : (
-                <span>Update Password</span>
+                <span>Update Password & Sign In</span>
               )}
             </button>
           </form>
@@ -194,10 +258,10 @@ const ResetPassword = () => {
             <button 
               type="button"
               onClick={handleResend}
-              disabled={isResending}
+              disabled={timer > 0 || isResending}
               className="font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50"
             >
-              {isResending ? 'Sending...' : "Didn't get the code? Resend"}
+              {isResending ? 'Sending...' : timer > 0 ? `Resend code in ${timer}s` : "Didn't get the code? Resend"}
             </button>
 
             <Link to="/login" className="text-orange-400 hover:text-orange-300 font-bold hover:underline transition-colors">

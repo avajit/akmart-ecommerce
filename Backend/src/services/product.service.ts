@@ -148,7 +148,9 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
 
   // Role-based status filter
   let statusFilter: any;
-  if (roleName === "ADMIN") {
+  if ((query.mine === "true" || query.mine === true) && userId) {
+    statusFilter = { createdById: userId };
+  } else if (roleName === "ADMIN") {
     statusFilter = {}; // all statuses
   } else if (roleName === "SELLER" && userId) {
     statusFilter = {
@@ -160,10 +162,28 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
 
   const where: any = { deletedAt: null, ...statusFilter };
 
-  // Category filter
+  // Category filter: support parent categories & descendant children
   if (category) {
-    const cat = await prisma.category.findUnique({ where: { slug: category } });
-    if (cat) where.categoryId = cat.id;
+    const rootCat = await prisma.category.findUnique({
+      where: { slug: category },
+      include: {
+        children: {
+          select: {
+            id: true,
+            children: { select: { id: true } },
+          },
+        },
+      },
+    });
+
+    if (rootCat) {
+      const childIds = rootCat.children.map(c => c.id);
+      const grandChildIds = rootCat.children.flatMap(c => c.children?.map(gc => gc.id) || []);
+      const allCategoryIds = [rootCat.id, ...childIds, ...grandChildIds];
+      where.categoryId = { in: allCategoryIds };
+    } else {
+      where.categoryId = "00000000-0000-0000-0000-000000000000";
+    }
   }
 
   // Search filter
@@ -180,31 +200,44 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
   // Price filter: we need to filter via SellerListing
   const minPrice = query.minPrice ? parseFloat(query.minPrice) : undefined;
   const maxPrice = query.maxPrice ? parseFloat(query.maxPrice) : undefined;
+  const inStockOnly = query.inStock === 'true' || query.inStock === true;
 
   // Attribute filters — remaining query params applied to JSONB on ProductVariant
-  // We filter products that have at least 1 variant matching all attribute filters
-  const attrKeys = Object.keys(attrFilters).filter(k => !["minPrice", "maxPrice", "search"].includes(k));
+  const attrKeys = Object.keys(attrFilters).filter(k => !["minPrice", "maxPrice", "search", "inStock", "mine"].includes(k));
 
   // Sort
   let orderBy: any = { createdAt: "desc" };
   if (sort === "newest") orderBy = { createdAt: "desc" };
+  else if (sort === "oldest") orderBy = { createdAt: "asc" };
+  else if (sort === "name-asc") orderBy = { name: "asc" };
+  else if (sort === "name-desc") orderBy = { name: "desc" };
 
-  const products = await prisma.product.findMany({
-    where: {
-      ...where,
-      variants: attrKeys.length > 0 || minPrice || maxPrice
-        ? {
+  const finalWhere: any = {
+    ...where,
+    ...(attrKeys.length > 0 || minPrice || maxPrice || inStockOnly
+      ? {
+          variants: {
             some: {
               deletedAt: null,
               ...(attrKeys.length > 0
-                ? { AND: attrKeys.map(k => ({ attributes: { path: [k], equals: attrFilters[k] } })) }
+                ? {
+                    AND: attrKeys.map(k => {
+                      const raw = String(attrFilters[k]);
+                      const vals = raw.split(',').map(s => s.trim()).filter(Boolean);
+                      if (vals.length > 1) {
+                        return { OR: vals.map(v => ({ attributes: { path: [k], equals: v } })) };
+                      }
+                      return { attributes: { path: [k], equals: raw } };
+                    }),
+                  }
                 : {}),
-              ...(minPrice || maxPrice
+              ...(minPrice || maxPrice || inStockOnly
                 ? {
                     listings: {
                       some: {
                         isActive: true,
                         deletedAt: null,
+                        ...(inStockOnly ? { stock: { gt: 0 } } : {}),
                         ...(minPrice ? { price: { gte: minPrice } } : {}),
                         ...(maxPrice ? { price: { lte: maxPrice } } : {}),
                       },
@@ -212,37 +245,78 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
                   }
                 : {}),
             },
-          }
-        : undefined,
-    },
-    include: {
-      category: { select: { name: true, slug: true } },
-      brand: { select: { name: true, slug: true } },
-      images: { where: { isPrimary: true }, take: 1 },
-      variants: {
-        where: { deletedAt: null },
-        include: {
-          images: { orderBy: { order: "asc" }, take: 1 },
-          listings: {
-            where: { isActive: true, deletedAt: null },
-            orderBy: { price: "asc" },
-            take: 1,
           },
-        },
-        take: 1,
-      },
-      _count: { select: { reviews: true } },
-    },
-    orderBy,
-    skip,
-    take: parseInt(limit),
-  });
+        }
+      : {}),
+  };
 
-  const total = await prisma.product.count({ where });
+  const isPriceSort = sort === "price-low" || sort === "price-high";
+  let products: any[];
+  let total: number;
+
+  if (isPriceSort) {
+    const allProducts = await prisma.product.findMany({
+      where: finalWhere,
+      include: {
+        category: { select: { name: true, slug: true } },
+        brand: { select: { name: true, slug: true } },
+        images: { where: { isPrimary: true }, take: 1 },
+        variants: {
+          where: { deletedAt: null },
+          include: {
+            images: { orderBy: { order: "asc" }, take: 1 },
+            listings: {
+              where: { isActive: true, deletedAt: null },
+              orderBy: { price: "asc" },
+              take: 1,
+            },
+          },
+          take: 5,
+        },
+        _count: { select: { reviews: true } },
+      },
+    });
+
+    total = allProducts.length;
+
+    allProducts.sort((a, b) => {
+      const priceA = a.variants.flatMap(v => v.listings)[0]?.price != null ? Number(a.variants.flatMap(v => v.listings)[0].price) : (sort === "price-low" ? Infinity : -Infinity);
+      const priceB = b.variants.flatMap(v => v.listings)[0]?.price != null ? Number(b.variants.flatMap(v => v.listings)[0].price) : (sort === "price-low" ? Infinity : -Infinity);
+      return sort === "price-low" ? priceA - priceB : priceB - priceA;
+    });
+
+    products = allProducts.slice(skip, skip + parseInt(limit));
+  } else {
+    total = await prisma.product.count({ where: finalWhere });
+    products = await prisma.product.findMany({
+      where: finalWhere,
+      include: {
+        category: { select: { name: true, slug: true } },
+        brand: { select: { name: true, slug: true } },
+        images: { where: { isPrimary: true }, take: 1 },
+        variants: {
+          where: { deletedAt: null },
+          include: {
+            images: { orderBy: { order: "asc" }, take: 1 },
+            listings: {
+              where: { isActive: true, deletedAt: null },
+              orderBy: { price: "asc" },
+              take: 1,
+            },
+          },
+          take: 1,
+        },
+        _count: { select: { reviews: true } },
+      },
+      orderBy,
+      skip,
+      take: parseInt(limit),
+    });
+  }
 
   // Shape: add cheapestPrice per product
-  const shaped = products.map(p => {
-    const cheapestListing = p.variants.flatMap(v => v.listings)[0];
+  const shaped = products.map((p: any) => {
+    const cheapestListing = p.variants.flatMap((v: any) => v.listings)[0];
     return {
       id: p.id,
       name: p.name,
@@ -252,8 +326,8 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
       brand: p.brand,
       primaryImage: p.images[0]?.url ?? p.variants[0]?.images[0]?.url ?? null,
       cheapestPrice: cheapestListing?.price ?? null,
-      reviewCount: p._count.reviews,
-      variants: p.variants.map(v => ({ 
+      reviewCount: p._count?.reviews ?? 0,
+      variants: p.variants.map((v: any) => ({ 
         id: v.id, 
         name: v.name, 
         sku: v.sku,

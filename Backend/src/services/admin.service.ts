@@ -1,5 +1,5 @@
 import { AppError } from "../utils/AppError";
-import { prisma } from "../app";
+import { prisma, redis } from "../app";
 
 // ── Product Review Queue ──────────────────────────────────────
 
@@ -131,10 +131,19 @@ export const verifySeller = async (sellerProfileId: string) => {
     );
   }
 
-  return prisma.sellerProfile.update({
+  const updated = await prisma.sellerProfile.update({
     where: { id: sellerProfileId },
     data: { verificationStatus: "VERIFIED", isPayoutEnabled: true },
+    include: { user: { select: { email: true } } },
   });
+
+  if (updated.user?.email) {
+    import('./email.service')
+      .then(({ EmailService }) => EmailService.sendSellerStatusEmail(updated.user.email!, updated.shopName, true))
+      .catch(() => {});
+  }
+
+  return updated;
 };
 
 export const suspendSeller = async (sellerProfileId: string) => {
@@ -179,17 +188,47 @@ export const deactivateCategory = async (id: string) => {
   return prisma.category.update({ where: { id }, data: { isActive: false } });
 };
 
+export const getCategoryAttributes = async (categoryId: string) => {
+  return prisma.categoryAttributeConfig.findMany({
+    where: { categoryId },
+    orderBy: { order: "asc" },
+  });
+};
+
 export const addCategoryAttribute = async (categoryId: string, data: {
   key: string; label: string; filterType: "MULTISELECT" | "RANGE" | "BOOLEAN"; unit?: string; order?: number;
 }) => {
   const category = await prisma.category.findUnique({ where: { id: categoryId } });
   if (!category) throw new AppError("Category not found", 404, "CATEGORY_NOT_FOUND");
 
-  return prisma.categoryAttributeConfig.upsert({
+  const result = await prisma.categoryAttributeConfig.upsert({
     where: { categoryId_key: { categoryId, key: data.key } },
     update: { label: data.label, filterType: data.filterType, unit: data.unit, order: data.order ?? 0 },
     create: { categoryId, ...data, order: data.order ?? 0 },
   });
+
+  try {
+    await redis.del("cache:category:tree");
+    await redis.del(`cache:category:filters:${category.slug}`);
+  } catch {}
+
+  return result;
+};
+
+export const deleteCategoryAttribute = async (categoryId: string, attributeId: string) => {
+  const category = await prisma.category.findUnique({ where: { id: categoryId } });
+  if (!category) throw new AppError("Category not found", 404, "CATEGORY_NOT_FOUND");
+
+  const result = await prisma.categoryAttributeConfig.delete({
+    where: { id: attributeId },
+  });
+
+  try {
+    await redis.del("cache:category:tree");
+    await redis.del(`cache:category:filters:${category.slug}`);
+  } catch {}
+
+  return result;
 };
 
 // ── Brand Management ──────────────────────────────────────────

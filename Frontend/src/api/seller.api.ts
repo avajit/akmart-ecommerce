@@ -9,7 +9,7 @@ export const updateSellerProfile = (data: any) => api.patch("/seller/profile", d
 export const createProduct = (data: any) => api.post("/products", data).then((res: any) => res.data);
 export const updateProduct = (id: string, data: any) => api.patch(`/products/${id}`, data).then((res: any) => res.data);
 export const submitProduct = (id: string) => api.patch(`/products/${id}/submit`).then((res: any) => res.data);
-export const getSellerProducts = () => api.get("/products").then((res: any) => res.data); // Shared endpoint but gets seller view when authenticated
+export const getSellerProducts = () => api.get("/seller/products").then((res: any) => res.data);
 
 // Listings
 export const createListing = (data: any) => api.post("/seller/listings", data).then((res: any) => res.data);
@@ -19,3 +19,4 @@ export const deleteListing = (id: string) => api.delete(`/seller/listings/${id}`
 
 export const getCategories = () => api.get("/categories/tree").then((res: any) => res.data);
 export const getBrands = () => api.get("/categories/brands").then((res: any) => res.data);
+export const getCategoryFilters = (slugOrId: string) => api.get(`/categories/${slugOrId}/filters`).then((res: any) => res.data);
