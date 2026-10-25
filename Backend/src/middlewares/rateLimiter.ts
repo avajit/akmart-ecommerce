@@ -13,7 +13,7 @@ redisClient.on('error', (err) => {
 // Global Rate Limiter: Protects against basic DDoS
 export const globalLimiter = rateLimit({
   store: new RedisStore({
-    // @ts-ignore
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -35,7 +35,7 @@ export const globalLimiter = rateLimit({
 // Auth Rate Limiter: Stricter limits for login/register endpoints to prevent brute-force
 export const authLimiter = rateLimit({
   store: new RedisStore({
-    // @ts-ignore
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
