@@ -1,13 +1,16 @@
 # Dependencies
-node_modules
+node_modules/
 **/node_modules/
 
-# Environment Variables
+# Environment Variables & Secrets
 .env
-.env.local
-.env.development
-.env.production
-.env.test
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.cert
+PRODUCTION_SECRETS.md
 
 # Build Outputs
 dist/
@@ -15,25 +18,78 @@ build/
 out/
 Frontend/dist/
 Backend/dist/
+dist-ssr/
+*.tsbuildinfo
 
 # OS Files
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 logs/
 *.log
 
-# Prisma
+# Prisma & Local Databases
 Backend/prisma/*.db
 Backend/prisma/*.db-journal
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+dump.rdb
+*.dump
 
-# IDE
-.vscode/
+# IDE & Editors
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
 .idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# Test Coverage
+# AI Assistants & Tooling (local skills & sessions)
+**/.claude/
+**/.cursor/
+**/.devin/
+Backend/.agents/
+
+# Test Coverage & Reports
 coverage/
+*.lcov
+.nyc_output/
+Backend/coverage/
+
+# Local Scratch, Prompts & Personal Notes
+prompt.md
+m2.md
+MODULE_1_README.md
+TODO.md
+todo.md
+image.png
+scratch/
+temp/
+tmp/
+*.tmp
+*.temp
+notes/
+local-notes/
+Frontend/src/assets/*.pdf
+Frontend/src/readme
+
+# Local Ad-hoc Test & Utility Scripts
+Backend/test-*.js
+Backend/test-*.ts
+Backend/test-listing.js
+Backend/flushRedis.mjs
+Backend/generateEthereal.js

@@ -224,7 +224,6 @@ jobs:
 
     env:
       IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/akmart-ecommerce-backend
-      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
@@ -235,15 +234,13 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        if: env.GHCR_TOKEN != ''
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image
-        if: env.GHCR_TOKEN != ''
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -256,7 +253,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run migrations (production)
-        if: env.DATABASE_URL != '' && env.GHCR_TOKEN != ''
+        if: env.DATABASE_URL != ''
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
@@ -265,10 +262,6 @@ jobs:
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             ${{ env.IMAGE_NAME }}:latest \
             sh -c "npx prisma generate && npx prisma migrate deploy"
-
-      - name: Skip publish (token not configured)
-        if: env.GHCR_TOKEN == ''
-        run: echo "⚠️ GHCR_TOKEN not configured — skipping Docker publish."
 
 # ═══════════════════════════════════════════════════════════════════════
 # FRONTEND
