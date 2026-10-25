@@ -1,20 +1,23 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSellerProfile } from '../../api/seller.api';
+import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-toastify';
 
 export default function Onboarding() {
   const [formData, setFormData] = useState({ shopName: '', phoneNumber: '', address: '', city: '', state: '', pincode: '', country: 'NP' });
   const navigate = useNavigate();
+  const updateUser = useAuthStore((state) => state.updateUser);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createSellerProfile(formData);
-      toast.success('Seller profile created!');
+      updateUser({ role: 'SELLER', roleName: 'SELLER' });
+      toast.success('Seller profile created! Welcome to your Seller Dashboard.');
       navigate('/seller/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Failed to create profile');
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || 'Failed to create profile');
     }
   };
 

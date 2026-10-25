@@ -30,6 +30,25 @@ export interface UserDTO {
   createdAt: string;
 }
 
+export interface LoginRequestDTO {
+  email?: string;
+  phoneNumber?: string;
+  password?: string;
+}
+
+export interface RegisterRequestDTO {
+  fullName: string;
+  password: string;
+  email?: string;
+  phoneNumber?: string;
+  role?: string;
+}
+
+export interface VerifyAccountRequestDTO {
+  identifier: string;
+  token: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
 }

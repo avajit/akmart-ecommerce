@@ -3,11 +3,28 @@ import { authService } from '../api/auth.service';
 import { useAuthStore } from '../store/authStore';
 import { ApiError } from '../utils/ApiError';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const resolvePostAuthRedirect = (roleName?: string, intendedPath?: string): string => {
+  if (
+    intendedPath &&
+    typeof intendedPath === 'string' &&
+    intendedPath !== '/login' &&
+    intendedPath !== '/register' &&
+    intendedPath !== '/verify'
+  ) {
+    return intendedPath;
+  }
+  const normalized = (roleName || '').toUpperCase();
+  if (normalized === 'ADMIN') return '/admin/dashboard';
+  if (normalized === 'SELLER') return '/seller/dashboard';
+  return '/';
+};
 
 export const useLogin = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
+  const location = useLocation();
 
   return useMutation({
     mutationFn: (data: { email?: string; phoneNumber?: string; password?: string }) => 
@@ -15,12 +32,31 @@ export const useLogin = () => {
     
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken);
-      toast.success('Login successful!');
-      navigate('/');
+      toast.success('Welcome back! Login successful.', { toastId: 'login-success' });
+      const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
+      const intended = (location.state as any)?.from;
+      navigate(resolvePostAuthRedirect(role, intended));
     },
     
-    onError: (error: ApiError) => {
-      toast.error(error.message || 'Login failed');
+    onError: (error: ApiError, variables) => {
+      if (error.code === 'GOOGLE_ACCOUNT_NO_PASSWORD') {
+        toast.info(error.message, { toastId: 'google-no-password', autoClose: 7000 });
+        return;
+      }
+      if (error.code === 'UNVERIFIED_ACCOUNT') {
+        toast.info(error.message || 'Account not verified yet. We have sent a new verification code!', {
+          toastId: 'unverified-account-notice',
+          autoClose: 5000,
+        });
+        navigate('/verify', {
+          state: {
+            email: variables.email,
+            phoneNumber: variables.phoneNumber,
+          },
+        });
+        return;
+      }
+      toast.error(error.message || 'Login failed', { toastId: 'login-error' });
     }
   });
 };
@@ -33,12 +69,32 @@ export const useRegister = () => {
       authService.register(data.fullName, data.password, data.email, data.phoneNumber, data.role),
     
     onSuccess: (_, variables) => {
-      toast.success('Registration successful! Please check your email/phone for the OTP.');
+      const id = variables.email || variables.phoneNumber || '';
+      if (id) {
+        sessionStorage.setItem('akmart_verify_identifier', id);
+      }
+      toast.success('Account created! Please enter the 6-digit verification code.', {
+        toastId: 'register-success',
+      });
       navigate('/verify', { state: { email: variables.email, phoneNumber: variables.phoneNumber } });
     },
     
-    onError: (error: ApiError) => {
-      toast.error(error.message || 'Registration failed');
+    onError: (error: ApiError, variables) => {
+      if (error.code === 'GOOGLE_ACCOUNT_EXISTS') {
+        toast.info(error.message, { toastId: 'google-account-exists', autoClose: 7000 });
+        return;
+      }
+      // If user is already registered but unverified, backend sends new OTP and informs user
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('unverified') || msg.includes('not verified') || error.code === 'UNVERIFIED_ACCOUNT') {
+        toast.info(error.message || 'Account is pending verification. Please enter the verification code.', {
+          toastId: 'unverified-register-notice',
+          autoClose: 5000,
+        });
+        navigate('/verify', { state: { email: variables.email, phoneNumber: variables.phoneNumber } });
+        return;
+      }
+      toast.error(error.message || 'Registration failed', { toastId: 'register-error' });
     }
   });
 };
@@ -52,13 +108,23 @@ export const useVerifyOTP = () => {
       authService.verifyAccount(data.identifier, data.token),
     
     onSuccess: (data) => {
+      sessionStorage.removeItem('akmart_verify_identifier');
       setAuth(data.user, data.accessToken);
-      toast.success('Account verified! You are now logged in.');
-      navigate('/');
+      toast.success('Account verified successfully! You are now logged in.', {
+        toastId: 'verify-success',
+      });
+      const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
+      if (role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else if (role === 'SELLER') {
+        navigate('/seller/onboarding');
+      } else {
+        navigate('/');
+      }
     },
     
     onError: (error: ApiError) => {
-      toast.error(error.message || 'Verification failed');
+      toast.error(error.message || 'Verification failed', { toastId: 'verify-error' });
     }
   });
 };
@@ -69,11 +135,13 @@ export const useResendOTP = () => {
       authService.resendOTP(identifier),
     
     onSuccess: () => {
-      toast.success('A new verification code has been sent!');
+      toast.success('A fresh verification code has been dispatched to your email/phone!', {
+        toastId: 'resend-success',
+      });
     },
     
     onError: (error: ApiError) => {
-      toast.error(error.message || 'Failed to resend code');
+      toast.error(error.message || 'Failed to resend code', { toastId: 'resend-error' });
     }
   });
 };
@@ -87,11 +155,11 @@ export const useLogout = () => {
     
     onSuccess: () => {
       logoutState();
-      toast.success('Logged out successfully');
+      toast.success('Logged out successfully', { toastId: 'logout-success' });
       navigate('/login');
     },
     
-    onError: (error: ApiError) => {
+    onError: () => {
       // Even if server fails, force clear local state to prevent being stuck
       logoutState();
       navigate('/login');
@@ -107,31 +175,48 @@ export const useForgotPassword = () => {
       authService.forgotPassword(data),
     
     onSuccess: (_, variables) => {
-      toast.success('If an account exists, a 6-digit reset code has been sent!');
+      toast.success('If an account exists, a 6-digit reset code has been sent!', {
+        toastId: 'forgot-success',
+      });
       const identifier = variables.email || variables.phoneNumber || '';
-      navigate(`/reset-password`, { state: { identifier } });
+      if (identifier) {
+        sessionStorage.setItem('akmart_reset_identifier', identifier);
+      }
+      navigate(`/reset-password?identifier=${encodeURIComponent(identifier)}`, { state: { identifier } });
     },
     
     onError: (error: ApiError) => {
-      toast.error(error.message || 'Failed to send reset code');
+      toast.error(error.message || 'Failed to send reset code', { toastId: 'forgot-error' });
     }
   });
 };
 
 export const useResetPassword = () => {
   const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   return useMutation({
     mutationFn: (data: { token: string; newPassword: string }) => 
       authService.resetPassword(data),
     
-    onSuccess: () => {
-      toast.success('Password reset successfully! Please login with your new password.');
-      navigate('/login');
+    onSuccess: (data) => {
+      sessionStorage.removeItem('akmart_reset_identifier');
+      if (data?.user && data?.accessToken) {
+        setAuth(data.user, data.accessToken);
+        toast.success('Password updated successfully! Welcome back.', {
+          toastId: 'reset-success',
+        });
+        navigate('/');
+      } else {
+        toast.success('Password updated successfully! You can now log in.', {
+          toastId: 'reset-success',
+        });
+        navigate('/login');
+      }
     },
     
     onError: (error: ApiError) => {
-      toast.error(error.message || 'Failed to reset password');
+      toast.error(error.message || 'Failed to reset password', { toastId: 'reset-error' });
     }
   });
 };
@@ -139,18 +224,19 @@ export const useResetPassword = () => {
 export const useGoogleSSO = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
+  const location = useLocation();
 
   return useMutation({
     mutationFn: (idToken: string) => authService.googleSSO({ idToken }),
     onSuccess: (data) => {
-      // setAuth(user, accessToken) — same order as useLogin and useVerifyOTP
-      // setAuth internally handles localStorage.setItem('accessToken', ...) — no duplication needed
       setAuth(data.user, data.accessToken);
-      toast.success('Welcome! Signed in with Google.');
-      navigate('/');
+      toast.success('Welcome! Signed in with Google.', { toastId: 'google-success' });
+      const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
+      const intended = (location.state as any)?.from;
+      navigate(resolvePostAuthRedirect(role, intended));
     },
     onError: (error: ApiError) => {
-      toast.error(error.message || 'Google Sign-In failed. Please try again.');
+      toast.error(error.message || 'Google Sign-In failed. Please try again.', { toastId: 'google-error' });
     },
   });
 };

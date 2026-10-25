@@ -21,7 +21,7 @@ export default function SellerOrders() {
       queryClient.invalidateQueries({ queryKey: ['seller-orders'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || "Failed to update order status");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to update order status");
     }
   });
 

@@ -16,7 +16,7 @@ export const validateRequest = (schema: ZodTypeAny) => {
         // Format Zod errors to match our standard AppError shape
         const issues = error.issues || [];
         const errorMessages = issues.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
-        next(new AppError(`Validation failed: ${errorMessages}`, 400, 'VALIDATION_ERROR'));
+        next(new AppError(`Validation failed: ${errorMessages}`, 400, 'VALIDATION_ERROR', true, issues));
       } else {
         next(error);
       }

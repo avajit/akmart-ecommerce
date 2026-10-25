@@ -13,18 +13,20 @@ redisClient.on('error', (err) => {
 // Global Rate Limiter: Protects against basic DDoS
 export const globalLimiter = rateLimit({
   store: new RedisStore({
-    // @ts-ignore
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.RATE_LIMIT_MAX_REQUESTS,
+  max: env.NODE_ENV === 'development' ? 5000 : env.RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => env.NODE_ENV === 'test',
   message: {
     success: false,
+    message: 'Too many requests from this IP, please try again later.',
     error: {
       code: 429,
+      errorCode: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many requests from this IP, please try again later.',
     },
   },
@@ -33,18 +35,21 @@ export const globalLimiter = rateLimit({
 // Auth Rate Limiter: Stricter limits for login/register endpoints to prevent brute-force
 export const authLimiter = rateLimit({
   store: new RedisStore({
-    // @ts-ignore
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
-  max: env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  max: env.NODE_ENV === 'development' ? 100 : env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  skipSuccessfulRequests: true, // Crucial: Successful logins/verifications do not count towards brute-force limits
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => env.NODE_ENV === 'test' && !process.env.ENABLE_RATE_LIMIT_TEST,
   message: {
     success: false,
+    message: 'Too many authentication attempts from this IP, please try again later.',
     error: {
       code: 429,
+      errorCode: 'AUTH_RATE_LIMIT_EXCEEDED',
       message: 'Too many authentication attempts from this IP, please try again later.',
     },
   },

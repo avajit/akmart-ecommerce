@@ -1,4 +1,4 @@
-﻿import { Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import * as wishlistService from "../services/wishlist.service";
 import { z } from "zod";
@@ -8,7 +8,7 @@ const p = (val: unknown): string => val as string;
 export const getWishlist = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const wishlist = await wishlistService.getWishlist(req.user!.userId);
-    res.json({ success: true, data: wishlist });
+    res.json({ success: true, message: "Wishlist fetched successfully", data: wishlist });
   } catch (err) { next(err); }
 };
 

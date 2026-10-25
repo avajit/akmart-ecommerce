@@ -21,20 +21,20 @@ const PaymentMethod = ({ method, setMethod }) => {
               flex items-center gap-3 p-4 px-6 border rounded-lg cursor-pointer transition-all duration-300
               ${
                 method === item.id
-                  ? "border-amber-500 bg-amber-500/10 text-white"
+                  ? "border-orange-500 bg-orange-500/10 text-white"
                   : "border-gray-700 bg-[#1A1A1A] text-gray-400 hover:bg-[#252525] hover:text-gray-200"
               }
             `}
           >
-            {/* Custom Gold Radio Button */}
+            {/* Custom Orange Radio Button */}
             <div
               className={`
                 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0
-                ${method === item.id ? "border-amber-500" : "border-gray-500"}
+                ${method === item.id ? "border-orange-500" : "border-gray-500"}
               `}
             >
               {method === item.id && (
-                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
               )}
             </div>
 

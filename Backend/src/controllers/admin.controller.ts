@@ -1,4 +1,4 @@
-﻿import { Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import * as adminService from "../services/admin.service";
 import { z } from "zod";
@@ -13,7 +13,7 @@ const p = (val: unknown): string => val as string;
 export const getDashboard = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const stats = await adminService.getDashboardStats();
-    res.json({ success: true, data: stats });
+    res.json({ success: true, message: "Dashboard stats retrieved successfully", data: stats });
   } catch (err) { next(err); }
 };
 
@@ -22,7 +22,7 @@ export const getDashboard = async (req: AuthenticatedRequest, res: Response, nex
 export const getPendingProducts = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const result = await adminService.getPendingProducts(qi(req.query.page), qi(req.query.limit, 20));
-    res.json({ success: true, data: result });
+    res.json({ success: true, message: "Pending products retrieved successfully", data: result });
   } catch (err) { next(err); }
 };
 
@@ -34,7 +34,7 @@ export const getAllProducts = async (req: AuthenticatedRequest, res: Response, n
       qi(req.query.page),
       qi(req.query.limit, 20)
     );
-    res.json({ success: true, data: result });
+    res.json({ success: true, message: "Products retrieved successfully", data: result });
   } catch (err) { next(err); }
 };
 
@@ -62,7 +62,7 @@ export const getAllSellers = async (req: AuthenticatedRequest, res: Response, ne
       qi(req.query.page),
       qi(req.query.limit, 20)
     );
-    res.json({ success: true, data: result });
+    res.json({ success: true, message: "Sellers retrieved successfully", data: result });
   } catch (err) { next(err); }
 };
 
@@ -119,11 +119,25 @@ export const deactivateCategory = async (req: AuthenticatedRequest, res: Respons
   } catch (err) { next(err); }
 };
 
+export const getCategoryAttributes = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const attrs = await adminService.getCategoryAttributes(p(req.params.id));
+    res.json({ success: true, message: "Category attributes fetched", data: attrs });
+  } catch (err) { next(err); }
+};
+
 export const addCategoryAttribute = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const data = addAttributeSchema.parse(req.body);
     const attr = await adminService.addCategoryAttribute(p(req.params.id), data);
     res.status(201).json({ success: true, message: "Attribute added", data: attr });
+  } catch (err) { next(err); }
+};
+
+export const deleteCategoryAttribute = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    await adminService.deleteCategoryAttribute(p(req.params.id), p(req.params.attrId));
+    res.json({ success: true, message: "Attribute deleted" });
   } catch (err) { next(err); }
 };
 

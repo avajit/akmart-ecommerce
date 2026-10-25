@@ -17,7 +17,7 @@ export const createProfile = async (req: AuthenticatedRequest, res: Response, ne
 export const getProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const profile = await sellerService.getSellerProfile(req.user!.userId);
-    res.json({ success: true, data: profile });
+    res.json({ success: true, message: "Seller profile retrieved successfully", data: profile });
   } catch (err) { next(err); }
 };
 
@@ -42,7 +42,7 @@ export const createListing = async (req: AuthenticatedRequest, res: Response, ne
 export const getListings = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const listings = await sellerService.getSellerListings(req.user!.userId);
-    res.json({ success: true, data: listings });
+    res.json({ success: true, message: "Listings retrieved successfully", data: listings });
   } catch (err) { next(err); }
 };
 
@@ -68,7 +68,7 @@ export const deleteListing = async (req: AuthenticatedRequest, res: Response, ne
 export const getOrders = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const orders = await sellerService.getSellerOrders(req.user!.userId);
-    res.json({ success: true, data: orders.map(toOrderItemResponseDTO) });
+    res.json({ success: true, message: "Seller orders retrieved successfully", data: orders.map(toOrderItemResponseDTO) });
   } catch (err) { next(err); }
 };
 
@@ -78,5 +78,12 @@ export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response
     const dto = updateOrderStatusSchema.parse(req.body);
     const orderItem = await sellerService.updateSellerOrderStatus(req.user!.userId, orderItemId, dto.status);
     res.json({ success: true, message: "Order status updated", data: toOrderItemResponseDTO(orderItem) });
+  } catch (err) { next(err); }
+};
+
+export const getMyProducts = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const products = await sellerService.getSellerProducts(req.user!.userId);
+    res.json({ success: true, message: "Seller products retrieved successfully", data: { products } });
   } catch (err) { next(err); }
 };

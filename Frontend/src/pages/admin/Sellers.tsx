@@ -17,7 +17,7 @@ export default function AdminSellers() {
       toast.success("Seller verified!");
       fetchSellers();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Verification failed");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Verification failed");
     }
   };
 
@@ -27,7 +27,7 @@ export default function AdminSellers() {
       toast.warning("Seller suspended!");
       fetchSellers();
     } catch (err: any) {
-      toast.error("Failed to suspend");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to suspend");
     }
   };
 

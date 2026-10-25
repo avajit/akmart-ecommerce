@@ -8,6 +8,14 @@ export const createSellerProfile = async (userId: string, dto: CreateSellerProfi
   const existing = await prisma.sellerProfile.findUnique({ where: { userId } });
   if (existing) throw new AppError("Seller profile already exists", 409, "PROFILE_EXISTS");
 
+  const sellerRole = await prisma.role.findUnique({ where: { name: 'SELLER' } });
+  if (sellerRole) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { roleId: sellerRole.id }
+    });
+  }
+
   return prisma.sellerProfile.create({ data: { userId, ...dto } });
 };
 
@@ -176,4 +184,29 @@ export const updateSellerOrderStatus = async (userId: string, orderItemId: strin
     where: { id: orderItemId },
     data: { status },
   });
+};
+
+// ── Seller Products (strictly products created by this seller) ───
+
+export const getSellerProducts = async (userId: string) => {
+  const products = await prisma.product.findMany({
+    where: { createdById: userId, deletedAt: null },
+    include: {
+      variants: {
+        include: {
+          images: true,
+          listings: true,
+        },
+      },
+      images: true,
+      category: { select: { name: true, slug: true } },
+      brand: { select: { name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return products.map((p) => ({
+    ...p,
+    primaryImage: p.images?.[0]?.url || p.variants?.[0]?.images?.[0]?.url || null,
+  }));
 };
