@@ -259,9 +259,9 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE_NAME }}:latest
           docker run --rm \
-            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            -e DATABASE_URL \
             ${{ env.IMAGE_NAME }}:latest \
-            sh -c "npx prisma generate && npx prisma migrate deploy"
+            npx prisma migrate deploy
 
 # ═══════════════════════════════════════════════════════════════════════
 # FRONTEND
