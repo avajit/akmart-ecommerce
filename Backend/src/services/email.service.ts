@@ -363,9 +363,25 @@ export class EmailService {
             ${itemsHtml}
           </tbody>
           <tfoot>
+            ${order.subtotal ? `
             <tr>
-              <td colspan="2" style="padding-top:14px;color:#ffffff;font-size:14px;font-weight:700;">Total Amount</td>
-              <td style="padding-top:14px;color:#f97316;font-size:16px;font-weight:800;text-align:right;">
+              <td colspan="2" style="padding-top:10px;color:#94a3b8;font-size:12px;">Subtotal</td>
+              <td style="padding-top:10px;color:#ffffff;font-size:12px;text-align:right;">Rs. ${Number(order.subtotal).toLocaleString()}</td>
+            </tr>` : ''}
+            <tr>
+              <td colspan="2" style="padding-top:6px;color:#94a3b8;font-size:12px;">Delivery Fee</td>
+              <td style="padding-top:6px;color:${Number(order.deliveryFee || 0) === 0 ? '#22c55e' : '#ffffff'};font-size:12px;text-align:right;">
+                ${Number(order.deliveryFee || 0) === 0 ? 'FREE' : `Rs. ${Number(order.deliveryFee).toLocaleString()}`}
+              </td>
+            </tr>
+            ${Number(order.discountAmount || 0) > 0 ? `
+            <tr>
+              <td colspan="2" style="padding-top:6px;color:#22c55e;font-size:12px;">Coupon Discount (${order.couponCode || 'PROMO'})</td>
+              <td style="padding-top:6px;color:#22c55e;font-size:12px;text-align:right;">-Rs. ${Number(order.discountAmount).toLocaleString()}</td>
+            </tr>` : ''}
+            <tr>
+              <td colspan="2" style="padding-top:14px;color:#ffffff;font-size:14px;font-weight:700;border-top:1px solid #1e293b;">Total Amount</td>
+              <td style="padding-top:14px;color:#f97316;font-size:16px;font-weight:800;text-align:right;border-top:1px solid #1e293b;">
                 Rs. ${Number(order.totalAmount || 0).toLocaleString()}
               </td>
             </tr>

@@ -246,6 +246,11 @@ export default function Orders() {
                     <p className="text-white font-extrabold mt-0.5">
                       {currency}{Number(order.totalAmount).toLocaleString()}
                     </p>
+                    {order.couponCode && (
+                      <span className="text-[10px] text-emerald-400 font-medium block">
+                        Saved with {order.couponCode}
+                      </span>
+                    )}
                   </div>
                   {address && (
                     <div>

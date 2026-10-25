@@ -1,8 +1,9 @@
 import { AppError } from "../utils/AppError";
 import { prisma } from "../app";
+import { validateCoupon } from "./coupon.service";
 
 export const checkout = async (userId: string, body: any) => {
-  const { shippingAddressId, paymentMethod } = body;
+  const { shippingAddressId, paymentMethod, couponCode } = body;
 
   const cart = await prisma.cart.findUnique({
     where: { userId },
@@ -19,8 +20,8 @@ export const checkout = async (userId: string, body: any) => {
     throw new AppError("Cart is empty", 400, "CART_EMPTY");
   }
 
-  // Calculate total and prepare items
-  let totalAmount = 0;
+  // Calculate subtotal and prepare items
+  let subtotal = 0;
   const orderItems: any[] = [];
 
   for (const item of cart.items) {
@@ -34,7 +35,7 @@ export const checkout = async (userId: string, body: any) => {
     }
 
     const lineTotal = Number(item.sellerListing.price) * item.quantity;
-    totalAmount += lineTotal;
+    subtotal += lineTotal;
 
     orderItems.push({
       sellerListingId: item.sellerListingId,
@@ -43,6 +44,25 @@ export const checkout = async (userId: string, body: any) => {
       priceAtPurchase: item.sellerListing.price,
     });
   }
+
+  // Enterprise Shipping Rule: Free delivery above NPR 2,500; otherwise NPR 100
+  const FREE_SHIPPING_THRESHOLD = 2500;
+  const STANDARD_DELIVERY_FEE = 100;
+  const deliveryFee = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_DELIVERY_FEE;
+
+  // Server-side Coupon Validation
+  let discountAmount = 0;
+  let couponId: string | null = null;
+  let appliedCouponCode: string | null = null;
+
+  if (couponCode && typeof couponCode === "string" && couponCode.trim()) {
+    const couponRes = await validateCoupon(couponCode, subtotal, userId);
+    discountAmount = couponRes.coupon.discountAmount;
+    couponId = couponRes.coupon.id;
+    appliedCouponCode = couponRes.coupon.code;
+  }
+
+  const totalAmount = Math.max(0, subtotal + deliveryFee - discountAmount);
 
   // Create order transaction
   const order = await prisma.$transaction(async (tx) => {
@@ -70,13 +90,26 @@ export const checkout = async (userId: string, body: any) => {
       }
     }
 
-    // Create Order
+    // Atomically increment coupon usage count
+    if (couponId) {
+      await tx.coupon.update({
+        where: { id: couponId },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
+
+    // Create Order with full financial snapshot
     const newOrder = await tx.order.create({
       data: {
         userId,
+        subtotal,
+        deliveryFee,
+        discountAmount,
+        couponId,
+        couponCode: appliedCouponCode,
         totalAmount,
         shippingAddressId,
-        paymentMethod,
+        paymentMethod: paymentMethod || 'COD',
         status: 'CONFIRMED', // Assuming COD directly confirms
         items: {
           create: orderItems
@@ -100,7 +133,8 @@ export const checkout = async (userId: string, body: any) => {
             }
           }
         },
-        shippingAddress: true
+        shippingAddress: true,
+        coupon: true,
       }
     });
 

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCart } from '../api/consumer.api';
 import { getAddresses, addAddress, checkout } from '../api/order.api';
 import { ShopContext } from '../context/ShopContext';
+import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-toastify';
 import { 
   FiMapPin, 
@@ -17,7 +18,10 @@ import {
   FiCreditCard,
   FiSmartphone,
   FiDollarSign,
-  FiEdit2
+  FiEdit2,
+  FiBriefcase,
+  FiTag,
+  FiX
 } from 'react-icons/fi';
 
 const NEPAL_PROVINCES = [
@@ -50,7 +54,32 @@ const POPULAR_NEPAL_CITIES = [
 export default function Checkout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { currency } = useContext(ShopContext) || { currency: 'NPR ' };
+  const { isAuthenticated, user } = useAuthStore();
+  const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
+  const isMerchantOrAdmin = role === 'SELLER' || role === 'ADMIN';
+
+  const { 
+    currency, 
+    freeShippingThreshold = 2500,
+    appliedCoupon,
+    discountAmount = 0,
+    applyCoupon,
+    removeCoupon
+  } = (useContext(ShopContext) as any) || { currency: 'NPR ', freeShippingThreshold: 2500 };
+
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCodeInput.trim() || !applyCoupon) return;
+    const ok = await applyCoupon(couponCodeInput);
+    if (ok) setCouponCodeInput('');
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/checkout');
+    }
+  }, [isAuthenticated, navigate]);
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'ESEWA' | 'KHALTI'>('COD');
@@ -70,11 +99,13 @@ export default function Checkout() {
   const { data: cartRes, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: getCart,
+    enabled: isAuthenticated && !isMerchantOrAdmin,
   });
 
   const { data: addrRes, refetch: refetchAddr } = useQuery({
     queryKey: ['addresses'],
     queryFn: getAddresses,
+    enabled: isAuthenticated && !isMerchantOrAdmin,
   });
 
   const cart = (cartRes as any)?.data;
@@ -124,6 +155,7 @@ export default function Checkout() {
     mutationFn: (data: any) => checkout(data),
     onSuccess: (res: any) => {
       toast.success("Order placed successfully!");
+      if (removeCoupon) removeCoupon();
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
       const createdOrder = res?.data || res;
@@ -169,6 +201,7 @@ export default function Checkout() {
     checkoutMutation.mutate({
       shippingAddressId: selectedAddressId,
       paymentMethod,
+      couponCode: appliedCoupon?.code,
     });
   };
 
@@ -201,13 +234,34 @@ export default function Checkout() {
     );
   }
 
+  if (isMerchantOrAdmin) {
+    return (
+      <div className="max-w-xl mx-auto py-24 px-4 text-center font-poppins">
+        <div className="w-16 h-16 bg-orange-500/10 rounded-2xl border border-orange-500/20 flex items-center justify-center mx-auto mb-5 text-orange-400">
+          <FiBriefcase className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Merchant Account Detected</h2>
+        <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+          You are signed in with a <strong>{role}</strong> account. Ordering and checkout are reserved for consumer accounts.
+        </p>
+        <button
+          onClick={() => navigate(role === 'SELLER' ? '/seller/dashboard' : '/admin/dashboard')}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+        >
+          Go to {role === 'SELLER' ? 'Seller' : 'Admin'} Dashboard &rarr;
+        </button>
+      </div>
+    );
+  }
+
   const subtotal = cart.items.reduce(
     (sum: number, item: any) => sum + (Number(item.priceAtAddTime || item.sellerListing?.price || 0) * item.quantity),
     0
   );
-  // Free delivery for orders over NPR 5,000, otherwise flat NPR 100 delivery across Nepal
-  const deliveryFee = subtotal >= 5000 ? 0 : 100;
-  const total = subtotal + deliveryFee;
+  // Free delivery based on dynamic threshold (default NPR 2,500)
+  const deliveryFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 100;
+  const finalDiscount = appliedCoupon ? (discountAmount || appliedCoupon.discountAmount || 0) : 0;
+  const total = Math.max(0, subtotal + deliveryFee - finalDiscount);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-28 md:pb-12 font-poppins text-white min-h-screen">
@@ -615,7 +669,7 @@ export default function Checkout() {
             </div>
 
             {/* Totals Breakdown */}
-            <div className="space-y-2 text-xs mb-5">
+            <div className="space-y-2.5 text-xs mb-5">
               <div className="flex justify-between text-gray-400">
                 <span>Subtotal ({cart.items.length} items)</span>
                 <span className="text-white font-medium">{currency}{subtotal.toLocaleString()}</span>
@@ -623,20 +677,64 @@ export default function Checkout() {
               <div className="flex justify-between text-gray-400">
                 <span className="flex items-center gap-1">
                   <span>Standard Delivery (Nepal)</span>
-                  {deliveryFee === 0 && <span className="text-green-400 font-bold text-[10px]">(FREE)</span>}
+                  {deliveryFee === 0 && <span className="text-emerald-400 font-bold text-[10px]">(FREE)</span>}
                 </span>
                 <span className="text-white font-medium">
-                  {deliveryFee === 0 ? "FREE" : `${currency}${deliveryFee.toLocaleString()}`}
+                  {deliveryFee === 0 ? (
+                    <span className="text-emerald-400 font-extrabold uppercase text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      FREE
+                    </span>
+                  ) : (
+                    `${currency}${deliveryFee.toLocaleString()}`
+                  )}
                 </span>
               </div>
-              {subtotal < 5000 && (
+
+              {appliedCoupon && (
+                <div className="flex justify-between items-center text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <FiTag size={13} /> Coupon ({appliedCoupon.code})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold">-{currency}{finalDiscount.toLocaleString()}</span>
+                    <button 
+                      type="button"
+                      onClick={removeCoupon} 
+                      className="text-gray-400 hover:text-rose-400 transition-colors"
+                      title="Remove coupon"
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!appliedCoupon && (
+                <form onSubmit={handleApplyCoupon} className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Promo code (e.g. AKMART10)"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value)}
+                    className="flex-1 bg-black border border-gray-700 rounded-xl px-3 py-2 text-xs text-white uppercase outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-mono"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-xs rounded-xl uppercase transition shadow-sm"
+                  >
+                    Apply
+                  </button>
+                </form>
+              )}
+
+              {subtotal < freeShippingThreshold && (
                 <p className="text-[10px] text-orange-400/90 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20">
-                  Tip: Add {currency}{(5000 - subtotal).toLocaleString()} more to qualify for <strong>FREE Delivery</strong> across Nepal!
+                  Tip: Add {currency}{(freeShippingThreshold - subtotal).toLocaleString()} more to qualify for <strong>FREE Delivery</strong> across Nepal!
                 </p>
               )}
               <div className="border-t border-gray-800 pt-3 flex justify-between items-baseline">
                 <span className="text-sm font-bold text-white uppercase tracking-wider">Total Payable</span>
-                <span className="text-2xl font-black text-white">{currency}{total.toLocaleString()}</span>
+                <span className="text-2xl font-black text-orange-400">{currency}{total.toLocaleString()}</span>
               </div>
             </div>
 

@@ -4,16 +4,35 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-toastify';
 import InputField from '../components/common/InputField';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 import { FiEye, FiEyeOff, FiLock, FiMail, FiUser, FiShoppingBag, FiBriefcase, FiTruck, FiShield, FiCreditCard } from 'react-icons/fi';
 import { assets } from '../assets/frontend_assets/assets';
 
 const Login: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuthStore();
 
   const [tab, setTab] = useState<'login' | 'register'>(
     location.pathname === '/register' ? 'register' : 'login'
   );
+
+  // If already authenticated, forward user to their intended destination or dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
+      const intended = (location.state as any)?.from || new URLSearchParams(location.search).get('redirect') || undefined;
+      if (intended && typeof intended === 'string' && !intended.startsWith('/login') && !intended.startsWith('/register') && !intended.startsWith('/verify')) {
+        navigate(intended, { replace: true });
+      } else if (role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (role === 'SELLER') {
+        navigate('/seller/dashboard', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, location, navigate]);
 
   useEffect(() => {
     if (location.pathname === '/register' && tab !== 'register') {
@@ -27,7 +46,7 @@ const Login: React.FC = () => {
   const switchTab = (newTab: 'login' | 'register') => {
     if (newTab === tab) return;
     setErrors({});
-    navigate(newTab === 'register' ? '/register' : '/login', { replace: true });
+    navigate(`${newTab === 'register' ? '/register' : '/login'}${location.search}`, { replace: true });
   };
 
   // Form State
@@ -35,7 +54,9 @@ const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'CONSUMER' | 'SELLER'>('CONSUMER');
+  const [role, setRole] = useState<'CONSUMER' | 'SELLER'>(
+    new URLSearchParams(location.search).get('role')?.toUpperCase() === 'SELLER' ? 'SELLER' : 'CONSUMER'
+  );
   const [rememberMe, setRememberMe] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 

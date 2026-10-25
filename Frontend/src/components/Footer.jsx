@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { assets } from '../assets/frontend_assets/assets';
+import BrandLogo from './BrandLogo';
 import { RiInstagramLine, RiTwitterXLine, RiFacebookCircleFill } from "react-icons/ri";
 import { FiShield, FiTruck, FiCreditCard, FiMapPin, FiPhone, FiMail } from "react-icons/fi";
 
@@ -14,11 +15,8 @@ const Footer = () => {
 
           {/* --- LEFT SECTION: LOGO & ABOUT --- */}
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <img src={assets.logo} className='h-8 w-auto object-contain' alt="AkMart Logo" />
-              <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/30 rounded-md">
-                Nepal Hub
-              </span>
+            <div>
+              <BrandLogo size="lg" />
             </div>
             <p className='text-gray-400 text-xs sm:text-sm leading-relaxed max-w-md'>
               AkMart is Nepal's premier multi-vendor e-commerce marketplace delivering authentic groceries, tech, apparel, and lifestyle essentials across all 7 provinces with guaranteed low prices.

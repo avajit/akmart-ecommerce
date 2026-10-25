@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProductBySlug, addToCart, addToWishlist } from '../api/consumer.api';
+import { getProductBySlug, addToCart } from '../api/consumer.api';
 import { ShopContext } from '../context/ShopContext';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-toastify';
@@ -19,13 +19,19 @@ import {
   FiMessageSquare,
   FiEdit3,
   FiCheckCircle,
-  FiX
+  FiX,
+  FiShoppingCart
 } from 'react-icons/fi';
 
 export default function Product() {
   const { slug } = useParams();
-  const navigate = useNavigate();
-  const { currency } = useContext(ShopContext) || { currency: 'NPR ' };
+  const { currency, refreshCartCount, isInWishlist, toggleWishlist, addToCartOptimistic } = (useContext(ShopContext) as any) || { 
+    currency: 'NPR ', 
+    refreshCartCount: () => {},
+    isInWishlist: () => false,
+    toggleWishlist: async () => false,
+    addToCartOptimistic: async () => {},
+  };
   const { user } = useAuthStore();
   const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
   const isMerchantOrAdmin = role === 'SELLER' || role === 'ADMIN';
@@ -174,12 +180,33 @@ export default function Product() {
     if (!targetListingId) {
       return toast.error("No active seller available for this variant.");
     }
+    const targetListing = listings.find((l: any) => l.id === targetListingId) || primaryListing;
+    const itemDetails = {
+      productName: product?.name || 'Product',
+      productSlug: product?.slug || '',
+      variantName: currentVariant?.name || 'Standard',
+      imageUrl: currentVariant?.images?.[0]?.url || product?.images?.[0]?.url,
+      price: Number(targetListing?.price || 0),
+      stock: Number(targetListing?.stock || 10),
+      shopName: targetListing?.sellerProfile?.shopName || 'AkMart Verified Seller'
+    };
+
     setActionLoading(true);
     try {
-      await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
-      toast.success(`Added ${quantity} item(s) to cart! 🛒`);
+      if (typeof addToCartOptimistic === 'function') {
+        await addToCartOptimistic({
+          sellerListingId: targetListingId,
+          variantId: currentVariant.id,
+          quantity,
+          itemDetails
+        });
+      } else {
+        await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
+        if (typeof refreshCartCount === 'function') refreshCartCount();
+        toast.success(`Added ${quantity} item(s) to cart! 🛒`);
+      }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to add to cart. Are you logged in?");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to add to cart");
     } finally {
       setActionLoading(false);
     }
@@ -194,28 +221,41 @@ export default function Product() {
     if (!targetListingId) {
       return toast.error("No active seller available for this variant.");
     }
+    const targetListing = listings.find((l: any) => l.id === targetListingId) || primaryListing;
+    const itemDetails = {
+      productName: product?.name || 'Product',
+      productSlug: product?.slug || '',
+      variantName: currentVariant?.name || 'Standard',
+      imageUrl: currentVariant?.images?.[0]?.url || product?.images?.[0]?.url,
+      price: Number(targetListing?.price || 0),
+      stock: Number(targetListing?.stock || 10),
+      shopName: targetListing?.sellerProfile?.shopName || 'AkMart Verified Seller'
+    };
+
     setActionLoading(true);
     try {
-      await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
+      if (typeof addToCartOptimistic === 'function') {
+        await addToCartOptimistic({
+          sellerListingId: targetListingId,
+          variantId: currentVariant.id,
+          quantity,
+          itemDetails
+        });
+      } else {
+        await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
+      }
       navigate('/checkout');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to proceed to checkout. Are you logged in?");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to proceed to checkout");
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleWishlist = async () => {
-    if (isMerchantOrAdmin) {
-      toast.info("Wishlist is available for consumer accounts only.");
-      return;
-    }
     if (!currentVariant?.id) return;
-    try {
-      await addToWishlist(currentVariant.id);
-      toast.success("Added to Wishlist! 💖");
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to update wishlist. Are you logged in?");
+    if (toggleWishlist) {
+      await toggleWishlist(currentVariant.id);
     }
   };
 
@@ -459,36 +499,43 @@ export default function Product() {
                   <button
                     onClick={() => handleBuyNow()}
                     disabled={actionLoading || stock <= 0}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none"
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none group"
                   >
-                    <FiShoppingBag className="w-4 h-4" />
-                    Buy Now
+                    <FiShoppingBag className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    <span>Buy Now</span>
                   </button>
 
                   <button
                     onClick={() => handleAddToCart()}
                     disabled={actionLoading || stock <= 0}
-                    className="w-full bg-[#1A1A1A] hover:bg-[#222222] text-white font-bold py-3.5 px-6 rounded-xl transition-all border border-gray-800 flex items-center justify-center gap-2 text-xs uppercase tracking-wider disabled:opacity-40 disabled:pointer-events-none"
+                    className="w-full bg-[#181818] hover:bg-[#222222] text-white font-bold py-3.5 px-6 rounded-xl transition-all border border-gray-700/80 hover:border-orange-500/50 flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none shadow-sm"
                   >
-                    Add To Cart
+                    {actionLoading ? (
+                      <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <FiShoppingCart className="w-4 h-4 text-orange-400" />
+                    )}
+                    <span>{actionLoading ? 'Adding...' : 'Add To Cart'}</span>
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Wishlist Button (Consumer only) */}
-          {!isMerchantOrAdmin && (
-            <div>
-              <button
-                onClick={handleWishlist}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1A] border border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-semibold transition"
-              >
-                <FiHeart className="text-orange-500 w-4 h-4" />
-                Save to Wishlist
-              </button>
-            </div>
-          )}
+          {/* Wishlist Button */}
+          <div className="pt-1">
+            <button
+              onClick={handleWishlist}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
+                currentVariant?.id && isInWishlist?.(currentVariant.id)
+                  ? 'bg-orange-500/15 border-orange-500/40 text-orange-400 shadow-sm'
+                  : 'bg-[#1A1A1A] border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white'
+              }`}
+            >
+              <FiHeart className={`w-4 h-4 transition-transform active:scale-125 ${currentVariant?.id && isInWishlist?.(currentVariant.id) ? 'fill-orange-500 text-orange-500' : 'text-orange-500'}`} />
+              <span>{currentVariant?.id && isInWishlist?.(currentVariant.id) ? 'Saved in Wishlist' : 'Save to Wishlist'}</span>
+            </button>
+          </div>
 
           {/* Additional Seller Offers */}
           {listings.length > 1 && (

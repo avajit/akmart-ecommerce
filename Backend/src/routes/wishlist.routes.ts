@@ -4,7 +4,7 @@ import * as wishlistController from "../controllers/wishlist.controller";
 
 const router = Router();
 
-router.use(requireAuth, requireRole(["CONSUMER"]));
+router.use(requireAuth, requireRole(["CONSUMER", "SELLER", "ADMIN"]));
 
 router.get("/", wishlistController.getWishlist);
 router.post("/items", wishlistController.addItem);

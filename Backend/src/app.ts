@@ -67,6 +67,7 @@ import productRoutes from './routes/product.routes';
 import cartRoutes from './routes/cart.routes';
 import wishlistRoutes from './routes/wishlist.routes';
 import orderRoutes from './routes/order.routes';
+import couponRoutes from './routes/coupon.routes';
 
 // Health Check Endpoint (For orchestrators/load balancers)
 app.get('/health', async (req, res) => {
@@ -91,6 +92,7 @@ app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/wishlist', wishlistRoutes);
 app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/coupons', couponRoutes);
 
 // --- ERROR HANDLING ---
 

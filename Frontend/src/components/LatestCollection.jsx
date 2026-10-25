@@ -45,6 +45,7 @@ const LatestCollection = () => {
               name={item.name}
               price={item.cheapestPrice ?? 0}
               brand={item.brand?.name || "AkMart"}
+              variantId={item.variants?.[0]?.id}
             />
           ))}
         </div>
