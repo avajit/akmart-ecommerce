@@ -4,6 +4,7 @@ import AppRoutes from "./routes/AppRoutes";
 import ScrollToTop from "./components/ScrollToTop";
 import Footer from "./components/Footer";
 import SearchOverlay from "./components/SearchOverlay";
+import CartDrawer from "./components/CartDrawer";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -26,6 +27,7 @@ function App() {
         theme="dark"
       />
       <SearchOverlay />
+      <CartDrawer />
 
       <div className="flex-grow w-full h-full ">
         <AppRoutes />

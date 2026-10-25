@@ -38,6 +38,7 @@ const BestSeller = () => {
               name={item.name}
               image={item.primaryImage}
               price={item.cheapestPrice ?? 0}
+              variantId={item.variants?.[0]?.id}
               bestseller={true}
             />
           ))}

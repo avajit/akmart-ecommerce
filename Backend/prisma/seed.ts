@@ -120,7 +120,7 @@ async function main() {
       ] 
     },
     { 
-      name: 'Home', 
+      name: 'Home & Living', 
       slug: 'home', 
       imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600&auto=format&fit=crop',
       children: [
@@ -394,7 +394,69 @@ async function main() {
     }
   }
 
-  console.log('✅ Comprehensive marketplace products with dynamic attributes seeded successfully!');
+  // 7. ENTERPRISE PROMOTIONS & COUPONS
+  console.log('🎟️ Seeding platform discount coupons...');
+  await prisma.coupon.upsert({
+    where: { code: 'AKMART10' },
+    update: {
+      discountType: 'PERCENTAGE',
+      discountValue: 10,
+      maxDiscount: 500,
+      minOrderAmount: 1000,
+      isActive: true,
+    },
+    create: {
+      code: 'AKMART10',
+      description: '10% discount on orders above NPR 1,000 (Max discount NPR 500)',
+      discountType: 'PERCENTAGE',
+      discountValue: 10,
+      maxDiscount: 500,
+      minOrderAmount: 1000,
+      isActive: true,
+    },
+  });
+
+  await prisma.coupon.upsert({
+    where: { code: 'FESTIVE500' },
+    update: {
+      discountType: 'PERCENTAGE',
+      discountValue: 15,
+      maxDiscount: 500,
+      minOrderAmount: 3000,
+      isActive: true,
+    },
+    create: {
+      code: 'FESTIVE500',
+      description: '15% festive discount on orders above NPR 3,000 (Max discount NPR 500)',
+      discountType: 'PERCENTAGE',
+      discountValue: 15,
+      maxDiscount: 500,
+      minOrderAmount: 3000,
+      isActive: true,
+    },
+  });
+
+  await prisma.coupon.upsert({
+    where: { code: 'WELCOME100' },
+    update: {
+      discountType: 'FIXED',
+      discountValue: 100,
+      maxDiscount: 100,
+      minOrderAmount: 500,
+      isActive: true,
+    },
+    create: {
+      code: 'WELCOME100',
+      description: 'Flat NPR 100 discount on your order above NPR 500',
+      discountType: 'FIXED',
+      discountValue: 100,
+      maxDiscount: 100,
+      minOrderAmount: 500,
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Comprehensive marketplace products & coupons seeded successfully!');
 }
 
 main()

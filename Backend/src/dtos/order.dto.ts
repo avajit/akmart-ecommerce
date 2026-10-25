@@ -4,7 +4,8 @@ import { z } from "zod";
 
 export const checkoutSchema = z.object({
   shippingAddressId: z.string().uuid("Invalid address ID"),
-  paymentMethod: z.enum(["COD"]),
+  paymentMethod: z.enum(["COD", "ESEWA", "KHALTI"]).default("COD"),
+  couponCode: z.string().max(50).optional(),
 });
 
 export const addAddressSchema = z.object({
@@ -95,6 +96,10 @@ export const toOrderResponseDTO = (order: any) => {
   if (!order) return null;
   return {
     id: order.id,
+    subtotal: Number(order.subtotal || order.totalAmount || 0),
+    deliveryFee: Number(order.deliveryFee || 0),
+    discountAmount: Number(order.discountAmount || 0),
+    couponCode: order.couponCode || null,
     totalAmount: Number(order.totalAmount),
     status: order.status,
     paymentMethod: order.paymentMethod,

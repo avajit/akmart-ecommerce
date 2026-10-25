@@ -744,6 +744,7 @@ export default function Collection() {
                     name={p.name}
                     price={p.cheapestPrice}
                     brand={p.brand?.name || "AkMart"}
+                    variantId={p.variants?.[0]?.id}
                   />
                 ))}
               </div>

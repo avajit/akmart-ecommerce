@@ -1,4 +1,4 @@
-﻿import { AppError } from "../utils/AppError";
+import { AppError } from "../utils/AppError";
 import { prisma } from "../app";
 
 const getOrCreateWishlist = async (userId: string) => {
@@ -69,12 +69,12 @@ export const addToWishlist = async (userId: string, variantId: string) => {
 
 export const removeFromWishlist = async (userId: string, variantId: string) => {
   const wishlist = await prisma.wishlist.findUnique({ where: { userId } });
-  if (!wishlist) throw new AppError("Wishlist not found", 404, "NOT_FOUND");
+  if (!wishlist) return { alreadyRemoved: true };
 
   const item = await prisma.wishlistItem.findUnique({
     where: { wishlistId_variantId: { wishlistId: wishlist.id, variantId } },
   });
-  if (!item) throw new AppError("Item not in wishlist", 404, "NOT_FOUND");
+  if (!item) return { alreadyRemoved: true };
 
   return prisma.wishlistItem.delete({
     where: { wishlistId_variantId: { wishlistId: wishlist.id, variantId } },

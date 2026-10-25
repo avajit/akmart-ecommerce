@@ -73,6 +73,11 @@ const PlaceOrder: React.FC = () => {
   const items = order.items || [];
   const totalAmount = Number(order.totalAmount || 0);
 
+  const subtotalAmount = Number(order.subtotal ?? totalAmount);
+  const deliveryFee = Number(order.deliveryFee ?? 0);
+  const discountAmount = Number(order.discountAmount ?? 0);
+  const couponCode = order.couponCode;
+
   const handlePrint = () => {
     window.print();
   };
@@ -224,13 +229,23 @@ const PlaceOrder: React.FC = () => {
               Payment Breakdown
             </h3>
             <div className="flex justify-between text-xs text-gray-400">
-              <span>Items Total ({items.length} items)</span>
-              <span className="text-white font-medium">{currency}{totalAmount.toLocaleString()}</span>
+              <span>Items Subtotal ({items.length} items)</span>
+              <span className="text-white font-medium">{currency}{subtotalAmount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-xs text-gray-400">
               <span>Delivery Fee (Nepal Express)</span>
-              <span className="text-emerald-400 font-semibold">FREE</span>
+              {deliveryFee === 0 ? (
+                <span className="text-emerald-400 font-semibold">FREE</span>
+              ) : (
+                <span className="text-white font-medium">{currency}{deliveryFee.toLocaleString()}</span>
+              )}
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-xs text-emerald-400">
+                <span>Coupon Discount {couponCode ? `(${couponCode})` : ''}</span>
+                <span className="font-semibold">-{currency}{discountAmount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="border-t border-gray-800 pt-3 flex justify-between items-baseline">
               <span className="text-sm font-bold text-white uppercase tracking-wider">Total Paid / Payable</span>
               <span className="text-xl font-extrabold text-orange-400">

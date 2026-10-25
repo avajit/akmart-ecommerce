@@ -25,3 +25,8 @@ export const getCategoryTree = () => api.get("/categories/tree").then((res: any)
 export const getCategoryFilters = (slug: string) => api.get(`/categories/${slug}/filters`).then((res: any) => res.data);
 export const getBrands = () => api.get("/categories/brands").then((res: any) => res.data);
 
+// Coupons & Promotions
+export const validateCoupon = (data: { code: string; subtotal: number }) => api.post("/coupons/validate", data).then((res: any) => res.data);
+export const getActiveCoupons = () => api.get("/coupons").then((res: any) => res.data);
+
+

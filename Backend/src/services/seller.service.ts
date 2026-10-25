@@ -1,6 +1,6 @@
 import { AppError } from "../utils/AppError";
 import { CreateSellerProfileDto, UpdateSellerProfileDto, CreateSellerListingDto, UpdateSellerListingDto } from "../dtos/seller.dto";
-import { prisma } from "../app";
+import { prisma, redis } from "../app";
 
 // ── SellerProfile ─────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ export const createSellerListing = async (userId: string, dto: CreateSellerListi
   });
   if (existingListing) throw new AppError("You already have an active listing for this variant", 409, "LISTING_EXISTS");
 
-  return prisma.sellerListing.create({
+  const listing = await prisma.sellerListing.create({
     data: {
       sellerProfileId: profile.id,
       variantId: dto.variantId,
@@ -79,6 +79,18 @@ export const createSellerListing = async (userId: string, dto: CreateSellerListi
       variant: { include: { product: { select: { name: true, slug: true } } } },
     },
   });
+
+  // Invalidate public catalog cache so the newly priced/stocked listing appears immediately
+  try {
+    const catalogKeys = await redis.keys("cache:catalog:*");
+    if (catalogKeys.length > 0) {
+      await redis.del(...catalogKeys);
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  return listing;
 };
 
 export const getSellerListings = async (userId: string) => {

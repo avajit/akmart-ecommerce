@@ -4,11 +4,13 @@ import * as sellerController from "../controllers/seller.controller";
 
 const router = Router();
 
-// All seller routes: must be logged in + have SELLER role
+// ── SellerProfile Creation (Any logged in user can apply to become a seller) ──
+router.post("/profile", requireAuth, sellerController.createProfile);
+
+// All subsequent seller management routes: must be logged in + have SELLER or ADMIN role
 router.use(requireAuth, requireRole(["SELLER", "ADMIN"]));
 
-// ── SellerProfile ──────────────────────────────────────────────
-router.post("/profile", sellerController.createProfile);
+// ── SellerProfile Management ──────────────────────────────────
 router.get("/profile", sellerController.getProfile);
 router.patch("/profile", sellerController.updateProfile);
 

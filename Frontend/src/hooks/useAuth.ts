@@ -34,7 +34,7 @@ export const useLogin = () => {
       setAuth(data.user, data.accessToken);
       toast.success('Welcome back! Login successful.', { toastId: 'login-success' });
       const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
-      const intended = (location.state as any)?.from;
+      const intended = (location.state as any)?.from || new URLSearchParams(location.search).get('redirect') || undefined;
       navigate(resolvePostAuthRedirect(role, intended));
     },
     
@@ -48,10 +48,12 @@ export const useLogin = () => {
           toastId: 'unverified-account-notice',
           autoClose: 5000,
         });
-        navigate('/verify', {
+        const redirect = new URLSearchParams(location.search).get('redirect');
+        navigate(`/verify${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`, {
           state: {
             email: variables.email,
             phoneNumber: variables.phoneNumber,
+            from: redirect || (location.state as any)?.from
           },
         });
         return;
@@ -63,6 +65,7 @@ export const useLogin = () => {
 
 export const useRegister = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   return useMutation({
     mutationFn: (data: { fullName: string; password: string; email?: string; phoneNumber?: string; role?: string }) => 
@@ -76,7 +79,14 @@ export const useRegister = () => {
       toast.success('Account created! Please enter the 6-digit verification code.', {
         toastId: 'register-success',
       });
-      navigate('/verify', { state: { email: variables.email, phoneNumber: variables.phoneNumber } });
+      const redirect = new URLSearchParams(location.search).get('redirect');
+      navigate(`/verify${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`, { 
+        state: { 
+          email: variables.email, 
+          phoneNumber: variables.phoneNumber,
+          from: redirect || (location.state as any)?.from
+        } 
+      });
     },
     
     onError: (error: ApiError, variables) => {
@@ -102,6 +112,7 @@ export const useRegister = () => {
 export const useVerifyOTP = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
+  const location = useLocation();
 
   return useMutation({
     mutationFn: (data: { identifier: string; token: string }) => 
@@ -114,13 +125,8 @@ export const useVerifyOTP = () => {
         toastId: 'verify-success',
       });
       const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
-      if (role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else if (role === 'SELLER') {
-        navigate('/seller/onboarding');
-      } else {
-        navigate('/');
-      }
+      const intended = (location.state as any)?.from || new URLSearchParams(location.search).get('redirect') || (role === 'SELLER' ? '/seller/onboarding' : undefined);
+      navigate(resolvePostAuthRedirect(role, intended));
     },
     
     onError: (error: ApiError) => {
@@ -232,7 +238,7 @@ export const useGoogleSSO = () => {
       setAuth(data.user, data.accessToken);
       toast.success('Welcome! Signed in with Google.', { toastId: 'google-success' });
       const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
-      const intended = (location.state as any)?.from;
+      const intended = (location.state as any)?.from || new URLSearchParams(location.search).get('redirect') || undefined;
       navigate(resolvePostAuthRedirect(role, intended));
     },
     onError: (error: ApiError) => {
