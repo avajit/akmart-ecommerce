@@ -1,4 +1,8 @@
-name: CI
+# ─────────────────────────────────────────────────────────────────────
+# AkMart — Unified CI/CD Pipeline
+# Industry-standard workflow: lint → type-check → test (coverage) → security → build → deploy
+# ─────────────────────────────────────────────────────────────────────
+name: CI/CD
 
 on:
   push:
@@ -6,46 +10,25 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel redundant runs on the same branch/PR — saves runner minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ═══════════════════════════════════════════════════════════════════════
+# BACKEND
+# ═══════════════════════════════════════════════════════════════════════
 jobs:
-  backend:
+
+  # ── Stage 1: Lint + Type Check ──────────────────────────────────────
+  backend-lint:
+    name: "Backend · Lint & Type Check"
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: akmart_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d akmart_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
+    timeout-minutes: 10
 
     defaults:
       run:
         working-directory: Backend
-
-    env:
-      NODE_ENV: test
-      PORT: 5000
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/akmart_test
-      REDIS_URL: redis://localhost:6379
-      JWT_ACCESS_SECRET: test-access-secret
-      JWT_REFRESH_SECRET: test-refresh-secret
-      GOOGLE_CLIENT_ID: test-google-client-id
-      GOOGLE_CLIENT_SECRET: test-google-client-secret
-      GOOGLE_CALLBACK_URL: http://localhost:5000/api/v1/auth/google/callback
-      FRONTEND_WEB_URL: http://localhost:5173
-      FRONTEND_MOBILE_URL: com.akmart.app
 
     steps:
       - name: Checkout code
@@ -58,7 +41,94 @@ jobs:
           cache: npm
           cache-dependency-path: Backend/package-lock.json
 
-      - name: Install backend dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+  # ── Stage 2: Test with Coverage ─────────────────────────────────────
+  backend-test:
+    name: "Backend · Test & Coverage"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend-lint]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: akmart_test
+        ports:
+          - '5432:5432'
+        options: >-
+          --health-cmd="pg_isready -U postgres -d akmart_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - '6379:6379'
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    defaults:
+      run:
+        working-directory: Backend
+
+    env:
+      NODE_ENV: test
+      PORT: '5001'
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/akmart_test
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: test-access-secret-ci-only-12345
+      JWT_REFRESH_SECRET: test-refresh-secret-ci-only-12345
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_REFRESH_EXPIRES_IN_MS: '604800000'
+      OTP_EXPIRES_IN_MS: '900000'
+      BCRYPT_SALT_ROUNDS: '4'
+      DEFAULT_USER_ROLE: CONSUMER
+      GOOGLE_CLIENT_ID: test-google-client-id
+      GOOGLE_CLIENT_SECRET: test-google-client-secret
+      GOOGLE_CALLBACK_URL: http://localhost:5000/api/v1/auth/google/callback
+      SMTP_HOST: smtp.ethereal.email
+      SMTP_PORT: '587'
+      SMTP_USER: test_user
+      SMTP_PASS: test_pass
+      SMTP_FROM: '"AKMart Test" <test@akmart.com>'
+      FRONTEND_WEB_URL: http://localhost:5173
+      FRONTEND_MOBILE_URL: com.akmart.app
+      AUTH_RATE_LIMIT_MAX_REQUESTS: '5'
+      AUTH_RATE_LIMIT_WINDOW_MS: '900000'
+      RATE_LIMIT_MAX_REQUESTS: '100'
+      RATE_LIMIT_WINDOW_MS: '60000'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install dependencies
         run: npm ci
 
       - name: Generate Prisma client
@@ -67,14 +137,179 @@ jobs:
       - name: Run Prisma migrations
         run: npx prisma migrate deploy
 
-      - name: Build backend
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: Backend/coverage/
+          retention-days: 14
+
+  # ── Stage 3: Security Audit ─────────────────────────────────────────
+  backend-security:
+    name: "Backend · Security Audit"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [backend-lint]
+
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies (high + critical)
+        run: npm audit --audit-level=high || true
+        # `|| true` prevents CI failure on known unfixable upstream vulns
+        # Remove `|| true` when all deps are clean
+
+  # ── Stage 4: Build Validation ───────────────────────────────────────
+  backend-build:
+    name: "Backend · Build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [backend-test, backend-security]
+
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build production bundle
         run: npm run build
 
-      - name: Run backend tests
-        run: npm test
-
-  frontend:
+  # ── Stage 5: Docker Build & Push (main only) ────────────────────────
+  backend-docker:
+    name: "Backend · Docker Publish"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/akmart-ecommerce-backend
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: env.GHCR_TOKEN != ''
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push image
+        if: env.GHCR_TOKEN != ''
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run migrations (production)
+        if: env.DATABASE_URL != '' && env.GHCR_TOKEN != ''
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          docker pull ${{ env.IMAGE_NAME }}:latest
+          docker run --rm \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            ${{ env.IMAGE_NAME }}:latest \
+            sh -c "npx prisma generate && npx prisma migrate deploy"
+
+      - name: Skip publish (token not configured)
+        if: env.GHCR_TOKEN == ''
+        run: echo "⚠️ GHCR_TOKEN not configured — skipping Docker publish."
+
+# ═══════════════════════════════════════════════════════════════════════
+# FRONTEND
+# ═══════════════════════════════════════════════════════════════════════
+
+  # ── Stage 1: Lint ───────────────────────────────────────────────────
+  frontend-lint:
+    name: "Frontend · Lint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: Frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+  # ── Stage 2: Build ──────────────────────────────────────────────────
+  frontend-build:
+    name: "Frontend · Build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [frontend-lint]
 
     defaults:
       run:
@@ -95,8 +330,15 @@ jobs:
           cache: npm
           cache-dependency-path: Frontend/package-lock.json
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm ci
 
       - name: Build frontend
         run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: Frontend/dist/
+          retention-days: 7

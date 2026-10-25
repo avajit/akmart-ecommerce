@@ -198,8 +198,8 @@ export class AuthService {
     
     let googleEmail: string | undefined;
     let googleSub: string | undefined;
-    let googleName: string | undefined;
-    let googlePicture: string | undefined;
+    const googleName: string | undefined = undefined;
+    const googlePicture: string | undefined = undefined;
 
     try {
       // getTokenInfo works with access_token from the @react-oauth/google popup flow.

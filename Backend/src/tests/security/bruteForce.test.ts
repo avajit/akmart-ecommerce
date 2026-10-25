@@ -42,26 +42,28 @@ describe('Security: Brute-Force Protection', () => {
   }, 20000); // Increased timeout for multiple serial requests
 
   it('should protect OTP verification from brute-force', async () => {
-    const verifyData = {
-      identifier: 'bruteforce-otp@example.com',
-      token: '123456'
-    };
-
     const maxAttempts = env.AUTH_RATE_LIMIT_MAX_REQUESTS;
 
     for (let i = 0; i < maxAttempts; i++) {
       const res = await request(app)
         .post('/api/v1/auth/verify-account')
-        .send(verifyData);
+        .send({
+          identifier: `bruteforce-otp-${i}@example.com`,
+          token: '123456',
+        });
       
       expect(res.status).not.toBe(429);
     }
 
     const limitedRes = await request(app)
       .post('/api/v1/auth/verify-account')
-      .send(verifyData);
+      .send({
+        identifier: 'bruteforce-otp-blocked@example.com',
+        token: '123456',
+      });
 
     expect(limitedRes.status).toBe(429);
+    expect(limitedRes.body.error.message).toContain('Too many authentication attempts');
   }, 20000);
 
 });
