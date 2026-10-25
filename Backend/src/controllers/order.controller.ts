@@ -14,7 +14,7 @@ export const checkout = async (req: AuthenticatedRequest, res: Response, next: N
 export const getMyOrders = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const orders = await orderService.getMyOrders(req.user!.userId);
-    res.json({ success: true, data: orders.map(toOrderResponseDTO) });
+    res.json({ success: true, message: "Orders retrieved successfully", data: orders.map(toOrderResponseDTO) });
   } catch (err) { next(err); }
 };
 
@@ -22,14 +22,22 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response, nex
   try {
     const orderId = req.params.id as string;
     const order = await orderService.getOrderById(req.user!.userId, orderId);
-    res.json({ success: true, data: toOrderResponseDTO(order) });
+    res.json({ success: true, message: "Order retrieved successfully", data: toOrderResponseDTO(order) });
+  } catch (err) { next(err); }
+};
+
+export const cancelOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const orderId = req.params.id as string;
+    const order = await orderService.cancelOrder(req.user!.userId, orderId);
+    res.json({ success: true, message: "Order cancelled successfully and stock restored", data: toOrderResponseDTO(order) });
   } catch (err) { next(err); }
 };
 
 export const getAddresses = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const addresses = await orderService.getAddresses(req.user!.userId);
-    res.json({ success: true, data: addresses.map(toAddressResponseDTO) });
+    res.json({ success: true, message: "Addresses retrieved successfully", data: addresses.map(toAddressResponseDTO) });
   } catch (err) { next(err); }
 };
 

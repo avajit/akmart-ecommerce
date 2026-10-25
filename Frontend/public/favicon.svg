@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Subtle circular/rounded backing for dark/light mode compatibility -->
+  <rect width="512" height="512" rx="128" fill="#0b0f19" />
+  <rect x="8" y="8" width="496" height="496" rx="120" stroke="#f97316" stroke-opacity="0.3" stroke-width="6" />
+
+  <!-- Shopping Cart Frame (Vibrant Blue) -->
+  <path d="M72 136H114L152 320C155 334 167 344 182 344H376C390 344 402 334 405 320L432 176H122" 
+        stroke="#0284c7" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Cart Top Bar (Orange) -->
+  <line x1="168" y1="176" x2="330" y2="176" stroke="#f97316" stroke-width="24" stroke-linecap="round" />
+
+  <!-- Monogram A (Blue) -->
+  <path d="M198 300L240 188L282 300M212 268H268" 
+        stroke="#0284c7" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Monogram K (Vibrant Orange) -->
+  <path d="M294 184V304M354 188L300 248L358 304" 
+        stroke="#f97316" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Verification Checkmark (Vibrant Blue Accent) -->
+  <path d="M308 152L334 178L402 108" 
+        stroke="#0284c7" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Wheels (Orange) -->
+  <circle cx="196" cy="404" r="28" fill="#f97316" />
+  <circle cx="360" cy="404" r="28" fill="#f97316" />
+</svg>

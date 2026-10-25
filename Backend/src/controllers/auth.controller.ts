@@ -14,7 +14,7 @@ const cookieOptions = {
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await AuthService.register(req.body);
+    await AuthService.register(req.body);
     
     res.status(201).json({
       success: true,
@@ -132,10 +132,21 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
 export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await AuthService.resetPassword(req.body);
+    const deviceInfo = (req.headers['user-agent'] as string) || 'Unknown Device';
+    const ip = (req.ip as string) || req.socket.remoteAddress || 'Unknown IP';
+    const result = await AuthService.resetPassword(req.body, deviceInfo, ip);
+
+    res.cookie('refreshToken', result.refreshToken, cookieOptions);
+
+    const responseData: AuthResponseDTO = {
+      accessToken: result.accessToken,
+      user: toUserResponseDTO(result.user),
+    };
+
     res.status(200).json({
       success: true,
-      message: 'Password reset successfully',
+      message: 'Password reset successfully. You are now logged in.',
+      data: responseData,
     });
   } catch (error) {
     next(error);
@@ -219,7 +230,7 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
 
     if (!user) throw new AppError('User not found', 404);
 
-    res.status(200).json({ success: true, data: user });
+    res.status(200).json({ success: true, message: 'Profile fetched successfully', data: user });
   } catch (err) {
     next(err);
   }
@@ -251,5 +262,43 @@ export const updateMe = async (req: AuthenticatedRequest, res: Response, next: N
     res.status(200).json({ success: true, message: 'Profile updated successfully', data: user });
   } catch (err) {
     next(err);
+  }
+};
+
+export const cancelRegistration = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== 'string') {
+      throw new AppError('Cancellation token is required', 400, 'INVALID_TOKEN');
+    }
+
+    const result = await AuthService.cancelRegistration(token);
+
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>AKMart - Registration Cancelled</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { background: #0b0f19; color: #e2e8f0; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+          .card { background: #131926; border: 1px solid #1e293b; border-radius: 16px; padding: 36px 28px; max-width: 440px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+          h2 { color: #f97316; margin-top: 0; font-size: 22px; }
+          p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 12px 0 24px 0; }
+          a { display: inline-block; background: #f97316; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>Registration Cancelled</h2>
+          <p>${result.message}</p>
+          <a href="${env.FRONTEND_WEB_URL}">Return to Store</a>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    next(error);
   }
 };

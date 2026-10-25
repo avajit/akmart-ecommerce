@@ -22,4 +22,6 @@ export const submitReview = (productId: string, data: any) => api.post(`/product
 
 // Categories (Public)
 export const getCategoryTree = () => api.get("/categories/tree").then((res: any) => res.data);
+export const getCategoryFilters = (slug: string) => api.get(`/categories/${slug}/filters`).then((res: any) => res.data);
 export const getBrands = () => api.get("/categories/brands").then((res: any) => res.data);
+

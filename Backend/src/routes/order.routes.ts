@@ -1,14 +1,15 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { requireAuth, requireRole } from "../middlewares/auth.middleware";
 import * as orderController from "../controllers/order.controller";
 
 const router = Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requireRole(["CONSUMER"]));
 
 router.post("/checkout", orderController.checkout);
 router.get("/", orderController.getMyOrders);
 router.get("/:id", orderController.getOrderById);
+router.patch("/:id/cancel", orderController.cancelOrder);
 
 router.get("/addresses/me", orderController.getAddresses);
 router.post("/addresses", orderController.addAddress);

@@ -18,7 +18,9 @@ export const suspendSeller = (id: string) => api.patch(`/admin/sellers/${id}/sus
 export const createCategory = (data: any) => api.post("/admin/categories", data).then((res: any) => res.data);
 export const updateCategory = (id: string, data: any) => api.patch(`/admin/categories/${id}`, data).then((res: any) => res.data);
 export const deactivateCategory = (id: string) => api.delete(`/admin/categories/${id}`).then((res: any) => res.data);
+export const getCategoryAttributes = (id: string) => api.get(`/admin/categories/${id}/attributes`).then((res: any) => res.data);
 export const addCategoryAttribute = (id: string, data: any) => api.post(`/admin/categories/${id}/attributes`, data).then((res: any) => res.data);
+export const deleteCategoryAttribute = (id: string, attrId: string) => api.delete(`/admin/categories/${id}/attributes/${attrId}`).then((res: any) => res.data);
 
 // Brands
 export const createBrand = (data: any) => api.post("/admin/brands", data).then((res: any) => res.data);

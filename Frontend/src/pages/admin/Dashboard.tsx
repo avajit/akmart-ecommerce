@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAdminDashboard } from '../../api/admin.api';
+import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import { FiBox, FiUsers, FiClock, FiCheckCircle, FiArrowRight, FiGrid, FiTag } from 'react-icons/fi';
 
@@ -11,7 +12,7 @@ export default function AdminDashboard() {
     getAdminDashboard().then((res: any) => {
       setStats(res.data);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err: any) => { toast.error(err.response?.data?.message || err.message || 'Failed to load dashboard stats'); setLoading(false); });
   }, []);
 
   if (loading) {

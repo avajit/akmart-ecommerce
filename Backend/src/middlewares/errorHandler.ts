@@ -12,12 +12,14 @@ export const errorHandler = (
   let statusCode = 500;
   let message = 'Internal Server Error';
   let errorCode = 'INTERNAL_SERVER_ERROR';
+  let errors: any[] | undefined = undefined;
 
   // 1. Handle our custom AppError
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
     errorCode = err.errorCode;
+    errors = err.errors;
   } 
   // 2. Handle Prisma Database Errors
   else if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -74,9 +76,11 @@ export const errorHandler = (
     console.error('💥 UNEXPECTED ERROR:', err);
   }
 
-  // Build the standardized response payload
+  // Build the standardized unified response payload adhering to contract
   interface ErrorResponse {
     success: boolean;
+    message: string;
+    errors?: any[];
     error: {
       code: number;
       errorCode: string;
@@ -86,6 +90,8 @@ export const errorHandler = (
 
   const errorResponse: ErrorResponse = {
     success: false,
+    message,
+    ...(errors ? { errors } : {}),
     error: {
       code: statusCode,
       errorCode,

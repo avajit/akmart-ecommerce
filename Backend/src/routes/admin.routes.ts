@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { requireAuth, requireRole } from "../middlewares/auth.middleware";
 import * as adminController from "../controllers/admin.controller";
 
@@ -25,7 +25,9 @@ router.patch("/sellers/:id/suspend", adminController.suspendSeller);
 router.post("/categories", adminController.createCategory);
 router.patch("/categories/:id", adminController.updateCategory);
 router.delete("/categories/:id", adminController.deactivateCategory);
+router.get("/categories/:id/attributes", adminController.getCategoryAttributes);
 router.post("/categories/:id/attributes", adminController.addCategoryAttribute);
+router.delete("/categories/:id/attributes/:attrId", adminController.deleteCategoryAttribute);
 
 // ── Brand Management ───────────────────────────────────────────
 router.post("/brands", adminController.createBrand);

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, refreshToken, logout, googleSSO, forgotPassword, resetPassword, verifyAccount, resendOTP, deleteAccount, me, updateMe } from '../controllers/auth.controller';
+import { register, login, refreshToken, logout, googleSSO, forgotPassword, resetPassword, verifyAccount, resendOTP, deleteAccount, me, updateMe, cancelRegistration } from '../controllers/auth.controller';
 import { validateRequest } from '../middlewares/validateRequest';
 import { authLimiter } from '../middlewares/rateLimiter';
 import { requireAuth } from '../middlewares/auth.middleware';
@@ -9,6 +9,7 @@ const router = Router();
 
 // 1. Account Management
 router.post('/register', authLimiter, validateRequest(registerSchema), register);
+router.get('/cancel-registration', cancelRegistration);
 router.post('/verify-account', authLimiter, validateRequest(verifyAccountSchema), verifyAccount);
 router.post('/resend-otp', authLimiter, validateRequest(resendOTPSchema), resendOTP);
 router.delete('/account', requireAuth, deleteAccount as any); // Soft deletes user and revokes sessions

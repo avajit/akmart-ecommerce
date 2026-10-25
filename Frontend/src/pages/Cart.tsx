@@ -3,11 +3,16 @@ import { getCart, updateCartItem, removeCartItem } from '../api/consumer.api';
 import { ShopContext } from '../context/ShopContext';
 import { toast } from 'react-toastify';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiTrash2, FiShoppingBag, FiArrowRight, FiShield, FiAlertTriangle } from 'react-icons/fi';
+import { useAuthStore } from '../store/authStore';
+import { FiTrash2, FiShoppingBag, FiArrowRight, FiShield, FiAlertTriangle, FiBriefcase } from 'react-icons/fi';
 
 export default function Cart() {
   const [cart, setCart] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuthStore();
+  const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
+  const isMerchantOrAdmin = role === 'SELLER' || role === 'ADMIN';
+
+  const [loading, setLoading] = useState(!isMerchantOrAdmin);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { currency } = useContext(ShopContext) || { currency: 'NPR ' };
@@ -18,11 +23,16 @@ export default function Cart() {
         setCart(res.data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err: any) => {
+        toast.error(err.response?.data?.message || err.message || "Failed to load shopping cart");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
-    fetchCart();
+    if (!isMerchantOrAdmin) {
+      fetchCart();
+    }
   }, []);
 
   const handleUpdate = async (id: string, qty: number) => {
@@ -50,6 +60,26 @@ export default function Cart() {
       setUpdatingId(null);
     }
   };
+
+  if (isMerchantOrAdmin) {
+    return (
+      <div className="max-w-xl mx-auto py-24 px-4 text-center font-poppins">
+        <div className="w-16 h-16 bg-orange-500/10 rounded-2xl border border-orange-500/20 flex items-center justify-center mx-auto mb-5 text-orange-400">
+          <FiBriefcase className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Merchant Account Detected</h2>
+        <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+          You are signed in with a <strong>{role}</strong> account. Shopping cart and checkout are reserved for consumer accounts.
+        </p>
+        <Link
+          to={role === 'SELLER' ? '/seller/dashboard' : '/admin/dashboard'}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+        >
+          Go to {role === 'SELLER' ? 'Seller' : 'Admin'} Dashboard &rarr;
+        </Link>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -88,7 +118,7 @@ export default function Cart() {
   const total = subtotal + deliveryFee;
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+    <div className="max-w-7xl mx-auto pt-6 sm:pt-10 pb-28 md:pb-12 px-4 sm:px-6 lg:px-8 font-poppins text-white">
       <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase">Shopping Cart</h1>
@@ -148,7 +178,7 @@ export default function Cart() {
                   </div>
 
                   {!item.isAvailable && (
-                    <p className="text-rose-400 text-xs mt-1 font-medium">⚠️ Currently unavailable or out of stock</p>
+                    <p className="text-rose-400 text-xs mt-1 font-medium"><FiAlertTriangle className="inline mr-1 text-rose-400 shrink-0" /> Currently unavailable or out of stock</p>
                   )}
                 </div>
 

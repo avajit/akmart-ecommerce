@@ -1,10 +1,10 @@
-﻿import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { Router } from "express";
+import { requireAuth, requireRole } from "../middlewares/auth.middleware";
 import * as cartController from "../controllers/cart.controller";
 
 const router = Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requireRole(["CONSUMER"]));
 
 router.get("/", cartController.getCart);
 router.post("/items", cartController.addItem);

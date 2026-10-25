@@ -26,7 +26,7 @@ export default function AdminBrands() {
       setNewBrand({ name: '', logoUrl: '' });
       fetchBrands();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || "Failed to create brand");
+      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to create brand");
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export default function AdminBrands() {
                                 toast.success("Brand deactivated");
                                 fetchBrands();
                               } catch (err: any) {
-                                toast.error(err.response?.data?.error?.message || "Failed to deactivate brand");
+                                toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to deactivate brand");
                               }
                             }
                           }}
