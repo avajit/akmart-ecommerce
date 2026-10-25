@@ -65,7 +65,7 @@ const SearchOverlay = () => {
                 
                 {/* --- SEARCH INPUT HEADER --- */}
                 <div className='flex items-center gap-3 p-4 border-b border-gray-800'>
-                    <FiSearch className="text-xl text-amber-500" />
+                    <FiSearch className="text-xl text-orange-500" />
                     <input 
                         ref={inputRef}
                         value={search} 
@@ -109,10 +109,10 @@ const SearchOverlay = () => {
                                         <div className="w-12 h-12 bg-gray-800 rounded flex items-center justify-center text-xs text-gray-500">No Img</div>
                                     )}
                                     <div className="flex-1">
-                                        <p className="text-gray-200 text-sm font-medium group-hover:text-amber-500 transition-colors">{item.name}</p>
+                                        <p className="text-gray-200 text-sm font-medium group-hover:text-orange-400 transition-colors">{item.name}</p>
                                         <p className="text-gray-500 text-xs mt-0.5">Starting at NPR {item.cheapestPrice ?? 0}</p>
                                     </div>
-                                    <span className="text-xs text-gray-600 group-hover:text-amber-500">View</span>
+                                    <span className="text-xs text-gray-500 group-hover:text-orange-400">View</span>
                                 </Link>
                             ))}
                             

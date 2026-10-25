@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { requireAuth, requireRole } from "../middlewares/auth.middleware";
 import * as productController from "../controllers/product.controller";
 
@@ -37,7 +37,7 @@ router.patch("/:id/submit", requireAuth, requireRole(["ADMIN", "SELLER"]), produ
 router.patch("/:id", requireAuth, requireRole(["ADMIN", "SELLER"]), productController.updateProduct);
 router.delete("/:id", requireAuth, requireRole(["ADMIN", "SELLER"]), productController.deleteProduct);
 
-// Protected route (Consumer/Any)
-router.post("/:id/reviews", requireAuth, productController.submitReview);
+// Protected route (Consumer only - verified buyer reviews)
+router.post("/:id/reviews", requireAuth, requireRole(["CONSUMER"]), productController.submitReview);
 
 export default router;

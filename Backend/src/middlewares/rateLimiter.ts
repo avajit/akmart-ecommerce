@@ -17,7 +17,7 @@ export const globalLimiter = rateLimit({
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.RATE_LIMIT_MAX_REQUESTS,
+  max: env.NODE_ENV === 'development' ? 5000 : env.RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => env.NODE_ENV === 'test',
@@ -39,7 +39,8 @@ export const authLimiter = rateLimit({
     sendCommand: (...args: string[]) => redisClient.call(...args),
   }),
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
-  max: env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  max: env.NODE_ENV === 'development' ? 100 : env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  skipSuccessfulRequests: true, // Crucial: Successful logins/verifications do not count towards brute-force limits
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => env.NODE_ENV === 'test' && !process.env.ENABLE_RATE_LIMIT_TEST,

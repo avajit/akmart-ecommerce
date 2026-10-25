@@ -80,7 +80,7 @@ const Profile = () => {
   }
 
   return (
-    <div className='border-t border-gray-800 pt-10 pb-24 px-4 sm:px-6 max-w-4xl mx-auto'>
+    <div className='border-t border-gray-800 pt-6 sm:pt-10 pb-28 md:pb-16 px-4 sm:px-6 max-w-4xl mx-auto'>
       
       {/* --- TITLE HEADER --- */}
       <div className='text-2xl mb-8 text-center sm:text-left'>

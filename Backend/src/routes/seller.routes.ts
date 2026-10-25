@@ -12,6 +12,9 @@ router.post("/profile", sellerController.createProfile);
 router.get("/profile", sellerController.getProfile);
 router.patch("/profile", sellerController.updateProfile);
 
+// ── Seller Products (Own Catalog Items) ────────────────────────
+router.get("/products", sellerController.getMyProducts);
+
 // ── SellerListings ─────────────────────────────────────────────
 router.post("/listings", sellerController.createListing);
 router.get("/listings", sellerController.getListings);

@@ -119,11 +119,25 @@ export const deactivateCategory = async (req: AuthenticatedRequest, res: Respons
   } catch (err) { next(err); }
 };
 
+export const getCategoryAttributes = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const attrs = await adminService.getCategoryAttributes(p(req.params.id));
+    res.json({ success: true, message: "Category attributes fetched", data: attrs });
+  } catch (err) { next(err); }
+};
+
 export const addCategoryAttribute = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const data = addAttributeSchema.parse(req.body);
     const attr = await adminService.addCategoryAttribute(p(req.params.id), data);
     res.status(201).json({ success: true, message: "Attribute added", data: attr });
+  } catch (err) { next(err); }
+};
+
+export const deleteCategoryAttribute = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    await adminService.deleteCategoryAttribute(p(req.params.id), p(req.params.attrId));
+    res.json({ success: true, message: "Attribute deleted" });
   } catch (err) { next(err); }
 };
 

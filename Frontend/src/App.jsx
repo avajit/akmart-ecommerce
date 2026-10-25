@@ -12,10 +12,22 @@ function App() {
     <div className="w-full min-h-screen bg-black text-gray-200 flex flex-col">
       
       <ScrollToTop />
-      <ToastContainer position="bottom-right" theme="dark" />
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        limit={3}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <SearchOverlay />
 
-      <div className="flex-grow w-full h-full">
+      <div className="flex-grow w-full h-full ">
         <AppRoutes />
       </div>
 

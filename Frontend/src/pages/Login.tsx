@@ -270,6 +270,41 @@ const Login: React.FC = () => {
           {/* Form Container with fade-in animation for smoother state switching */}
           <form onSubmit={onSubmitHandler} className="flex flex-col gap-4 text-left" autoComplete="off" noValidate>
             <div className="space-y-4">
+              {/* Account Type Selector: Register only */}
+              <div
+                className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                  tab === 'register' ? 'max-h-24 opacity-100 mb-2' : 'max-h-0 opacity-0 pointer-events-none'
+                }`}
+              >
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">I want to register as:</label>
+                <div className="grid grid-cols-2 gap-2 p-1 bg-[#1A1A1A] border border-gray-800 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setRole('CONSUMER')}
+                    className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                      role === 'CONSUMER'
+                        ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <FiShoppingBag className="w-3.5 h-3.5" />
+                    <span>Shopper</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('SELLER')}
+                    className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                      role === 'SELLER'
+                        ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <FiBriefcase className="w-3.5 h-3.5" />
+                    <span>Seller / Merchant</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Full Name: Register only */}
               <div
                 className={`transition-all duration-200 ease-in-out overflow-hidden ${

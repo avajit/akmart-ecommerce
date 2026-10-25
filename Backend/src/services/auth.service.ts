@@ -14,11 +14,38 @@ export class AuthService {
   static async register(data: RegisterRequestDTO & { googleId?: string }) {
     if (data.email) {
       const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
-      if (existingUser) throw new AppError('Email is already registered', 400, 'EMAIL_EXISTS');
+      if (existingUser) {
+        if (!existingUser.isEmailVerified) {
+          await OTPService.generateAndSendOTP(data.email, 'EMAIL_VERIFY').catch(() => {});
+          throw new AppError(
+            'This email is already registered but unverified. A new verification code has been sent.',
+            400,
+            'EMAIL_EXISTS'
+          );
+        }
+        if (!existingUser.passwordHash) {
+          throw new AppError(
+            'This email is registered via Google Sign-In. Please sign in with Google or use "Forgot Password" to set an account password.',
+            400,
+            'GOOGLE_ACCOUNT_EXISTS'
+          );
+        }
+        throw new AppError('Email is already registered. Please sign in.', 400, 'EMAIL_EXISTS');
+      }
     }
     if (data.phoneNumber) {
       const existingUser = await prisma.user.findUnique({ where: { phoneNumber: data.phoneNumber } });
-      if (existingUser) throw new AppError('Phone number is already registered', 400, 'PHONE_EXISTS');
+      if (existingUser) {
+        if (!existingUser.isPhoneVerified) {
+          await OTPService.generateAndSendOTP(data.phoneNumber, 'PHONE_VERIFY').catch(() => {});
+          throw new AppError(
+            'This phone number is already registered but unverified. A new verification code has been sent.',
+            400,
+            'PHONE_EXISTS'
+          );
+        }
+        throw new AppError('Phone number is already registered. Please sign in.', 400, 'PHONE_EXISTS');
+      }
     }
 
     const roleName = data.role || env.DEFAULT_USER_ROLE;
@@ -47,7 +74,10 @@ export class AuthService {
     // Send Verification OTP instantly if they registered with email or phone
     if (!data.googleId) {
       if (data.email) {
-        await OTPService.generateAndSendOTP(data.email, 'EMAIL_VERIFY');
+        const cancelToken = crypto.randomBytes(16).toString('hex');
+        await redis.set(`revoke:reg:${cancelToken}`, data.email, 'EX', 48 * 3600);
+        const cancelUrl = `http://localhost:5000/api/v1/auth/cancel-registration?token=${cancelToken}`;
+        await OTPService.generateAndSendOTP(data.email, 'EMAIL_VERIFY', cancelUrl);
       } else if (data.phoneNumber) {
         await OTPService.generateAndSendOTP(data.phoneNumber, 'PHONE_VERIFY');
       }
@@ -62,8 +92,16 @@ export class AuthService {
       include: { role: true },
     });
 
-    if (!user || !user.passwordHash) {
+    if (!user) {
       throw new AppError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
+    }
+
+    if (!user.passwordHash) {
+      throw new AppError(
+        'This account was created with Google. Please click "Continue with Google", or use "Forgot Password" to set an account password.',
+        400,
+        'GOOGLE_ACCOUNT_NO_PASSWORD'
+      );
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
@@ -77,10 +115,16 @@ export class AuthService {
 
     // Check if account is verified (either email or phone)
     if (!user.isEmailVerified && !user.isPhoneVerified && !user.googleId) {
-      throw new AppError('Account not verified. Please verify your email or phone number first.', 403, 'UNVERIFIED_ACCOUNT');
+      // Automatically re-send fresh verification code to their email/phone
+      const targetIdentifier = user.email || user.phoneNumber;
+      if (targetIdentifier) {
+        const type = user.email ? 'EMAIL_VERIFY' : 'PHONE_VERIFY';
+        await OTPService.generateAndSendOTP(targetIdentifier, type).catch(() => {});
+      }
+      throw new AppError('Account not verified yet. We have sent a new verification code to your email/phone.', 403, 'UNVERIFIED_ACCOUNT');
     }
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId, user.role.name);
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
     await prisma.refreshToken.create({
@@ -100,7 +144,7 @@ export class AuthService {
     
     const existingToken = await prisma.refreshToken.findUnique({
       where: { tokenHash },
-      include: { user: true },
+      include: { user: { include: { role: true } } },
     });
 
     if (!existingToken || existingToken.revokedAt || existingToken.expiresAt < new Date()) {
@@ -118,7 +162,11 @@ export class AuthService {
     });
 
     // Generate new tokens
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(existingToken.userId, existingToken.user.roleId);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(
+      existingToken.userId,
+      existingToken.user.roleId,
+      existingToken.user.role.name
+    );
     const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
 
     await prisma.refreshToken.create({
@@ -215,7 +263,7 @@ export class AuthService {
       throw new AppError('Account is disabled', 403, 'ACCOUNT_DISABLED');
     }
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId, user.role.name);
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
     await prisma.refreshToken.create({
@@ -242,14 +290,11 @@ export class AuthService {
       return;
     }
 
-    if (!user.passwordHash) {
-      throw new AppError('This account is registered via Google Sign-In and does not have a password.', 400, 'NO_PASSWORD_SET');
-    }
-
+    // Google SSO users can also request password reset to set their initial password!
     await OTPService.generateAndSendOTP(identifier, 'PASSWORD_RESET');
   }
 
-  static async resetPassword(data: ResetPasswordRequestDTO) {
+  static async resetPassword(data: ResetPasswordRequestDTO, deviceInfo: string = 'unknown', ip: string = 'unknown') {
     const redisKey = `otp:PASSWORD_RESET:${data.token}`;
     const identifier = await redis.get(redisKey);
 
@@ -265,6 +310,34 @@ export class AuthService {
       where: { OR: [{ email: identifier }, { phoneNumber: identifier }] },
       data: { passwordHash }
     });
+
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email: identifier }, { phoneNumber: identifier }] },
+      include: { role: true },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    // Auto-login: issue session tokens immediately so user doesn't have to re-type
+    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId, user.role.name);
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    await prisma.refreshToken.create({
+      data: {
+        tokenHash,
+        userId: user.id,
+        deviceInfo: deviceInfo || ip,
+        expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN_MS),
+      },
+    });
+
+    return {
+      user,
+      accessToken,
+      refreshToken,
+    };
   }
 
   static async verifyAccount(identifier: string, token: string, deviceInfo: string, ip: string) {
@@ -287,7 +360,7 @@ export class AuthService {
       data: updateData
     });
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.roleId, user.role.name);
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
     await prisma.refreshToken.create({
@@ -299,7 +372,41 @@ export class AuthService {
       },
     });
 
+    // Dispatch welcome email asynchronously
+    if (isEmail) {
+      import('./email.service')
+        .then(({ EmailService }) => EmailService.sendWelcomeEmail(identifier, user.fullName))
+        .catch(() => {});
+    }
+
     return { user, accessToken, refreshToken };
+  }
+
+  static async cancelRegistration(token: string) {
+    const redisKey = `revoke:reg:${token}`;
+    const email = await redis.get(redisKey);
+    if (!email) {
+      throw new AppError('Cancellation link has expired or is invalid', 400, 'INVALID_TOKEN');
+    }
+
+    const user = await prisma.user.findFirst({ where: { email } });
+    if (!user) {
+      await redis.del(redisKey);
+      return { message: 'No registration found for this email address.' };
+    }
+
+    if (user.isEmailVerified) {
+      throw new AppError('This account is already verified and active. It cannot be cancelled via this link.', 400, 'ALREADY_VERIFIED');
+    }
+
+    // Delete unverified user and clean up Redis
+    await prisma.user.delete({ where: { id: user.id } });
+    await redis.del(redisKey);
+
+    // Clean up any pending OTPs for this email in O(1)
+    await OTPService.invalidateOTP(email, 'EMAIL_VERIFY');
+
+    return { message: 'Registration has been successfully cancelled and your email was removed.' };
   }
 
   static async resendOTP(identifier: string) {
@@ -316,7 +423,7 @@ export class AuthService {
     if (!isEmail && user.isPhoneVerified) throw new AppError('Phone is already verified', 400, 'ALREADY_VERIFIED');
 
     const type = isEmail ? 'EMAIL_VERIFY' : 'PHONE_VERIFY';
-    await OTPService.generateAndSendOTP(identifier, type);
+    await OTPService.generateAndSendOTP(identifier, type, { enforceCooldown: true });
   }
 
   static async deleteAccount(userId: string) {
