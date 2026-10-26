@@ -81,6 +81,92 @@ export default function Cart() {
   // Out-of-Stock Gatekeeper: Check if any item cannot be purchased
   const hasOutOfStockItems = items.some((item: any) => !item.isAvailable || (item.availableStock !== undefined && item.availableStock < item.quantity));
 
+  // ── Enterprise Item Selection (Daraz / AliExpress standard) ──
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+
+  // Auto-initialize selectedItemIds with all in-stock items when cart loads
+  useEffect(() => {
+    if (items.length > 0) {
+      setSelectedItemIds(prev => {
+        const validItemIds = new Set(items.map((it: any) => it.id));
+        const preserved = new Set([...prev].filter(id => validItemIds.has(id)));
+        if (preserved.size > 0) return preserved;
+
+        const initialSelected = new Set<string>();
+        items.forEach((it: any) => {
+          const isOOS = !it.isAvailable || (it.availableStock !== undefined && it.availableStock < it.quantity);
+          if (!isOOS) {
+            initialSelected.add(it.id);
+          }
+        });
+        return initialSelected;
+      });
+    } else {
+      setSelectedItemIds(new Set());
+    }
+  }, [items]);
+
+  const toggleItemSelection = (id: string) => {
+    setSelectedItemIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const availableItems = useMemo(() => {
+    return items.filter((it: any) => it.isAvailable && (it.availableStock === undefined || it.availableStock >= it.quantity));
+  }, [items]);
+
+  const isAllSelected = availableItems.length > 0 && availableItems.every((it: any) => selectedItemIds.has(it.id));
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedItemIds(new Set());
+    } else {
+      setSelectedItemIds(new Set(availableItems.map((it: any) => it.id)));
+    }
+  };
+
+  const selectedItems = useMemo(() => {
+    return items.filter((it: any) => selectedItemIds.has(it.id));
+  }, [items, selectedItemIds]);
+
+  const selectedSubtotal = useMemo(() => {
+    return selectedItems.reduce((sum: number, it: any) => {
+      const price = Number(it.priceAtAddTime || it.sellerListing?.price || 0);
+      return sum + price * (it.quantity || 1);
+    }, 0);
+  }, [selectedItems]);
+
+  const selectedQuantity = useMemo(() => {
+    return selectedItems.reduce((sum: number, it: any) => sum + (it.quantity || 1), 0);
+  }, [selectedItems]);
+
+  const selectedShippingFee = selectedSubtotal >= freeShippingThreshold || selectedSubtotal === 0 ? 0 : shippingFee;
+  const selectedShippingGap = Math.max(0, freeShippingThreshold - selectedSubtotal);
+  const selectedShippingProgress = Math.min(100, Math.round((selectedSubtotal / freeShippingThreshold) * 100));
+
+  const selectedDiscountAmount = useMemo(() => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.minOrderValue && selectedSubtotal < appliedCoupon.minOrderValue) return 0;
+    if (appliedCoupon.discountType === 'PERCENTAGE') {
+      const calc = Math.round((selectedSubtotal * appliedCoupon.discountValue) / 100);
+      return appliedCoupon.maxDiscount ? Math.min(calc, appliedCoupon.maxDiscount) : calc;
+    }
+    return Math.min(appliedCoupon.discountValue, selectedSubtotal);
+  }, [appliedCoupon, selectedSubtotal]);
+
+  const selectedFinalPayable = Math.max(0, selectedSubtotal + selectedShippingFee - selectedDiscountAmount);
+
+  const hasOutOfStockInSelected = useMemo(() => {
+    return selectedItems.some((item: any) => !item.isAvailable || (item.availableStock !== undefined && item.availableStock < item.quantity));
+  }, [selectedItems]);
+
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponCode.trim()) return;
@@ -91,10 +177,15 @@ export default function Cart() {
   };
 
   const handleProceedToCheckout = () => {
+    if (selectedItems.length === 0) {
+      toast.warn("Please select at least one item to proceed to checkout.");
+      return;
+    }
+    const checkoutState = { selectedItemIds: Array.from(selectedItemIds) };
     if (!isAuthenticated) {
-      navigate('/login?redirect=/checkout');
+      navigate('/login?redirect=/checkout', { state: checkoutState });
     } else {
-      navigate('/checkout');
+      navigate('/checkout', { state: checkoutState });
     }
   };
 
@@ -226,26 +317,27 @@ export default function Cart() {
       </div>
 
       {/* ── Free Shipping Progress Bar (Enterprise AOV Booster) ── */}
+      {/* ── Free Shipping Progress Bar (Calculated dynamically on selected items) ── */}
       <div className={`mb-8 p-4 sm:p-5 rounded-2xl border transition-all duration-300 shadow-md ${
-        freeShippingProgress >= 100 
+        selectedShippingProgress >= 100 
           ? 'bg-emerald-500/5 border-emerald-500/25' 
           : 'bg-[#141414] border-gray-800/80'
       }`}>
         <div className="flex items-center justify-between mb-2.5 text-xs sm:text-sm">
           <div className="flex items-center gap-2.5">
             <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-              freeShippingProgress >= 100 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-orange-500/15 text-orange-400'
+              selectedShippingProgress >= 100 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-orange-500/15 text-orange-400'
             }`}>
               <FiTruck size={16} />
             </span>
             <span className="font-semibold text-white">
-              {freeShippingProgress >= 100 ? (
+              {selectedShippingProgress >= 100 ? (
                 <span className="text-emerald-400 flex items-center gap-1.5 font-bold">
                   <FiCheckCircle size={15} /> Congratulations! You unlocked FREE Nationwide Delivery
                 </span>
               ) : (
                 <span>
-                  Add <strong className="text-orange-400">{currency}{freeShippingGap.toLocaleString()}</strong> more to qualify for <strong>FREE Delivery</strong>
+                  Add <strong className="text-orange-400">{currency}{selectedShippingGap.toLocaleString()}</strong> more to qualify for <strong>FREE Delivery</strong>
                 </span>
               )}
             </span>
@@ -257,11 +349,11 @@ export default function Cart() {
         <div className="w-full bg-[#1F1F1F] h-2.5 rounded-full overflow-hidden p-0.5 border border-gray-800/60">
           <div 
             className={`h-full transition-all duration-500 rounded-full ${
-              freeShippingProgress >= 100 
+              selectedShippingProgress >= 100 
                 ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' 
                 : 'bg-gradient-to-r from-orange-600 via-orange-500 to-amber-400'
             }`}
-            style={{ width: `${freeShippingProgress}%` }}
+            style={{ width: `${selectedShippingProgress}%` }}
           />
         </div>
       </div>
@@ -270,6 +362,28 @@ export default function Cart() {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* Left Column: Vendor Grouped Cart Packages */}
         <div className="flex-1 w-full space-y-6">
+          {/* Select All Cart Action Bar (AliExpress / Daraz / Shopee standard) */}
+          <div className="bg-[#141414] border border-gray-800/80 rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-sm">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded accent-orange-500 cursor-pointer bg-black border-gray-700"
+              />
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>Select All</span>
+                <span className="text-gray-400 font-normal">({selectedItems.length} of {items.length} items)</span>
+              </span>
+            </label>
+
+            {selectedItems.length > 0 && selectedItems.length < items.length && (
+              <span className="text-[11px] text-orange-400 font-medium bg-orange-500/10 px-2.5 py-1 rounded-full border border-orange-500/20">
+                Buying {selectedItems.length} of {items.length} items
+              </span>
+            )}
+          </div>
+
           {vendorGroups.map((group, groupIndex) => (
             <div 
               key={group.sellerName + groupIndex}
@@ -314,8 +428,20 @@ export default function Cart() {
                         !item.isAvailable ? 'opacity-60' : ''
                       }`}
                     >
-                      {/* Top section on mobile / Left section on desktop: Image + Details */}
-                      <div className="flex gap-3.5 sm:gap-5 items-start flex-1 min-w-0">
+                      {/* Top section on mobile / Left section on desktop: Checkbox + Image + Details */}
+                      <div className="flex gap-3 sm:gap-4 items-start flex-1 min-w-0">
+                        {/* Item Selection Checkbox */}
+                        <div className="pt-2 sm:pt-4 shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedItemIds.has(item.id)}
+                            onChange={() => toggleItemSelection(item.id)}
+                            disabled={!item.isAvailable || (item.availableStock !== undefined && item.availableStock < item.quantity)}
+                            className="w-4 h-4 rounded accent-orange-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed bg-black border-gray-700"
+                            title={!item.isAvailable ? "Item unavailable" : "Select to purchase"}
+                          />
+                        </div>
+
                         {/* Product Thumbnail */}
                         <Link 
                           to={`/product/${productSlug}`}
@@ -463,23 +589,23 @@ export default function Cart() {
                 Order Summary
               </h2>
               <span className="text-xs text-gray-400 font-mono">
-                {items.length} {items.length === 1 ? 'Product' : 'Products'}
+                {selectedItems.length} of {items.length} Selected
               </span>
             </div>
 
-            {/* Out of Stock Alert Banner */}
-            {hasOutOfStockItems && (
+            {/* Out of Stock Alert Banner for SELECTED items */}
+            {hasOutOfStockInSelected && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs flex items-start gap-2.5">
                 <FiAlertTriangle className="shrink-0 mt-0.5 text-rose-400" size={16} />
-                <span>One or more items are out of stock. Remove them or save for later to proceed to checkout.</span>
+                <span>One or more selected items are out of stock. Uncheck them to proceed to checkout.</span>
               </div>
             )}
 
-            {/* Financial Breakdown */}
+            {/* Financial Breakdown (Based strictly on selected items) */}
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-gray-400">
-                <span>Subtotal</span>
-                <span className="text-white font-medium">{currency}{cartSubtotal.toLocaleString()}</span>
+                <span>Subtotal ({selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''})</span>
+                <span className="text-white font-medium">{currency}{selectedSubtotal.toLocaleString()}</span>
               </div>
 
               <div className="flex justify-between text-gray-400 items-center">
@@ -487,12 +613,12 @@ export default function Cart() {
                   <FiTruck size={14} className="text-gray-400" />
                   <span>Estimated Delivery</span>
                 </div>
-                {shippingFee === 0 ? (
+                {selectedShippingFee === 0 ? (
                   <span className="text-emerald-400 font-extrabold uppercase text-xs bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                     FREE
                   </span>
                 ) : (
-                  <span className="text-white font-medium">{currency}{shippingFee.toLocaleString()}</span>
+                  <span className="text-white font-medium">{currency}{selectedShippingFee.toLocaleString()}</span>
                 )}
               </div>
 
@@ -502,7 +628,7 @@ export default function Cart() {
                     <FiTag size={13} /> Coupon ({appliedCoupon.code})
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold">-{currency}{discountAmount.toLocaleString()}</span>
+                    <span className="font-extrabold">-{currency}{selectedDiscountAmount.toLocaleString()}</span>
                     <button 
                       type="button"
                       onClick={removeCoupon} 
@@ -521,7 +647,7 @@ export default function Cart() {
                   <span className="text-[10px] text-gray-500">Includes all taxes & delivery fees</span>
                 </div>
                 <span className="text-2xl font-extrabold text-orange-400">
-                  {currency}{finalPayable.toLocaleString()}
+                  {currency}{selectedFinalPayable.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -582,10 +708,14 @@ export default function Cart() {
             <button
               type="button"
               onClick={handleProceedToCheckout}
-              disabled={hasOutOfStockItems || items.length === 0}
+              disabled={selectedItems.length === 0 || hasOutOfStockInSelected}
               className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-40 disabled:pointer-events-none text-white font-extrabold py-4 rounded-xl transition shadow-xl shadow-orange-500/25 flex items-center justify-center gap-2 uppercase tracking-wider text-xs active:scale-[0.99] group"
             >
-              <span>Proceed to Checkout</span>
+              <span>
+                {selectedItems.length === 0 
+                  ? "Select Items to Checkout" 
+                  : `Proceed to Checkout (${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''})`}
+              </span>
               <FiArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
@@ -601,18 +731,20 @@ export default function Cart() {
       {/* ── Sticky Mobile Checkout Footer (Pinned cleanly to bottom on mobile) ── */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111111]/98 backdrop-blur-md border-t border-gray-800/90 p-3.5 px-5 pb-[max(0.85rem,env(safe-area-inset-bottom))] flex items-center justify-between shadow-[0_-10px_25px_rgba(0,0,0,0.7)]">
         <div>
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Total Payable</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">
+            Total ({selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''})
+          </span>
           <span className="text-lg font-black text-orange-400">
-            {currency}{finalPayable.toLocaleString()}
+            {currency}{selectedFinalPayable.toLocaleString()}
           </span>
         </div>
         <button
           type="button"
           onClick={handleProceedToCheckout}
-          disabled={hasOutOfStockItems || items.length === 0}
+          disabled={selectedItems.length === 0 || hasOutOfStockInSelected}
           className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-40 text-white font-extrabold py-3 px-6 rounded-xl uppercase tracking-wider text-xs flex items-center gap-2 transition active:scale-95 shadow-lg shadow-orange-500/25 group"
         >
-          <span>Checkout</span>
+          <span>Checkout ({selectedItems.length})</span>
           <FiArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>

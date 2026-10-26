@@ -2,6 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import * as couponService from "../services/coupon.service";
 import { AppError } from "../utils/AppError";
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    roleName?: string;
+  };
+}
+
 export const validateCoupon = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code, subtotal } = req.body;
@@ -10,7 +17,8 @@ export const validateCoupon = async (req: Request, res: Response, next: NextFunc
     }
     const numericSubtotal = Number(subtotal || 0);
 
-    const result = await couponService.validateCoupon(code, numericSubtotal, (req as any).user?.id);
+    const authReq = req as AuthenticatedRequest;
+    const result = await couponService.validateCoupon(code, numericSubtotal, authReq.user?.id);
 
     res.status(200).json({
       success: true,

@@ -6,6 +6,7 @@ export const checkoutSchema = z.object({
   shippingAddressId: z.string().uuid("Invalid address ID"),
   paymentMethod: z.enum(["COD", "ESEWA", "KHALTI"]).default("COD"),
   couponCode: z.string().max(50).optional(),
+  selectedItemIds: z.array(z.string().uuid()).optional(),
 });
 
 export const addAddressSchema = z.object({

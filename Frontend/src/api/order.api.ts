@@ -1,7 +1,7 @@
 import api from './client';
 
 // --- Checkout & Orders ---
-export const checkout = (data: { shippingAddressId: string; paymentMethod: string; couponCode?: string }) => api.post('/orders/checkout', data).then(res => res.data);
+export const checkout = (data: { shippingAddressId: string; paymentMethod: string; couponCode?: string; selectedItemIds?: string[] }) => api.post('/orders/checkout', data).then(res => res.data);
 export const getMyOrders = () => api.get('/orders').then(res => res.data);
 export const getOrderById = (id: string) => api.get(`/orders/${id}`).then(res => res.data);
 export const cancelOrder = (id: string) => api.patch(`/orders/${id}/cancel`).then(res => res.data);

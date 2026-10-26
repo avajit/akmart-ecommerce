@@ -21,7 +21,7 @@ export interface ValidateCouponResult {
 export const validateCoupon = async (
   code: string,
   subtotal: number,
-  userId?: string
+  _userId?: string
 ): Promise<ValidateCouponResult> => {
   const cleanCode = (code || "").trim().toUpperCase();
   if (!cleanCode) {
@@ -59,15 +59,13 @@ export const validateCoupon = async (
   }
 
   // Calculate discount amount
-  let discountAmount = 0;
   const discountVal = Number(coupon.discountValue);
   const maxDisc = coupon.maxDiscount ? Number(coupon.maxDiscount) : null;
+  let discountAmount: number;
 
   if (coupon.discountType === "PERCENTAGE") {
-    discountAmount = Math.round((subtotal * discountVal) / 100);
-    if (maxDisc && discountAmount > maxDisc) {
-      discountAmount = maxDisc;
-    }
+    const calculated = Math.round((subtotal * discountVal) / 100);
+    discountAmount = maxDisc && calculated > maxDisc ? maxDisc : calculated;
   } else {
     // FIXED
     discountAmount = Math.min(discountVal, subtotal);

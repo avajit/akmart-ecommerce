@@ -22,19 +22,18 @@ const SearchOverlay = () => {
 
     useEffect(() => {
         setShowSearch(false); 
-    }, [location])
+    }, [location, setShowSearch]);
 
     // Debounced search fetch
     useEffect(() => {
         if (!search.trim()) {
-            const resetTimer = setTimeout(() => {
-                setSearchResults([]);
-                setLoading(false);
-            }, 0);
-            return () => clearTimeout(resetTimer);
+            setSearchResults([]);
+            setLoading(false);
+            return;
         }
-        setLoading(true);
+
         const timer = setTimeout(() => {
+            setLoading(true);
             browseProducts({ search, limit: 6 }).then((res) => {
                 setSearchResults(res?.data?.products || []);
                 setLoading(false);

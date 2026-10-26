@@ -30,8 +30,10 @@ const PlaceOrder: React.FC = () => {
   const navigate = useNavigate();
   const { currency } = (useContext(ShopContext) as any) || { currency: 'NPR ' };
 
-  // Retrieve placed order passed from Checkout.tsx
+  // Retrieve placed order and payment metadata passed from Checkout.tsx
   const order = location.state?.order;
+  const transactionId = location.state?.transactionId;
+  const paymentChannel = (location.state?.paymentChannel || order?.paymentMethod || 'COD').toUpperCase();
 
   // Handle case where user directly visits /place-order without active order data
   if (!order) {
@@ -98,8 +100,20 @@ const PlaceOrder: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                  Order Confirmed
+                <span
+                  className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                    paymentChannel === 'ESEWA'
+                      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                      : paymentChannel === 'KHALTI'
+                      ? 'text-purple-300 bg-purple-500/10 border-purple-500/20'
+                      : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                  }`}
+                >
+                  {paymentChannel === 'ESEWA'
+                    ? 'Paid via eSewa • Confirmed'
+                    : paymentChannel === 'KHALTI'
+                    ? 'Paid via Khalti • Confirmed'
+                    : 'Order Confirmed (COD)'}
                 </span>
                 <span className="text-gray-500 text-xs">• {orderDate}</span>
               </div>
@@ -148,7 +162,11 @@ const PlaceOrder: React.FC = () => {
           <div>
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block">Payment Method</span>
             <span className="text-sm sm:text-base font-semibold text-white mt-0.5 block">
-              {order.paymentMethod === 'COD' ? 'Cash on Delivery' : order.paymentMethod || 'COD'}
+              {paymentChannel === 'ESEWA'
+                ? 'eSewa (Paid Online)'
+                : paymentChannel === 'KHALTI'
+                ? 'Khalti (Paid Online)'
+                : 'Cash on Delivery (COD)'}
             </span>
           </div>
           <div>
@@ -297,17 +315,66 @@ const PlaceOrder: React.FC = () => {
                 Payment Channel
               </h3>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-300 font-medium">
-                {order.paymentMethod === 'COD' ? 'Cash on Delivery (COD)' : order.paymentMethod}
-              </span>
-              <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px] uppercase">
-                {order.paymentMethod === 'COD' ? 'Pay upon delivery' : 'Verified'}
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-500 leading-relaxed">
-              Please have exact cash ready at your doorstep when our courier arrives.
-            </p>
+
+            {paymentChannel === 'ESEWA' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-[#60BB46] text-white flex items-center justify-center font-black text-xs shadow-md shadow-[#60BB46]/30">
+                      e
+                    </span>
+                    <span className="text-white font-bold text-sm">eSewa Mobile Wallet</span>
+                  </div>
+                  <span className="text-emerald-400 font-bold bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/25 text-[10px] uppercase flex items-center gap-1">
+                    <FiCheckCircle className="w-3 h-3" /> Paid & Verified
+                  </span>
+                </div>
+                {transactionId && (
+                  <div className="bg-[#1A1A1A] p-2.5 rounded-xl border border-gray-800 flex items-center justify-between text-xs font-mono">
+                    <span className="text-gray-400 text-[11px]">Txn Ref:</span>
+                    <span className="text-emerald-400 font-bold">{transactionId}</span>
+                  </div>
+                )}
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Electronic authorization verified via eSewa ePay. No cash collection required upon delivery.
+                </p>
+              </div>
+            ) : paymentChannel === 'KHALTI' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-[#5C2D91] text-white flex items-center justify-center font-black text-xs shadow-md shadow-[#5C2D91]/30">
+                      K
+                    </span>
+                    <span className="text-white font-bold text-sm">Khalti Digital Wallet</span>
+                  </div>
+                  <span className="text-purple-300 font-bold bg-purple-500/15 px-2.5 py-0.5 rounded-full border border-purple-500/25 text-[10px] uppercase flex items-center gap-1">
+                    <FiCheckCircle className="w-3 h-3" /> Paid & Verified
+                  </span>
+                </div>
+                {transactionId && (
+                  <div className="bg-[#1A1A1A] p-2.5 rounded-xl border border-gray-800 flex items-center justify-between text-xs font-mono">
+                    <span className="text-gray-400 text-[11px]">Txn Ref:</span>
+                    <span className="text-purple-300 font-bold">{transactionId}</span>
+                  </div>
+                )}
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Payment cleared via Khalti Gateway. Instant settlement guaranteed by AKMart.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-300 font-medium">Cash on Delivery (COD)</span>
+                  <span className="text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 text-[10px] uppercase">
+                    Pay Upon Arrival
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Please have exact cash ready ({currency}{totalAmount.toLocaleString()}) or Fonepay QR at your doorstep when our courier arrives.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Trust Guarantees */}

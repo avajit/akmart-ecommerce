@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { assets } from '../assets/frontend_assets/assets';
 import BrandLogo from './BrandLogo';
 import { RiInstagramLine, RiTwitterXLine, RiFacebookCircleFill } from "react-icons/ri";
 import { FiShield, FiTruck, FiCreditCard, FiMapPin, FiPhone, FiMail } from "react-icons/fi";

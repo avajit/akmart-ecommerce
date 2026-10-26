@@ -493,7 +493,6 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const newQty = Math.min(item.quantity + data.quantity, maxStock);
         if (newQty === item.quantity) {
           toast.info(`Item already in cart at maximum quantity (${newQty})`);
-          setIsCartDrawerOpen(true);
           return;
         }
         updatedItems = [...currentGuestItems];
@@ -544,7 +543,6 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
       saveGuestCartItems(updatedItems);
       setCart({ id: 'guest-cart', items: updatedItems });
       toast.success("Added to cart! 🛍️");
-      setIsCartDrawerOpen(true);
       return;
     }
 
@@ -556,7 +554,6 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
       });
       toast.success("Added to cart! 🛍️");
       await refreshCart();
-      setIsCartDrawerOpen(true);
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || err.response?.data?.message || err.message || "Failed to add to cart");
     }

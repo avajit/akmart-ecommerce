@@ -84,7 +84,7 @@ export default function Navbar() {
   // Gracefully extract readable user display name without email domain cutoffs or harsh ellipsis
   const getDisplayName = (): string => {
     if (!user) return 'User';
-    const raw = user.fullName || user.name || user.email || 'User';
+    const raw = user.fullName || (user as any).name || user.email || 'User';
     const cleaned = raw.includes('@') ? raw.split('@')[0] : raw;
     const parts = cleaned.trim().split(/\s+/);
     return parts[0] || 'User';
@@ -416,7 +416,7 @@ export default function Navbar() {
             <button 
               type="button"
               id="header-cart-btn"
-              onClick={openCartDrawer} 
+              onClick={() => navigate('/cart')} 
               aria-label="Shopping Cart"
               title="Shopping Cart"
               className="w-10 h-10 rounded-xl flex items-center justify-center transition-all relative border text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700"
@@ -993,7 +993,7 @@ export default function Navbar() {
         {(!isAuthenticated || role === 'CONSUMER') && (
           <button 
             type="button"
-            onClick={openCartDrawer} 
+            onClick={() => navigate('/cart')} 
             className="flex flex-col items-center justify-center min-w-[48px] py-1 gap-0.5 text-[10px] font-medium transition-colors relative text-gray-400 hover:text-orange-500"
           >
             <div className="relative">
