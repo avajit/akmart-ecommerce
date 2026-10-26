@@ -246,7 +246,8 @@ export function getPublicUrl(key: string): string {
     return `${env.S3_PUBLIC_BASE_URL.replace(/\/$/, '')}/${key}`;
   }
 
-  return `http://localhost:${env.PORT || 5000}/api/v1/files/${key}`;
+  const baseUrl = (env.BACKEND_URL || `http://localhost:${env.PORT || 5000}`).replace(/\/$/, '');
+  return `${baseUrl}/api/v1/files/${key}`;
 }
 
 /**
