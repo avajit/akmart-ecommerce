@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProductBySlug, addToCart } from '../api/consumer.api';
+import { getProductBySlug, addToCart, getProductReviews, submitReview } from '../api/consumer.api';
 import { ShopContext } from '../context/ShopContext';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-toastify';
@@ -35,7 +35,7 @@ export default function Product() {
   };
   const { user } = useAuthStore();
   const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
-  const isMerchantOrAdmin = role === 'SELLER' || role === 'ADMIN';
+  const isMerchantOrAdmin = role === 'ADMIN';
 
   const [product, setProduct] = useState<any>(null);
   const [selectedVariantId, setSelectedVariantId] = useState('');
@@ -44,45 +44,33 @@ export default function Product() {
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
-  // Verified Customer Reviews State
-  const [reviews, setReviews] = useState([
-    {
-      id: 'rev-1',
-      author: 'Aarav Sharma',
-      city: 'Kathmandu',
-      rating: 5,
-      date: '2 days ago',
-      title: 'Exceeded expectations, 100% authentic!',
-      comment: 'Arrived within 24 hours in sealed packaging. Quality is superb and exactly matches the specs listed. Highly recommended seller!',
-      variantName: 'Verified Spec',
-      helpfulCount: 19,
-      isVerified: true,
-    },
-    {
-      id: 'rev-2',
-      author: 'Pooja Thapa',
-      city: 'Pokhara',
-      rating: 5,
-      date: '1 week ago',
-      title: 'Great value for money & fast delivery',
-      comment: 'Loved the fast shipping and the seller communicated promptly. Fresh condition and genuine product.',
-      variantName: 'Verified Spec',
-      helpfulCount: 8,
-      isVerified: true,
-    },
-    {
-      id: 'rev-3',
-      author: 'Bikash Adhikari',
-      city: 'Lalitpur',
-      rating: 4,
-      date: '2 weeks ago',
-      title: 'Very good product, works smoothly',
-      comment: 'Delivery was on time. Everything works as advertised. Only minor issue was the outer box had a small bend, but the product was flawless.',
-      variantName: 'Verified Spec',
-      helpfulCount: 5,
-      isVerified: true,
-    },
-  ]);
+  // Verified Customer Reviews State (Connected to Backend API)
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const fetchReviews = (productId: string) => {
+    getProductReviews(productId)
+      .then((res: any) => {
+        const fetched = res.data?.reviews || res.reviews || [];
+        setReviews(fetched.map((r: any) => ({
+          id: r.id,
+          author: r.user?.fullName || 'Verified Shopper',
+          city: 'Nepal',
+          rating: r.rating,
+          date: new Date(r.createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+          title: r.title || 'Product Review',
+          comment: r.body || '',
+          variantName: 'Verified Spec',
+          helpfulCount: 0,
+          isVerified: true,
+        })));
+      })
+      .catch(() => {});
+  };
 
   const [reviewFilter, setReviewFilter] = useState<'ALL' | '5' | '4'>('ALL');
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -102,6 +90,9 @@ export default function Product() {
             if (initialVariant.attributes && typeof initialVariant.attributes === 'object') {
               setSelectedAttributes(initialVariant.attributes);
             }
+          }
+          if (prod?.id) {
+            fetchReviews(prod.id);
           }
           setLoading(false);
         })
@@ -782,27 +773,28 @@ export default function Product() {
             </div>
 
             <form
-              onSubmit={e => {
+              onSubmit={async e => {
                 e.preventDefault();
                 if (!newReview.title.trim() || !newReview.comment.trim()) {
                   return toast.error('Please complete both review title and comments');
                 }
-                const created = {
-                  id: `rev-${Date.now()}`,
-                  author: user?.fullName || 'Verified Shopper',
-                  city: 'Kathmandu, Nepal',
-                  rating: newReview.rating,
-                  date: 'Just now',
-                  title: newReview.title.trim(),
-                  comment: newReview.comment.trim(),
-                  variantName: currentVariant?.name || 'Verified Spec',
-                  helpfulCount: 0,
-                  isVerified: true,
-                };
-                setReviews([created, ...reviews]);
-                setShowReviewModal(false);
-                setNewReview({ rating: 5, title: '', comment: '' });
-                toast.success('Your verified review was published successfully!');
+                if (!product?.id) return;
+                setSubmittingReview(true);
+                try {
+                  await submitReview(product.id, {
+                    rating: newReview.rating,
+                    title: newReview.title.trim(),
+                    body: newReview.comment.trim(),
+                  });
+                  setShowReviewModal(false);
+                  setNewReview({ rating: 5, title: '', comment: '' });
+                  toast.success('Your verified review was published successfully!');
+                  fetchReviews(product.id);
+                } catch (err: any) {
+                  toast.error(err.response?.data?.message || err.message || 'Failed to submit review');
+                } finally {
+                  setSubmittingReview(false);
+                }
               }}
               className="space-y-4"
             >

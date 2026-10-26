@@ -62,7 +62,7 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuthStore();
   const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
-  const isMerchantOrAdmin = role === 'SELLER' || role === 'ADMIN';
+  const isMerchantOrAdmin = role === 'ADMIN';
 
   const { 
     currency, 

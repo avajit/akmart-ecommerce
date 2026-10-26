@@ -5,11 +5,11 @@ import { prisma } from "../app";
 const getOrCreateCart = async (userId: string) => {
   const itemInclude = {
     variant: { include: { product: { select: { name: true, slug: true } }, images: { where: { isPrimary: true }, take: 1 } } },
-    sellerListing: { 
-      include: { 
+    sellerListing: {
+      include: {
         sellerProfile: { select: { shopName: true } },
         variant: { include: { product: { select: { name: true, slug: true } }, images: { where: { isPrimary: true }, take: 1 } } }
-      } 
+      }
     },
   };
 
@@ -47,11 +47,21 @@ export const getCart = async (userId: string) => {
 
 export const addToCart = async (userId: string, body: { sellerListingId: string; variantId: string; quantity: number }) => {
   const { sellerListingId, variantId, quantity } = body;
-  if (quantity < 1) throw new AppError("Quantity must be at least 1", 400, "INVALID_QTY");
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+    throw new AppError("Quantity must be a positive integer between 1 and 100", 400, "INVALID_QTY");
+  }
 
-  const listing = await prisma.sellerListing.findUnique({ where: { id: sellerListingId } });
+  const listing = await prisma.sellerListing.findUnique({
+    where: { id: sellerListingId },
+    include: { sellerProfile: true },
+  });
   if (!listing || listing.deletedAt || !listing.isActive) {
     throw new AppError("This listing is no longer available", 410, "LISTING_UNAVAILABLE");
+  }
+
+  // Anti-Self-Purchase Gatekeeper: Block seller from purchasing own listing
+  if (listing.sellerProfile?.userId === userId) {
+    throw new AppError("You cannot purchase products from your own store", 400, "CANNOT_PURCHASE_OWN_PRODUCT");
   }
 
   // CRITICAL: Live stock check — NO reservedStock change
@@ -88,7 +98,9 @@ export const addToCart = async (userId: string, body: { sellerListingId: string;
 };
 
 export const updateCartItem = async (userId: string, itemId: string, quantity: number) => {
-  if (quantity < 1) throw new AppError("Quantity must be at least 1", 400, "INVALID_QTY");
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+    throw new AppError("Quantity must be a positive integer between 1 and 100", 400, "INVALID_QTY");
+  }
 
   const cart = await prisma.cart.findUnique({ where: { userId } });
   if (!cart) throw new AppError("Cart not found", 404, "NOT_FOUND");

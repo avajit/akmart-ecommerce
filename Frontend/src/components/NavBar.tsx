@@ -411,8 +411,8 @@ export default function Navbar() {
             )}
           </NavLink>
 
-          {/* Cart with count badge (Consumers & Guests only) */}
-          {(!isAuthenticated || role === 'CONSUMER') && (
+          {/* Cart with count badge (Consumers, Sellers & Guests) */}
+          {(!isAuthenticated || role !== 'ADMIN') && (
             <button 
               type="button"
               id="header-cart-btn"
@@ -488,9 +488,14 @@ export default function Navbar() {
                     </>
                   )}
                   {role === 'SELLER' && (
-                    <NavLink to="/seller/dashboard" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>
-                      <FiBriefcase className="w-4 h-4" /> Seller Dashboard
-                    </NavLink>
+                    <>
+                      <NavLink to="/orders" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>
+                        <FiShoppingBag className="w-4 h-4" /> My Orders & Tracking
+                      </NavLink>
+                      <NavLink to="/seller/dashboard" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>
+                        <FiBriefcase className="w-4 h-4 text-orange-400" /> Seller Dashboard
+                      </NavLink>
+                    </>
                   )}
                   {role === 'ADMIN' && (
                     <NavLink to="/admin/dashboard" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>

@@ -4,7 +4,7 @@ import * as orderController from "../controllers/order.controller";
 
 const router = Router();
 
-router.use(requireAuth, requireRole(["CONSUMER"]));
+router.use(requireAuth, requireRole(["CONSUMER", "SELLER"]));
 
 router.post("/checkout", orderController.checkout);
 router.get("/", orderController.getMyOrders);

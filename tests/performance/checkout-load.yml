@@ -1,0 +1,29 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 20
+      arrivalRate: 5
+      name: "Warm-up phase (5 checkouts/sec)"
+    - duration: 30
+      arrivalRate: 20
+      rampTo: 50
+      name: "Spike / Flash-sale phase (ramp to 50 req/sec)"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Concurrent Checkout Under Load"
+    flow:
+      - post:
+          url: "/api/v1/orders/checkout"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.TEST_USER_TOKEN }}"
+          json:
+            shippingAddressId: "00000000-0000-0000-0000-000000000001"
+            paymentMethod: "COD"
+            couponCode: "MEGA20"
+          expect:
+            # Under extreme load, expects either 201 (Success) or 400 (Out of stock / Cart empty)
+            # Must NEVER return 500 (Unhandled crash)
+            - statusCode: [201, 400, 429]

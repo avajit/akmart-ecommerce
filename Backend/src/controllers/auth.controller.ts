@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { URL } from 'url';
 import { AuthService } from '../services/auth.service';
 import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
@@ -58,6 +59,19 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // CSRF Protection on Cookie-based refresh:
+    const requestOrigin = (req.headers.origin as string) || (req.headers.referer ? new URL(req.headers.referer as string).origin : undefined);
+    if (requestOrigin && env.NODE_ENV === 'production') {
+      const cleanOrigin = requestOrigin.replace(/\/$/, '');
+      const cleanFrontendUrl = env.FRONTEND_WEB_URL?.replace(/\/$/, '');
+      const cleanMobileUrl = env.FRONTEND_MOBILE_URL?.replace(/\/$/, '');
+      const isVercel = cleanOrigin.endsWith('.vercel.app');
+      const isAllowed = cleanOrigin === cleanFrontendUrl || cleanOrigin === cleanMobileUrl || isVercel;
+      if (!isAllowed) {
+        throw new AppError('Cross-Site Request Forgery (CSRF) detected. Origin rejected.', 403, 'CSRF_REJECTED');
+      }
+    }
+
     const token = req.cookies?.refreshToken;
     if (!token) throw new AppError('No refresh token provided', 401);
 

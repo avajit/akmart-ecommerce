@@ -25,7 +25,7 @@ import { toast } from 'react-toastify';
 export default function Cart() {
   const { isAuthenticated, user } = useAuthStore();
   const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
-  const isMerchantOrAdmin = role === 'SELLER' || role === 'ADMIN';
+  const isMerchantOrAdmin = role === 'ADMIN';
 
   const navigate = useNavigate();
   const { 
@@ -648,7 +648,7 @@ export default function Cart() {
               <div className="border-t border-gray-800 pt-3.5 flex justify-between items-baseline">
                 <div>
                   <span className="text-base font-extrabold text-white block">Total Payable</span>
-                  <span className="text-[10px] text-gray-500">Includes all taxes & delivery fees</span>
+                  <span className="text-[10px] text-gray-400">Includes all taxes & delivery fees</span>
                 </div>
                 <span className="text-2xl font-extrabold text-orange-400">
                   {currency}{selectedFinalPayable.toLocaleString()}
@@ -663,6 +663,7 @@ export default function Cart() {
                   <form onSubmit={handleApplyCoupon} className="flex gap-2">
                     <input
                       type="text"
+                      aria-label="Promotional Coupon Code"
                       placeholder="Promo code (e.g. AKMART10)"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}

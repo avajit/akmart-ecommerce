@@ -25,24 +25,26 @@ setupGracefulShutdown(server, prisma, redis);
 // 1. Security Headers (Helmet)
 app.use(helmet());
 
-// 2. CORS (Strict allowed origins for web & mobile, plus Vercel previews)
-const allowedOrigins = [
-  env.FRONTEND_WEB_URL,
-  env.FRONTEND_MOBILE_URL,
+// 2. CORS (Strict allowed origins for web & mobile, plus Vercel deployment support)
+export const allowedOrigins = [
+  env.FRONTEND_WEB_URL?.replace(/\/$/, ''),
+  env.FRONTEND_MOBILE_URL?.replace(/\/$/, ''),
   'http://localhost:5173',
   'http://localhost:3000',
-];
+].filter(Boolean) as string[];
 
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
-      const isVercel = origin.endsWith('.vercel.app');
-      const isAllowed = allowedOrigins.includes(origin) || isVercel;
+      const cleanOrigin = origin.replace(/\/$/, '');
+      const isVercel = cleanOrigin.endsWith('.vercel.app');
+      const isAllowed = allowedOrigins.includes(cleanOrigin) || isVercel;
       if (isAllowed) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error('Not allowed by CORS policy'));
       }
     },
     credentials: true, // Required for HttpOnly cookies (Refresh Token)

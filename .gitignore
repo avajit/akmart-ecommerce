@@ -69,6 +69,7 @@ coverage/
 *.lcov
 .nyc_output/
 Backend/coverage/
+test-results/
 
 # Local Scratch, Prompts & Personal Notes
 prompt.md

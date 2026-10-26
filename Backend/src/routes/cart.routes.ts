@@ -4,7 +4,7 @@ import * as cartController from "../controllers/cart.controller";
 
 const router = Router();
 
-router.use(requireAuth, requireRole(["CONSUMER"]));
+router.use(requireAuth, requireRole(["CONSUMER", "SELLER"]));
 
 router.get("/", cartController.getCart);
 router.post("/items", cartController.addItem);
