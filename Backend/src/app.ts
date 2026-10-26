@@ -17,6 +17,9 @@ export const redis = new Redis(env.REDIS_URL);
 const app = express();
 const server = createServer(app);
 
+// Enable trust proxy so Express recognizes real client IPs behind Render/Cloudflare/load balancers
+app.set('trust proxy', 1);
+
 // Graceful Shutdown setup
 setupGracefulShutdown(server, prisma, redis);
 
