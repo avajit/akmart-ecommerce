@@ -1,1 +1,0 @@
-- [x] Modify Hero.jsx to import hero.json and use fake data instead of API fetch

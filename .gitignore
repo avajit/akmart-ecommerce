@@ -94,9 +94,13 @@ Backend/test-*.ts
 Backend/test-listing.js
 Backend/flushRedis.mjs
 Backend/generateEthereal.js
-/ux-fixes/
+ux-fixes/
+**/ux-fixes/
+test-results/
+**/test-results/
 storage_local/
 **/storage_local/
 passwords.txt
 replace-secrets.txt
+
 
