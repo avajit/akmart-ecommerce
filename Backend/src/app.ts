@@ -25,8 +25,12 @@ setupGracefulShutdown(server, prisma, redis);
 
 // --- GLOBAL MIDDLEWARES ---
 
-// 1. Security Headers (Helmet)
-app.use(helmet());
+// 1. Security Headers (Helmet with cross-origin asset policy for media)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // 2. CORS (Strict allowed origins for web & mobile, plus Vercel deployment support)
 export const allowedOrigins = [

@@ -244,20 +244,31 @@ export default function AdminProducts() {
                       className="hover:bg-[#1A1A1A] cursor-pointer transition-colors group"
                     >
                       <td className="p-4">
-                        <div className="font-bold text-white text-sm group-hover:text-orange-400 transition">
-                          {p.name}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                            <FiLayers size={11} />
-                            {variantCount} variant{variantCount !== 1 ? 's' : ''}
-                          </span>
-                          {p.brand?.name && (
-                            <>
-                              <span className="text-gray-600">&bull;</span>
-                              <span className="text-[11px] text-gray-400">Brand: {p.brand.name}</span>
-                            </>
+                        <div className="flex items-center gap-3">
+                          {p.primaryImage ? (
+                            <img src={p.primaryImage} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800 shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-black border border-gray-800 flex items-center justify-center text-gray-600 text-[10px] shrink-0">
+                              <FiLayers size={14} />
+                            </div>
                           )}
+                          <div className="min-w-0">
+                            <div className="font-bold text-white text-sm group-hover:text-orange-400 transition truncate max-w-xs">
+                              {p.name}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                                <FiLayers size={11} />
+                                {variantCount} variant{variantCount !== 1 ? 's' : ''}
+                              </span>
+                              {p.brand?.name && (
+                                <>
+                                  <span className="text-gray-600">&bull;</span>
+                                  <span className="text-[11px] text-gray-400">Brand: {p.brand.name}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
 

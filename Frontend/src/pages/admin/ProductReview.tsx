@@ -84,6 +84,68 @@ export default function ProductReview() {
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Description</h3>
           <p className="text-sm text-gray-300 leading-relaxed">{product.description || "No description."}</p>
         </div>
+
+        {/* Submitted Product Images Gallery for Admin Verification */}
+        {(() => {
+          const allImgs: any[] = [
+            ...(product.images || []),
+            ...(product.variants?.flatMap((v: any) => v.images || []) || []),
+          ].filter(Boolean);
+
+          const uniqueImgs = allImgs.filter((img, idx, arr) => arr.findIndex(i => i.url === img.url) === idx);
+
+          return uniqueImgs.length > 0 ? (
+            <div className="pt-3 border-t border-gray-800">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Submitted Photos ({uniqueImgs.length})
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {uniqueImgs.map((img: any, idx: number) => (
+                  <a
+                    key={img.id || idx}
+                    href={img.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group block w-20 h-20 rounded-xl overflow-hidden border border-gray-800 hover:border-orange-500 transition shadow-md"
+                  >
+                    <img
+                      src={img.url}
+                      alt={`Product review photo ${idx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    {img.isPrimary && (
+                      <span className="absolute bottom-1 left-1 bg-orange-500 text-white text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded shadow">
+                        Main
+                      </span>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
+
+        {/* Variants Breakdown */}
+        {product.variants && product.variants.length > 0 && (
+          <div className="pt-3 border-t border-gray-800">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+              Product Variants ({product.variants.length})
+            </h3>
+            <div className="space-y-2">
+              {product.variants.map((v: any) => (
+                <div key={v.id} className="bg-black/60 border border-gray-800 rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-white">{v.name}</span>
+                    <span className="text-gray-500 font-mono text-[11px] ml-2">SKU: {v.sku}</span>
+                  </div>
+                  <span className="text-gray-400 font-medium">
+                    {v.images?.length || 0} photo{(v.images?.length || 0) !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         {isPending ? (
           <div className="pt-4 border-t border-gray-800">

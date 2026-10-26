@@ -86,6 +86,11 @@ const Profile: React.FC = () => {
   const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarProgress, setAvatarProgress] = useState(0);
+  const [avatarImgError, setAvatarImgError] = useState(false);
+
+  useEffect(() => {
+    setAvatarImgError(false);
+  }, [userData.avatarUrl]);
 
   const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -314,11 +319,12 @@ const Profile: React.FC = () => {
             <div className='relative group'>
               {/* Circular Avatar Container */}
               <div className='relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-orange-500/40 shadow-xl bg-[#1A1A1A] flex items-center justify-center'>
-                {userData.avatarUrl ? (
+                {userData.avatarUrl && !avatarImgError ? (
                   <img 
                     src={userData.avatarUrl} 
                     alt="Profile Avatar" 
                     className='w-full h-full object-cover'
+                    onError={() => setAvatarImgError(true)}
                   />
                 ) : (
                   <div className='w-full h-full bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg'>

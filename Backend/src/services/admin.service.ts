@@ -1,5 +1,6 @@
 import { AppError } from "../utils/AppError";
 import { prisma, redis } from "../app";
+import { resolveStorageUrl } from "../lib/storage";
 
 // ── Product Review Queue ──────────────────────────────────────
 
@@ -11,6 +12,12 @@ export const getPendingProducts = async (page = 1, limit = 20) => {
       include: {
         category: { select: { name: true, slug: true } },
         brand: { select: { name: true } },
+        images: { orderBy: { order: "asc" } },
+        variants: {
+          include: {
+            images: { orderBy: { order: "asc" } },
+          },
+        },
         createdBy: {
           select: {
             id: true, fullName: true, email: true,
@@ -25,7 +32,24 @@ export const getPendingProducts = async (page = 1, limit = 20) => {
     }),
     prisma.product.count({ where: { status: "PENDING_REVIEW", deletedAt: null } }),
   ]);
-  return { products, total, page, limit, totalPages: Math.ceil(total / limit) };
+
+  const shaped = products.map((p: any) => ({
+    ...p,
+    primaryImage: resolveStorageUrl(p.images?.[0]?.url ?? p.variants?.[0]?.images?.[0]?.url) ?? null,
+    images: (p.images || []).map((img: any) => ({
+      ...img,
+      url: resolveStorageUrl(img.url) || img.url,
+    })),
+    variants: (p.variants || []).map((v: any) => ({
+      ...v,
+      images: (v.images || []).map((img: any) => ({
+        ...img,
+        url: resolveStorageUrl(img.url) || img.url,
+      })),
+    })),
+  }));
+
+  return { products: shaped, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const getAllProducts = async (
@@ -48,6 +72,12 @@ export const getAllProducts = async (
       include: {
         category: { select: { name: true, slug: true } },
         brand: { select: { name: true } },
+        images: { orderBy: { order: "asc" } },
+        variants: {
+          include: {
+            images: { orderBy: { order: "asc" } },
+          },
+        },
         createdBy: {
           select: {
             fullName: true,
@@ -62,7 +92,24 @@ export const getAllProducts = async (
     }),
     prisma.product.count({ where }),
   ]);
-  return { products, total, page, limit, totalPages: Math.ceil(total / limit) };
+
+  const shaped = products.map((p: any) => ({
+    ...p,
+    primaryImage: resolveStorageUrl(p.images?.[0]?.url ?? p.variants?.[0]?.images?.[0]?.url) ?? null,
+    images: (p.images || []).map((img: any) => ({
+      ...img,
+      url: resolveStorageUrl(img.url) || img.url,
+    })),
+    variants: (p.variants || []).map((v: any) => ({
+      ...v,
+      images: (v.images || []).map((img: any) => ({
+        ...img,
+        url: resolveStorageUrl(img.url) || img.url,
+      })),
+    })),
+  }));
+
+  return { products: shaped, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const approveProduct = async (productId: string) => {

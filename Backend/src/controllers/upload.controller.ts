@@ -242,6 +242,8 @@ export const streamFile = async (req: Request, res: Response, next: NextFunction
 
     // Cache-Control: 1 year immutable for immutable UUID keys
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
     stream.pipe(res);
   } catch (err: any) {
