@@ -83,18 +83,22 @@ function AppRoutes() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/place-order" element={<PlaceOrder />} />
             <Route path="/orders" element={<Orders />} />
-            <Route path="/wishlist" element={<Wishlist />} />
           </Route>
 
-          {/* ----- General Authenticated User Account ----- */}
+          {/* ----- General Authenticated User Account (Wishlist & Profile) ----- */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
 
-        {/* ----- Seller Merchant Wall (Sellers & Admins Only) ----- */}
-        <Route element={<ProtectedRoute allowedRoles={['SELLER', 'ADMIN']} />}>
+        {/* ----- Seller Onboarding (Any Logged-in User can apply) ----- */}
+        <Route element={<ProtectedRoute />}>
           <Route path="/seller/onboarding" element={<SellerOnboarding />} />
+        </Route>
+
+        {/* ----- Seller Merchant Wall (Verified Sellers & Admins Only) ----- */}
+        <Route element={<ProtectedRoute allowedRoles={['SELLER', 'ADMIN']} />}>
           <Route element={<SellerLayout />}>
             <Route path="/seller/dashboard" element={<SellerDashboard />} />
             <Route path="/seller/products" element={<SellerProducts />} />

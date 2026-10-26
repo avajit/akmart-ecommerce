@@ -1,8 +1,9 @@
 import { AppError } from "../utils/AppError";
 import { prisma } from "../app";
+import { validateCoupon } from "./coupon.service";
 
 export const checkout = async (userId: string, body: any) => {
-  const { shippingAddressId, paymentMethod } = body;
+  const { shippingAddressId, paymentMethod, couponCode, selectedItemIds } = body;
 
   const cart = await prisma.cart.findUnique({
     where: { userId },
@@ -19,11 +20,20 @@ export const checkout = async (userId: string, body: any) => {
     throw new AppError("Cart is empty", 400, "CART_EMPTY");
   }
 
-  // Calculate total and prepare items
-  let totalAmount = 0;
+  // Industry Standard: Support selective checkout (buy 1 or selected items while keeping remainder in cart)
+  const itemsToCheckout = selectedItemIds && Array.isArray(selectedItemIds) && selectedItemIds.length > 0
+    ? cart.items.filter((item: any) => selectedItemIds.includes(item.id))
+    : cart.items;
+
+  if (itemsToCheckout.length === 0) {
+    throw new AppError("No items selected for checkout", 400, "NO_ITEMS_SELECTED");
+  }
+
+  // Calculate subtotal and prepare items
+  let subtotal = 0;
   const orderItems: any[] = [];
 
-  for (const item of cart.items) {
+  for (const item of itemsToCheckout) {
     if (!item.sellerListing.isActive || item.sellerListing.deletedAt) {
       throw new AppError("One or more items in your cart are no longer available", 400, "ITEM_UNAVAILABLE");
     }
@@ -34,7 +44,7 @@ export const checkout = async (userId: string, body: any) => {
     }
 
     const lineTotal = Number(item.sellerListing.price) * item.quantity;
-    totalAmount += lineTotal;
+    subtotal += lineTotal;
 
     orderItems.push({
       sellerListingId: item.sellerListingId,
@@ -44,11 +54,30 @@ export const checkout = async (userId: string, body: any) => {
     });
   }
 
+  // Enterprise Shipping Rule: Free delivery above NPR 2,500; otherwise NPR 100
+  const FREE_SHIPPING_THRESHOLD = 2500;
+  const STANDARD_DELIVERY_FEE = 100;
+  const deliveryFee = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_DELIVERY_FEE;
+
+  // Server-side Coupon Validation
+  let discountAmount = 0;
+  let couponId: string | null = null;
+  let appliedCouponCode: string | null = null;
+
+  if (couponCode && typeof couponCode === "string" && couponCode.trim()) {
+    const couponRes = await validateCoupon(couponCode, subtotal, userId);
+    discountAmount = couponRes.coupon.discountAmount;
+    couponId = couponRes.coupon.id;
+    appliedCouponCode = couponRes.coupon.code;
+  }
+
+  const totalAmount = Math.max(0, subtotal + deliveryFee - discountAmount);
+
   // Create order transaction
   const order = await prisma.$transaction(async (tx) => {
     // Deduct stock atomically with conditional check (stock >= quantity)
     // Prevents race conditions and overselling during flash-sales
-    for (const item of cart.items) {
+    for (const item of itemsToCheckout) {
       const updateResult = await tx.sellerListing.updateMany({
         where: {
           id: item.sellerListingId,
@@ -70,13 +99,26 @@ export const checkout = async (userId: string, body: any) => {
       }
     }
 
-    // Create Order
+    // Atomically increment coupon usage count
+    if (couponId) {
+      await tx.coupon.update({
+        where: { id: couponId },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
+
+    // Create Order with full financial snapshot
     const newOrder = await tx.order.create({
       data: {
         userId,
+        subtotal,
+        deliveryFee,
+        discountAmount,
+        couponId,
+        couponCode: appliedCouponCode,
         totalAmount,
         shippingAddressId,
-        paymentMethod,
+        paymentMethod: paymentMethod || 'COD',
         status: 'CONFIRMED', // Assuming COD directly confirms
         items: {
           create: orderItems
@@ -100,13 +142,15 @@ export const checkout = async (userId: string, body: any) => {
             }
           }
         },
-        shippingAddress: true
+        shippingAddress: true,
+        coupon: true,
       }
     });
 
-    // Clear cart
+    // Clear only checked-out items from cart (leaving unselected items safely in cart)
+    const checkedOutItemIds = itemsToCheckout.map((i: any) => i.id);
     await tx.cartItem.deleteMany({
-      where: { cartId: cart.id }
+      where: { id: { in: checkedOutItemIds } }
     });
 
     return newOrder;

@@ -73,6 +73,13 @@ export const verifySeller = async (req: AuthenticatedRequest, res: Response, nex
   } catch (err) { next(err); }
 };
 
+export const rejectSeller = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const profile = await adminService.rejectSeller(p(req.params.id));
+    res.json({ success: true, message: "Seller application rejected", data: profile });
+  } catch (err) { next(err); }
+};
+
 export const suspendSeller = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const profile = await adminService.suspendSeller(p(req.params.id));

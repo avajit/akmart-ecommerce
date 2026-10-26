@@ -6,6 +6,7 @@ import {
   FiShoppingBag, FiTag, FiMonitor, FiTv, FiSmile, FiPackage, FiZap, FiFeather, FiLayers
 } from "react-icons/fi";
 import { assets } from "../assets/frontend_assets/assets";
+import BrandLogo from "./BrandLogo";
 import { ShopContext } from "../context/ShopContext";
 import { useAuthStore } from "../store/authStore";
 import { useLogout } from "../hooks/useAuth";
@@ -48,12 +49,6 @@ const getDepartmentIcon = (slug?: string): React.ComponentType<{ className?: str
   return FiLayers;
 };
 
-// Automatically disambiguate "Home" into "Home & Living" so consumers clearly know it's the furniture & decor department
-const getDepartmentDisplayName = (name: string): string => {
-  if (name.trim().toLowerCase() === 'home') return 'Home & Living';
-  return name;
-};
-
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -66,6 +61,7 @@ export default function Navbar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileExpandedCats, setMobileExpandedCats] = useState<Record<string, boolean>>({});
   
   const profileRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -77,13 +73,22 @@ export default function Navbar() {
   const queryParams = new URLSearchParams(location.search);
   const currentCategory = queryParams.get('category');
 
-  const { getCartCount, currency } = useContext(ShopContext) as any;
+  const { getCartCount, currency, wishlistCount = 0, openCartDrawer } = useContext(ShopContext) as any;
   const displayCurrency = currency || 'NPR ';
   const { user, isAuthenticated } = useAuthStore();
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   const role = user?.roleName || user?.role || 'CONSUMER';
   const cartCount = typeof getCartCount === 'function' ? getCartCount() : 0;
+
+  // Gracefully extract readable user display name without email domain cutoffs or harsh ellipsis
+  const getDisplayName = (): string => {
+    if (!user) return 'User';
+    const raw = user.fullName || (user as any).name || user.email || 'User';
+    const cleaned = raw.includes('@') ? raw.split('@')[0] : raw;
+    const parts = cleaned.trim().split(/\s+/);
+    return parts[0] || 'User';
+  };
 
   // Fetch full category hierarchy once
   useEffect(() => {
@@ -188,8 +193,31 @@ export default function Navbar() {
     }
   };
 
-  // Top departments for the sub-navigation strip
-  const topDepartments = categories.slice(0, 6);
+  const toggleMobileCat = (catId: string) => {
+    setMobileExpandedCats(prev => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
+  // Priority slugs for the primary visible slots in desktop sub-nav (Amazon / Flipkart pattern)
+  const CORE_DEPARTMENT_SLUGS = ['electronics', 'home', 'kids', 'men', 'women'];
+
+  // Sort categories placing core flagship departments first, followed by all other dynamic categories
+  const sortedDepartments = [...categories].sort((a, b) => {
+    const aSlug = (a.slug || '').toLowerCase();
+    const bSlug = (b.slug || '').toLowerCase();
+    const idxA = CORE_DEPARTMENT_SLUGS.findIndex(s => aSlug.includes(s));
+    const idxB = CORE_DEPARTMENT_SLUGS.findIndex(s => bSlug.includes(s));
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  // First 5 slots are reserved for primary visible departments
+  const visibleDepartments = sortedDepartments.slice(0, 5);
+  // Any 6th, 7th, 8th... categories automatically fold into "More ▾" to protect the navbar layout
+  const overflowDepartments = sortedDepartments.slice(5);
+
+  const isPriceLowActive = queryParams.get('sort') === 'price-low';
 
   return (
     <header className="sticky top-0 left-0 right-0 z-50 bg-[#0D0D0D] border-b border-gray-800 font-poppins shadow-lg">
@@ -199,19 +227,14 @@ export default function Navbar() {
 
         {/* LEFT: BRAND LOGO */}
         <div className="flex items-center gap-3 shrink-0">
-          <Link to="/" onClick={closeAll} className="flex items-center gap-2 group focus:outline-none">
-            <img src={assets.logo} alt="AkMart" className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-105" />
-            <span className="hidden xl:inline-block px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/30 rounded-md">
-              Nepal Hub
-            </span>
-          </Link>
+          <BrandLogo onClick={closeAll} />
         </div>
 
         {/* CENTER: FLIPKART/AMAZON PROMINENT SEARCH BAR (DESKTOP) */}
-        <div className="hidden sm:flex flex-1 max-w-2xl relative" ref={searchContainerRef}>
+        <div className="hidden sm:flex flex-1 max-w-2xl relative group/search" ref={searchContainerRef}>
           <form onSubmit={handleSearchSubmit} className="w-full flex items-center relative">
-            <div className="w-full flex items-center bg-[#181818] border border-gray-700/80 hover:border-gray-600 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 rounded-xl transition-all duration-200 overflow-hidden shadow-inner">
-              <span className="pl-3.5 pr-2 text-gray-400">
+            <div className="w-full flex items-center bg-[#161616] border border-gray-700/80 hover:border-gray-600 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 rounded-xl transition-all duration-200 overflow-hidden shadow-inner">
+              <span className="pl-3.5 pr-2 text-gray-400 group-focus-within/search:text-orange-400 transition-colors">
                 <FiSearch className="w-4 h-4" />
               </span>
               <input
@@ -219,6 +242,7 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => { if (searchQuery.trim().length >= 2) setShowSuggestions(true); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') setShowSuggestions(false); }}
                 placeholder="Search for products, brands, categories..."
                 className="w-full bg-transparent py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none"
               />
@@ -226,16 +250,17 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => { setSearchQuery(""); setShowSuggestions(false); }}
-                  className="px-2 text-gray-400 hover:text-white"
+                  className="p-1 mr-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
                   title="Clear search"
                 >
-                  <FiX className="w-4 h-4" />
+                  <FiX className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-white font-medium text-xs sm:text-sm px-4 py-2.5 transition-colors shrink-0 flex items-center gap-1.5"
+                className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-xs sm:text-sm px-5 py-2.5 transition-all shrink-0 flex items-center gap-1.5 shadow-sm"
               >
+                <FiSearch className="w-3.5 h-3.5 hidden md:inline-block" />
                 <span>Search</span>
               </button>
             </div>
@@ -243,7 +268,7 @@ export default function Navbar() {
 
           {/* LIVE AUTOCOMPLETE DROPDOWN */}
           {showSuggestions && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-[#141414] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fadeIn text-sm">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#141414]/98 backdrop-blur-md border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fadeIn text-sm">
               
               {/* Category Matches */}
               {matchingCategories.length > 0 && (
@@ -333,7 +358,7 @@ export default function Navbar() {
           {role === 'SELLER' ? (
             <Link 
               to="/seller/dashboard" 
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-xs font-semibold transition-all"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm"
             >
               <FiBriefcase className="w-3.5 h-3.5" />
               <span>Merchant Center</span>
@@ -341,16 +366,17 @@ export default function Navbar() {
           ) : role === 'ADMIN' ? (
             <Link 
               to="/admin/dashboard" 
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-semibold transition-all"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm"
             >
               <FiShield className="w-3.5 h-3.5" />
               <span>Admin Center</span>
             </Link>
           ) : (
             <Link 
-              to={isAuthenticated ? "/seller/dashboard" : "/register"}
-              className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-300 hover:text-orange-400 transition-colors font-medium border border-gray-800 hover:border-gray-700 rounded-xl"
+              to={isAuthenticated ? "/seller/onboarding" : "/login?redirect=/seller/onboarding"}
+              className="hidden lg:flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-gray-200 hover:text-white bg-[#161616] hover:bg-[#202020] border border-gray-700/80 hover:border-orange-500/40 rounded-xl transition-all shadow-sm"
             >
+              <FiBriefcase className="w-3.5 h-3.5 text-orange-400" />
               <span>Become a Seller</span>
             </Link>
           )}
@@ -364,52 +390,66 @@ export default function Navbar() {
             <FiSearch className="w-5 h-5" />
           </button>
 
-          {/* Wishlist (Consumers & Guests only) */}
-          {(!isAuthenticated || role === 'CONSUMER') && (
-            <NavLink 
-              to="/wishlist" 
-              aria-label="Wishlist"
-              className={({ isActive }) => `p-2 text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors relative ${isActive ? 'text-orange-500' : ''}`}
-            >
-              <FiHeart className="w-5 h-5" />
-            </NavLink>
-          )}
+          {/* Wishlist (Desktop/tablet header - accessible to all shoppers) */}
+          <NavLink 
+            to="/wishlist" 
+            aria-label="Wishlist"
+            title="My Wishlist"
+            className={({ isActive }) => 
+              `hidden sm:flex w-10 h-10 rounded-xl items-center justify-center transition-all relative border ${
+                isActive 
+                  ? 'text-orange-400 bg-orange-500/10 border-orange-500/30 shadow-sm' 
+                  : 'text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700'
+              }`
+            }
+          >
+            <FiHeart className={`w-4.5 h-4.5 ${wishlistCount > 0 ? 'text-orange-400' : ''}`} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-orange-500 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-[#0D0D0D] shadow-md">
+                {wishlistCount}
+              </span>
+            )}
+          </NavLink>
 
           {/* Cart with count badge (Consumers & Guests only) */}
           {(!isAuthenticated || role === 'CONSUMER') && (
-            <NavLink 
-              to="/cart" 
-              aria-label="Cart"
-              className={({ isActive }) => `p-2 text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors relative ${isActive ? 'text-orange-500' : ''}`}
+            <button 
+              type="button"
+              id="header-cart-btn"
+              onClick={() => navigate('/cart')} 
+              aria-label="Shopping Cart"
+              title="Shopping Cart"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all relative border text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700"
             >
-              <FiShoppingCart className="w-5 h-5" />
+              <FiShoppingCart className="w-4.5 h-4.5" />
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-[#0D0D0D]">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-orange-500 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-[#0D0D0D] shadow-md">
                   {cartCount}
                 </span>
               )}
-            </NavLink>
+            </button>
           )}
 
-          {/* Profile Dropdown */}
-          <div className="relative" ref={profileRef}>
+          {/* Profile Dropdown (Desktop & Tablet only; mobile uses bottom bar 'Account' or drawer) */}
+          <div className="hidden sm:block relative" ref={profileRef}>
             {isAuthenticated ? (
               <button 
                 onClick={handleProfileClick}
-                className="flex items-center gap-2 p-1 sm:px-3 sm:py-1.5 rounded-xl hover:bg-[#1A1A1A] border border-transparent hover:border-gray-800 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#161616] hover:bg-[#202020] border border-gray-800/80 hover:border-gray-700 transition-all cursor-pointer shadow-sm group"
+                aria-label="User Account Menu"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-xs shadow-md">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-orange-500/30 shrink-0">
                   {user?.fullName ? user.fullName[0].toUpperCase() : 'U'}
                 </div>
-                <div className="hidden xl:flex flex-col text-left">
-                  <span className="text-xs font-bold text-white max-w-[100px] truncate">
-                    {user?.fullName?.split(' ')[0] || 'User'}
+                <div className="hidden xl:flex flex-col text-left leading-tight">
+                  <span className="text-xs font-semibold text-white max-w-[125px] truncate group-hover:text-orange-400 transition-colors">
+                    {getDisplayName()}
                   </span>
-                  <span className="text-[10px] text-gray-400 uppercase font-semibold">
-                    {role}
+                  <span className="text-[9.5px] text-orange-400/90 font-medium tracking-wide uppercase">
+                    {role === 'CONSUMER' ? 'Account' : role}
                   </span>
                 </div>
-                <FiChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform hidden sm:block ${profileOpen ? 'rotate-180' : ''}`} />
+                <FiChevronDown className={`w-3.5 h-3.5 text-gray-400 group-hover:text-orange-400 transition-transform duration-200 hidden sm:block ${profileOpen ? 'rotate-180' : ''}`} />
               </button>
             ) : (
               <Link 
@@ -438,9 +478,14 @@ export default function Navbar() {
                     <FiUser className="w-4 h-4" /> My Profile
                   </NavLink>
                   {role === 'CONSUMER' && (
-                    <NavLink to="/orders" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>
-                      <FiShoppingBag className="w-4 h-4" /> My Orders & Tracking
-                    </NavLink>
+                    <>
+                      <NavLink to="/orders" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>
+                        <FiShoppingBag className="w-4 h-4" /> My Orders & Tracking
+                      </NavLink>
+                      <NavLink to="/seller/onboarding" className="flex items-center gap-3 px-5 py-2.5 text-xs text-orange-400 hover:bg-[#1E1E1E] transition-colors font-medium border-t border-gray-800/60 mt-1" onClick={closeAll}>
+                        <FiBriefcase className="w-4 h-4 text-orange-400" /> Become a Seller
+                      </NavLink>
+                    </>
                   )}
                   {role === 'SELLER' && (
                     <NavLink to="/seller/dashboard" className="flex items-center gap-3 px-5 py-2.5 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-orange-400 transition-colors font-medium" onClick={closeAll}>
@@ -481,23 +526,32 @@ export default function Navbar() {
       {/* ── MOBILE EXPANDED SEARCH BAR ──────────────────────────────── */}
       {mobileSearchOpen && (
         <div className="sm:hidden px-4 pb-3 bg-[#0D0D0D] border-b border-gray-800 animate-fadeIn" ref={mobileSearchRef}>
-          <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#1A1A1A] border border-gray-700 rounded-xl overflow-hidden px-3 py-1.5">
+          <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#161616] border border-gray-700/80 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 rounded-xl overflow-hidden pl-3 pr-1.5 py-1.5 transition-all">
             <FiSearch className="text-gray-400 w-4 h-4 mr-2 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products, brands..."
+              onKeyDown={(e) => { if (e.key === 'Escape') { setShowSuggestions(false); setMobileSearchOpen(false); } }}
+              placeholder="Search products, brands, categories..."
               className="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
               autoFocus
             />
             {searchQuery && (
-              <button type="button" onClick={() => setSearchQuery("")} className="text-gray-400 mr-2">
+              <button 
+                type="button" 
+                onClick={() => setSearchQuery("")} 
+                className="p-1 mr-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                title="Clear"
+              >
                 <FiX className="w-3.5 h-3.5" />
               </button>
             )}
-            <button type="submit" className="text-orange-400 text-xs font-semibold shrink-0">
-              Go
+            <button 
+              type="submit" 
+              className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm shrink-0 flex items-center gap-1 transition-all"
+            >
+              <span>Search</span>
             </button>
           </form>
 
@@ -564,15 +618,15 @@ export default function Navbar() {
 
       {/* ── 2. FLIPKART-STYLE CATEGORY SUB-NAV STRIP (DESKTOP) ────────── */}
       <div className="hidden md:block bg-[#111111]/95 backdrop-blur-md border-t border-gray-800/60 border-b border-gray-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto no-scrollbar py-2 text-xs font-medium text-gray-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto lg:overflow-visible no-scrollbar py-2 text-xs font-medium text-gray-300">
           
-          <div className="flex items-center gap-1.5 lg:gap-2">
+          <div className="flex items-center gap-2 lg:gap-3">
             <Link 
               to="/collection"
-              onClick={() => setActiveMegaMenu(null)}
-              className={`px-3 py-1.5 rounded-lg border transition-colors duration-150 flex items-center gap-2 font-medium ${
-                !currentCategory && location.pathname === '/collection' 
-                  ? 'text-orange-400 bg-orange-500/10 border-orange-500/20' 
+              onClick={closeAll}
+              className={`px-3 py-1.5 rounded-lg border transition-all duration-150 flex items-center gap-2 font-medium ${
+                !currentCategory && location.pathname === '/collection' && !isPriceLowActive
+                  ? 'text-orange-400 bg-orange-500/10 border-orange-500/30 shadow-sm' 
                   : 'text-gray-300 border-transparent hover:text-white hover:bg-white/5'
               }`}
             >
@@ -580,7 +634,7 @@ export default function Navbar() {
               <span>All Products</span>
             </Link>
 
-            {topDepartments.map((dept: any) => {
+            {visibleDepartments.map((dept: any) => {
               const IconComp = getDepartmentIcon(dept.slug);
               const hasSub = dept.children && dept.children.length > 0;
               const isActive = currentCategory === dept.slug || dept.children?.some((c: any) => c.slug === currentCategory);
@@ -594,30 +648,30 @@ export default function Navbar() {
                 >
                   <Link
                     to={`/collection?category=${dept.slug}`}
-                    onClick={() => setActiveMegaMenu(null)}
-                    className={`px-3 py-1.5 rounded-lg border transition-colors duration-150 flex items-center gap-2 font-medium ${
+                    onClick={closeAll}
+                    className={`px-3 py-1.5 rounded-lg border transition-all duration-150 flex items-center gap-2 font-medium ${
                       isActive 
-                        ? 'text-orange-400 bg-orange-500/10 border-orange-500/20' 
+                        ? 'text-orange-400 bg-orange-500/10 border-orange-500/30 shadow-sm' 
                         : 'text-gray-300 border-transparent hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <IconComp className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-orange-400' : 'text-gray-400 group-hover:text-orange-400'}`} />
-                    <span className="tracking-wide">{getDepartmentDisplayName(dept.name)}</span>
+                    <span className="tracking-wide">{dept.name}</span>
                     {hasSub && (
                       <FiChevronDown className="w-3 h-3 text-gray-500 group-hover:text-orange-400 transition-transform duration-200 group-hover:rotate-180 shrink-0" />
                     )}
                   </Link>
 
                   {/* Mega Menu Dropdown */}
-                  {hasSub && activeMegaMenu === dept.id && (
-                    <div className="absolute left-0 top-full pt-1.5 z-50 animate-fadeIn">
+                  {hasSub && (
+                    <div className={`absolute left-0 top-full pt-1.5 z-50 animate-fadeIn ${activeMegaMenu === dept.id ? 'block' : 'hidden group-hover:block'}`}>
                       <div className="bg-[#141414] border border-gray-800 rounded-2xl shadow-2xl p-4 w-64 backdrop-blur-md">
                         <div className="pb-2.5 mb-2.5 border-b border-gray-800 text-[10px] font-bold uppercase tracking-wider text-gray-500 flex justify-between items-center">
                           <span className="flex items-center gap-1.5">
                             <IconComp className="w-3.5 h-3.5 text-orange-400" />
-                            {getDepartmentDisplayName(dept.name)}
+                            {dept.name}
                           </span>
-                          <Link to={`/collection?category=${dept.slug}`} className="text-orange-400 hover:underline">
+                          <Link to={`/collection?category=${dept.slug}`} onClick={closeAll} className="text-orange-400 hover:underline">
                             View All →
                           </Link>
                         </div>
@@ -644,12 +698,82 @@ export default function Navbar() {
                 </div>
               );
             })}
+
+            {/* "More Categories" Auto-Fold Popover (Flipkart / Amazon Pattern) */}
+            {overflowDepartments.length > 0 && (
+              <div 
+                className="relative group"
+                onMouseEnter={() => setActiveMegaMenu('more-categories')}
+                onMouseLeave={() => setActiveMegaMenu(null)}
+              >
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 rounded-lg border transition-all duration-150 flex items-center gap-1.5 font-medium ${
+                    overflowDepartments.some((d: any) => currentCategory === d.slug || d.children?.some((c: any) => c.slug === currentCategory))
+                      ? 'text-orange-400 bg-orange-500/10 border-orange-500/30 shadow-sm' 
+                      : 'text-gray-300 border-transparent hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <FiLayers className="w-3.5 h-3.5 text-gray-400 group-hover:text-orange-400 transition-colors shrink-0" />
+                  <span>More</span>
+                  <FiChevronDown className="w-3 h-3 text-gray-500 group-hover:text-orange-400 transition-transform duration-200 group-hover:rotate-180 shrink-0" />
+                </button>
+
+                {/* More Categories Dropdown Menu */}
+                <div className={`absolute left-0 top-full pt-1.5 z-50 animate-fadeIn ${activeMegaMenu === 'more-categories' ? 'block' : 'hidden group-hover:block'}`}>
+                  <div className="bg-[#141414] border border-gray-800 rounded-2xl shadow-2xl p-4 w-72 backdrop-blur-md">
+                      <div className="pb-2.5 mb-2.5 border-b border-gray-800 text-[10px] font-bold uppercase tracking-wider text-gray-500 flex justify-between items-center">
+                        <span className="flex items-center gap-1.5">
+                          <FiLayers className="w-3.5 h-3.5 text-orange-400" />
+                          More Departments ({overflowDepartments.length})
+                        </span>
+                        <Link to="/collection" onClick={closeAll} className="text-orange-400 hover:underline">
+                          View All →
+                        </Link>
+                      </div>
+                      <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                        {overflowDepartments.map((dept: any) => {
+                          const IconComp = getDepartmentIcon(dept.slug);
+                          const isDeptActive = currentCategory === dept.slug || dept.children?.some((c: any) => c.slug === currentCategory);
+                          return (
+                            <Link
+                              key={dept.id}
+                              to={`/collection?category=${dept.slug}`}
+                              onClick={closeAll}
+                              className={`flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all ${
+                                isDeptActive
+                                  ? 'text-orange-400 bg-orange-500/10 font-semibold border border-orange-500/20'
+                                  : 'text-gray-300 hover:bg-[#1E1E1E] hover:text-white'
+                              }`}
+                            >
+                              <span className="flex items-center gap-2">
+                                <IconComp className="w-3.5 h-3.5 text-orange-400/80 shrink-0" />
+                                <span className="truncate">{dept.name}</span>
+                              </span>
+                              {dept.children && dept.children.length > 0 && (
+                                <span className="text-[10px] text-gray-500 bg-[#202020] px-1.5 py-0.5 rounded font-mono">
+                                  {dept.children.length}
+                                </span>
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-4 shrink-0 pl-4 border-l border-gray-800">
+          <div className="flex items-center gap-4 shrink-0 pl-4 border-l border-gray-800/80">
             <Link 
               to="/collection?sort=price-low" 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 text-[11px] font-semibold tracking-wide transition-all shadow-sm group"
+              onClick={closeAll}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[11px] font-semibold tracking-wide transition-all shadow-sm group ${
+                isPriceLowActive 
+                  ? 'bg-orange-500/25 border-orange-500/50 text-orange-300 ring-1 ring-orange-500/30 shadow-orange-500/10' 
+                  : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/30'
+              }`}
             >
               <FiZap className="w-3.5 h-3.5 text-orange-400 group-hover:scale-110 transition-transform" />
               <span>Lowest Price Guarantee</span>
@@ -662,7 +786,7 @@ export default function Navbar() {
       {/* ── 3. MOBILE SLIDE DRAWER MENU ──────────────────────────────── */}
       <div className={`fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity duration-300 md:hidden ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         <div className={`absolute top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#0D0D0D] border-l border-gray-800 p-6 flex flex-col justify-between transition-transform duration-300 ease-in-out ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div>
+          <div className="overflow-y-auto pr-1">
             <div className="flex items-center justify-between pb-4 border-b border-gray-800">
               <span className="font-bold text-xs tracking-wider uppercase text-gray-400">Navigation</span>
               <button onClick={closeAll} aria-label="Close menu" className="text-gray-400 hover:text-white p-1">
@@ -672,43 +796,118 @@ export default function Navbar() {
 
             <ul className="flex flex-col gap-2 pt-4 text-sm font-medium">
               <li>
-                <NavLink to="/" className="block py-2 text-gray-300 hover:text-orange-500" onClick={closeAll}>
-                  Home
+                <NavLink to="/" className="flex items-center gap-2.5 py-2 text-gray-300 hover:text-orange-500" onClick={closeAll}>
+                  <FiHome className="w-4 h-4 text-gray-400" />
+                  <span>Home</span>
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/collection" className="block py-2 text-orange-400 font-semibold" onClick={closeAll}>
-                  All Collections
+                <NavLink to="/collection" className="flex items-center gap-2.5 py-2 text-orange-400 font-semibold" onClick={closeAll}>
+                  <FiGrid className="w-4 h-4 text-orange-500" />
+                  <span>All Collections</span>
                 </NavLink>
               </li>
 
               <li className="pt-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                Categories
+                Departments
               </li>
-              {categories.map((c: any) => (
-                <li key={c.id}>
-                  <NavLink 
-                    to={`/collection?category=${c.slug}`} 
-                    className="block py-1.5 text-xs text-gray-400 hover:text-white" 
-                    onClick={closeAll}
-                  >
-                    {c.name}
-                  </NavLink>
-                </li>
-              ))}
+              {sortedDepartments.map((c: any) => {
+                const IconComp = getDepartmentIcon(c.slug);
+                const hasChildren = c.children && c.children.length > 0;
+                const isExpanded = !!mobileExpandedCats[c.id];
+                return (
+                  <li key={c.id} className="border-b border-gray-800/40 pb-1">
+                    <div className="flex items-center justify-between py-1.5">
+                      <NavLink 
+                        to={`/collection?category=${c.slug}`} 
+                        className="flex items-center gap-2.5 text-xs text-gray-300 hover:text-orange-400 font-medium" 
+                        onClick={closeAll}
+                      >
+                        <IconComp className="w-3.5 h-3.5 text-orange-400/80 shrink-0" />
+                        <span>{c.name}</span>
+                      </NavLink>
+                      {hasChildren && (
+                        <button
+                          type="button"
+                          onClick={() => toggleMobileCat(c.id)}
+                          className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                          aria-label={`Toggle ${c.name} subcategories`}
+                        >
+                          <FiChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-orange-400' : ''}`} />
+                        </button>
+                      )}
+                    </div>
+                    {hasChildren && isExpanded && (
+                      <div className="pl-6 pb-1 space-y-1">
+                        {c.children.map((sub: any) => (
+                          <NavLink
+                            key={sub.id}
+                            to={`/collection?category=${sub.slug}`}
+                            onClick={closeAll}
+                            className="block py-1 text-[11px] text-gray-400 hover:text-orange-400"
+                          >
+                            {sub.name}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
 
               <li className="pt-3 border-t border-gray-800 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                Account
+                Account & Shortcuts
               </li>
               {role === 'CONSUMER' && (
                 <>
-                  <li><NavLink to="/wishlist" className="block py-1 text-xs text-gray-300" onClick={closeAll}>Wishlist</NavLink></li>
-                  <li><NavLink to="/orders" className="block py-1 text-xs text-gray-300" onClick={closeAll}>Orders & History</NavLink></li>
-                  <li><NavLink to="/profile" className="block py-1 text-xs text-gray-300" onClick={closeAll}>My Profile</NavLink></li>
+                  <li>
+                    <NavLink to="/wishlist" className="flex items-center gap-2.5 py-1 text-xs text-gray-300 hover:text-orange-400" onClick={closeAll}>
+                      <FiHeart className="w-3.5 h-3.5 text-gray-400" />
+                      <span>Wishlist</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/orders" className="flex items-center gap-2.5 py-1 text-xs text-gray-300 hover:text-orange-400" onClick={closeAll}>
+                      <FiShoppingBag className="w-3.5 h-3.5 text-gray-400" />
+                      <span>Orders & Tracking</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/profile" className="flex items-center gap-2.5 py-1 text-xs text-gray-300 hover:text-orange-400" onClick={closeAll}>
+                      <FiUser className="w-3.5 h-3.5 text-gray-400" />
+                      <span>My Profile</span>
+                    </NavLink>
+                  </li>
                 </>
               )}
-              {role === 'SELLER' && <li><NavLink to="/seller/dashboard" className="block py-1 text-xs text-orange-400" onClick={closeAll}>Seller Dashboard</NavLink></li>}
-              {role === 'ADMIN' && <li><NavLink to="/admin/dashboard" className="block py-1 text-xs text-purple-400" onClick={closeAll}>Admin Dashboard</NavLink></li>}
+              {(!isAuthenticated || role === 'CONSUMER') && (
+                <li>
+                  <NavLink 
+                    to={isAuthenticated ? "/seller/onboarding" : "/login?redirect=/seller/onboarding"} 
+                    className="flex items-center gap-2 py-1.5 text-xs text-orange-400 font-semibold hover:underline" 
+                    onClick={closeAll}
+                  >
+                    <FiBriefcase className="w-3.5 h-3.5 text-orange-400" />
+                    <span>Become a Seller →</span>
+                  </NavLink>
+                </li>
+              )}
+              {role === 'SELLER' && (
+                <li>
+                  <NavLink to="/seller/dashboard" className="flex items-center gap-2.5 py-1 text-xs text-orange-400 font-semibold" onClick={closeAll}>
+                    <FiBriefcase className="w-3.5 h-3.5 text-orange-400" />
+                    <span>Seller Dashboard</span>
+                  </NavLink>
+                </li>
+              )}
+              {role === 'ADMIN' && (
+                <li>
+                  <NavLink to="/admin/dashboard" className="flex items-center gap-2.5 py-1 text-xs text-purple-400 font-semibold" onClick={closeAll}>
+                    <FiShield className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Admin Dashboard</span>
+                  </NavLink>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -735,6 +934,7 @@ export default function Navbar() {
       </div>
 
       {/* ── 4. MOBILE BOTTOM NAVIGATION BAR (FLIPKART/AMAZON APP STYLE) ─ */}
+      {location.pathname !== '/cart' && location.pathname !== '/checkout' && (
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#111111]/95 backdrop-blur-md border-t border-gray-800/90 md:hidden flex justify-around items-center pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] px-2 shadow-2xl">
         <NavLink 
           to="/" 
@@ -758,15 +958,43 @@ export default function Navbar() {
             to="/wishlist" 
             className={({ isActive }) => `flex flex-col items-center justify-center min-w-[48px] py-1 gap-0.5 text-[10px] font-medium transition-colors relative ${isActive ? 'text-orange-500 font-bold' : 'text-gray-400'}`}
           >
-            <FiHeart className="w-4 h-4" />
+            <div className="relative">
+              <FiHeart className="w-4 h-4" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-orange-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </div>
             <span>Wishlist</span>
           </NavLink>
         )}
 
-        {(!isAuthenticated || role === 'CONSUMER') && (
+        {role === 'SELLER' && (
           <NavLink 
-            to="/cart" 
+            to="/seller/orders" 
             className={({ isActive }) => `flex flex-col items-center justify-center min-w-[48px] py-1 gap-0.5 text-[10px] font-medium transition-colors relative ${isActive ? 'text-orange-500 font-bold' : 'text-gray-400'}`}
+          >
+            <FiPackage className="w-4 h-4" />
+            <span>Orders</span>
+          </NavLink>
+        )}
+
+        {role === 'ADMIN' && (
+          <NavLink 
+            to="/admin/dashboard" 
+            className={({ isActive }) => `flex flex-col items-center justify-center min-w-[48px] py-1 gap-0.5 text-[10px] font-medium transition-colors relative ${isActive ? 'text-purple-400 font-bold' : 'text-gray-400'}`}
+          >
+            <FiShield className="w-4 h-4" />
+            <span>Admin</span>
+          </NavLink>
+        )}
+
+        {(!isAuthenticated || role === 'CONSUMER') && (
+          <button 
+            type="button"
+            onClick={() => navigate('/cart')} 
+            className="flex flex-col items-center justify-center min-w-[48px] py-1 gap-0.5 text-[10px] font-medium transition-colors relative text-gray-400 hover:text-orange-500"
           >
             <div className="relative">
               <FiShoppingCart className="w-4 h-4" />
@@ -777,6 +1005,16 @@ export default function Navbar() {
               )}
             </div>
             <span>Cart</span>
+          </button>
+        )}
+
+        {role === 'SELLER' && (
+          <NavLink 
+            to="/seller/dashboard" 
+            className={({ isActive }) => `flex flex-col items-center justify-center min-w-[48px] py-1 gap-0.5 text-[10px] font-medium transition-colors relative ${isActive ? 'text-orange-500 font-bold' : 'text-gray-400'}`}
+          >
+            <FiBriefcase className="w-4 h-4" />
+            <span>Merchant</span>
           </NavLink>
         )}
 
@@ -788,6 +1026,7 @@ export default function Navbar() {
           <span>{isAuthenticated ? 'Account' : 'Login'}</span>
         </NavLink>
       </div>
+      )}
 
     </header>
   );

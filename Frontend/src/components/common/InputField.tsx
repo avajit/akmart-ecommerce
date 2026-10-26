@@ -18,7 +18,7 @@ const InputField: React.FC<InputFieldProps> = ({
   startIcon,
   endAction,
   dark = true,
-  preventAutofill = true,
+  preventAutofill = false,
   className = '',
   ...props
 }) => {

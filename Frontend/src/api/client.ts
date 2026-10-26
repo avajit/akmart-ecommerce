@@ -10,13 +10,29 @@ let inMemoryAccessToken: string | null = null;
 
 export const setAccessToken = (token: string | null) => {
   inMemoryAccessToken = token;
+  if (typeof window !== 'undefined') {
+    try {
+      if (token) sessionStorage.setItem('akmart_access_token', token);
+      else sessionStorage.removeItem('akmart_access_token');
+    } catch {}
+  }
 };
 
 export const clearAccessToken = () => {
   inMemoryAccessToken = null;
+  if (typeof window !== 'undefined') {
+    try { sessionStorage.removeItem('akmart_access_token'); } catch {}
+  }
 };
 
-export const getAccessToken = () => inMemoryAccessToken;
+export const getAccessToken = () => {
+  if (!inMemoryAccessToken && typeof window !== 'undefined') {
+    try {
+      inMemoryAccessToken = sessionStorage.getItem('akmart_access_token');
+    } catch {}
+  }
+  return inMemoryAccessToken;
+};
 
 // Create an Axios instance
 const apiClient = axios.create({

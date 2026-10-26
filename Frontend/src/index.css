@@ -68,3 +68,34 @@ input:-webkit-autofill:active {
 .Toastify__close-button:hover {
   opacity: 1 !important;
 }
+
+/* --- Animations for Drawer & Modals --- */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-drawer-in {
+  animation: slideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-backdrop-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.Toastify__toast-container {
+  z-index: 99999 !important;
+}

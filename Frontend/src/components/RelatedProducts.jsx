@@ -39,6 +39,7 @@ const RelatedProducts = ({category, subCategory}) => {
                   name={item.name} 
                   price={item.cheapestPrice ?? 0} 
                   image={item.primaryImage}
+                  variantId={item.variants?.[0]?.id}
               />
           ))}
         </div>
