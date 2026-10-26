@@ -7,6 +7,7 @@ const router = Router();
 router.use(requireAuth, requireRole(["CONSUMER", "SELLER", "ADMIN"]));
 
 router.get("/", wishlistController.getWishlist);
+router.delete("/", wishlistController.clearWishlist);
 router.post("/items", wishlistController.addItem);
 router.delete("/items/:variantId", wishlistController.removeItem);
 

@@ -19,6 +19,10 @@ const Login: React.FC = () => {
 
   // If already authenticated, forward user to their intended destination or dashboard
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const autologin = params.get('autologin');
+    if (autologin) return; // Allow autologin to switch user session
+
     if (isAuthenticated) {
       const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
       const intended = (location.state as any)?.from || new URLSearchParams(location.search).get('redirect') || undefined;
@@ -70,6 +74,19 @@ const Login: React.FC = () => {
   const { mutate: login, isPending: isLoginPending } = useLogin();
   const { mutate: register, isPending: isRegisterPending } = useRegister();
   const { mutate: googleSSO, isPending: isGooglePending } = useGoogleSSO();
+
+  // Auto-login query parameter for instant developer / QA role switching
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const autologin = params.get('autologin');
+    if (autologin === 'seller') {
+      login({ email: 'seller@techmart.com', password: 'Seller@123' });
+    } else if (autologin === 'admin') {
+      login({ email: 'admin@akmart.com', password: 'Admin@123' });
+    } else if (autologin === 'consumer') {
+      login({ email: 'consumer@akmart.com', password: 'Consumer@123' });
+    }
+  }, [location.search, login]);
 
   const isSubmitting = isLoginPending || isRegisterPending;
 
@@ -280,13 +297,55 @@ const Login: React.FC = () => {
           </button>
 
           {/* Divider */}
-          <div className="relative flex items-center my-5">
+          <div className="relative flex items-center my-4">
             <div className="flex-grow border-t border-gray-800"></div>
             <span className="flex-shrink-0 mx-3 text-gray-500 text-[10px] uppercase tracking-widest font-semibold">
               or use credentials
             </span>
             <div className="flex-grow border-t border-gray-800"></div>
           </div>
+
+          {/* Quick Demo Credentials for One-Click Testing */}
+          {tab === 'login' && (
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <button
+                type="button"
+                id="demo-seller-btn"
+                onClick={() => {
+                  setIdentifier('seller@techmart.com');
+                  setPassword('Seller@123');
+                  login({ email: 'seller@techmart.com', password: 'Seller@123' });
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[11px] font-bold transition flex items-center gap-1"
+              >
+                Demo Seller
+              </button>
+              <button
+                type="button"
+                id="demo-admin-btn"
+                onClick={() => {
+                  setIdentifier('admin@akmart.com');
+                  setPassword('Admin@123');
+                  login({ email: 'admin@akmart.com', password: 'Admin@123' });
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] font-bold transition flex items-center gap-1"
+              >
+                Demo Admin
+              </button>
+              <button
+                type="button"
+                id="demo-consumer-btn"
+                onClick={() => {
+                  setIdentifier('consumer@akmart.com');
+                  setPassword('Consumer@123');
+                  login({ email: 'consumer@akmart.com', password: 'Consumer@123' });
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition flex items-center gap-1"
+              >
+                Demo Consumer
+              </button>
+            </div>
+          )}
 
           {/* Form Container with fade-in animation for smoother state switching */}
           <form onSubmit={onSubmitHandler} className="flex flex-col gap-4 text-left" autoComplete="off" noValidate>
@@ -365,7 +424,7 @@ const Login: React.FC = () => {
                 error={errors.identifier}
                 helperText={
                   identifier && isPhoneNumber(identifier)
-                    ? '🇳🇵 Nepal mobile (+977)'
+                    ? 'Nepal mobile (+977)'
                     : undefined
                 }
                 autoComplete="off"

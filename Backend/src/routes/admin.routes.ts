@@ -19,6 +19,7 @@ router.patch("/products/:id/reject", adminController.rejectProduct);
 // ── Seller Management ──────────────────────────────────────────
 router.get("/sellers", adminController.getAllSellers);
 router.patch("/sellers/:id/verify", adminController.verifySeller);
+router.patch("/sellers/:id/reject", adminController.rejectSeller);
 router.patch("/sellers/:id/suspend", adminController.suspendSeller);
 
 // ── Category Management ────────────────────────────────────────

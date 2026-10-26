@@ -70,7 +70,9 @@ export default function Checkout() {
     appliedCoupon,
     discountAmount = 0,
     applyCoupon,
-    removeCoupon
+    removeCoupon,
+    clearCartLocally,
+    refreshCart,
   } = (useContext(ShopContext) as any) || { currency: 'NPR ', freeShippingThreshold: 2500 };
 
   const [couponCodeInput, setCouponCodeInput] = useState('');
@@ -173,7 +175,7 @@ export default function Checkout() {
   const addAddrMutation = useMutation({
     mutationFn: (data: any) => addAddress(data),
     onSuccess: (res: any) => {
-      toast.success("Delivery address saved! 📍");
+      toast.success("Delivery address saved!");
       setShowAddAddress(false);
       setNewAddress({
         fullName: '',
@@ -197,6 +199,8 @@ export default function Checkout() {
     onSuccess: (res: any) => {
       toast.success("Order placed successfully!");
       if (removeCoupon) removeCoupon();
+      if (clearCartLocally) clearCartLocally(selectedItemIds);
+      if (refreshCart) refreshCart();
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
       const createdOrder = res?.data || res;
@@ -287,8 +291,10 @@ export default function Checkout() {
         {
           onSuccess: (res: any) => {
             setPaymentStep('SUCCESS');
-            toast.success(`${paymentMethod === 'ESEWA' ? 'eSewa' : 'Khalti'} payment authorized! 🟢`);
+            toast.success(`${paymentMethod === 'ESEWA' ? 'eSewa' : 'Khalti'} payment authorized!`);
             if (removeCoupon) removeCoupon();
+            if (clearCartLocally) clearCartLocally(selectedItemIds);
+            if (refreshCart) refreshCart();
             queryClient.invalidateQueries({ queryKey: ['cart'] });
             queryClient.invalidateQueries({ queryKey: ['my-orders'] });
             const createdOrder = res?.data || res;
@@ -909,6 +915,7 @@ export default function Checkout() {
 
             {/* Dynamic Place Order CTA Button */}
             <button
+              id="checkout-place-order-btn"
               onClick={handlePlaceOrder}
               disabled={checkoutMutation.isPending || !selectedAddressId || hasOutOfStockItems}
               className={`w-full font-extrabold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 uppercase tracking-wider text-xs active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none ${

@@ -17,6 +17,10 @@ export const getListings = () => api.get("/seller/listings").then((res: any) => 
 export const updateListing = (id: string, data: any) => api.patch(`/seller/listings/${id}`, data).then((res: any) => res.data);
 export const deleteListing = (id: string) => api.delete(`/seller/listings/${id}`).then((res: any) => res.data);
 
+// Orders
+export const getSellerOrders = () => api.get("/seller/orders").then((res: any) => res.data);
+export const updateSellerOrderStatus = (id: string, status: string) => api.patch(`/seller/orders/${id}/status`, { status }).then((res: any) => res.data);
+
 export const getCategories = () => api.get("/categories/tree").then((res: any) => res.data);
 export const getBrands = () => api.get("/categories/brands").then((res: any) => res.data);
 export const getCategoryFilters = (slugOrId: string) => api.get(`/categories/${slugOrId}/filters`).then((res: any) => res.data);

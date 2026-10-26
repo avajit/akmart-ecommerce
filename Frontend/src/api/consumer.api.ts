@@ -15,6 +15,7 @@ export const clearCart = () => api.delete("/cart").then((res: any) => res.data);
 export const getWishlist = () => api.get("/wishlist").then((res: any) => res.data);
 export const addToWishlist = (variantId: string) => api.post("/wishlist/items", { variantId }).then((res: any) => res.data);
 export const removeFromWishlist = (variantId: string) => api.delete(`/wishlist/items/${variantId}`).then((res: any) => res.data);
+export const clearWishlist = () => api.delete("/wishlist").then((res: any) => res.data);
 
 // Reviews
 export const getProductReviews = (productId: string, params?: any) => api.get(`/products/${productId}/reviews`, { params }).then((res: any) => res.data);

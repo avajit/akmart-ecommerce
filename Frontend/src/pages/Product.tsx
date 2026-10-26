@@ -204,7 +204,7 @@ export default function Product() {
       } else {
         await addToCart({ sellerListingId: targetListingId, variantId: currentVariant.id, quantity });
         if (typeof refreshCartCount === 'function') refreshCartCount();
-        toast.success(`Added ${quantity} item(s) to cart! 🛒`);
+        toast.success(`Added ${quantity} item(s) to cart!`);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to add to cart");
@@ -498,6 +498,7 @@ export default function Product() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
+                    id="buy-now-btn"
                     onClick={() => handleBuyNow()}
                     disabled={actionLoading || stock <= 0}
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none group"
@@ -507,6 +508,7 @@ export default function Product() {
                   </button>
 
                   <button
+                    id="add-to-cart-btn"
                     onClick={() => handleAddToCart()}
                     disabled={actionLoading || stock <= 0}
                     className="w-full bg-[#181818] hover:bg-[#222222] text-white font-bold py-3.5 px-6 rounded-xl transition-all border border-gray-700/80 hover:border-orange-500/50 flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none shadow-sm"

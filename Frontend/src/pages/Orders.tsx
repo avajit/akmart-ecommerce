@@ -141,6 +141,7 @@ export default function Orders() {
   const { currency } = useContext(ShopContext) || { currency: 'NPR ' };
   const queryClient = useQueryClient();
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [confirmingCancelId, setConfirmingCancelId] = useState<string | null>(null);
 
   const { data: ordersRes, isLoading } = useQuery({
     queryKey: ['my-orders'],
@@ -155,19 +156,14 @@ export default function Orders() {
       toast.success("Order cancelled successfully and inventory restored.");
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
       setCancellingOrderId(null);
+      setConfirmingCancelId(null);
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to cancel order");
       setCancellingOrderId(null);
+      setConfirmingCancelId(null);
     }
   });
-
-  const handleCancelClick = (orderId: string) => {
-    if (window.confirm("Are you sure you want to cancel this order? Stock will be immediately released back to the store.")) {
-      setCancellingOrderId(orderId);
-      cancelMutation.mutate(orderId);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -266,15 +262,38 @@ export default function Orders() {
                     <p className="text-gray-400 font-mono text-xs mt-0.5">#{order.id.slice(0, 8)}</p>
                   </div>
 
-                  {/* Cancel Button if eligible */}
+                  {/* Cancel Button with in-place verification */}
                   {isCancellable && (
-                    <button
-                      onClick={() => handleCancelClick(order.id)}
-                      disabled={isCancelling}
-                      className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 transition disabled:opacity-40"
-                    >
-                      {isCancelling ? "Cancelling..." : "Cancel Order"}
-                    </button>
+                    confirmingCancelId === order.id ? (
+                      <div className="flex items-center gap-1.5 animate-fadeIn">
+                        <button
+                          id={`confirm-cancel-${order.id.slice(0, 8)}`}
+                          onClick={() => {
+                            setCancellingOrderId(order.id);
+                            cancelMutation.mutate(order.id);
+                          }}
+                          disabled={isCancelling}
+                          className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 transition shadow-sm active:scale-95 disabled:opacity-40"
+                        >
+                          {isCancelling ? "Cancelling..." : "Confirm Cancel"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmingCancelId(null)}
+                          className="px-2.5 py-1.5 rounded-xl text-[11px] text-gray-400 hover:text-white bg-[#1A1A1A] border border-gray-800 transition"
+                        >
+                          Keep
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        id={`cancel-order-${order.id.slice(0, 8)}`}
+                        onClick={() => setConfirmingCancelId(order.id)}
+                        disabled={isCancelling}
+                        className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 transition disabled:opacity-40"
+                      >
+                        Cancel Order
+                      </button>
+                    )
                   )}
                 </div>
               </div>

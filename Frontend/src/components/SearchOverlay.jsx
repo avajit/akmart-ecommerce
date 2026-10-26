@@ -26,13 +26,12 @@ const SearchOverlay = () => {
 
     // Debounced search fetch
     useEffect(() => {
-        if (!search.trim()) {
-            setSearchResults([]);
-            setLoading(false);
-            return;
-        }
-
         const timer = setTimeout(() => {
+            if (!search.trim()) {
+                setSearchResults([]);
+                setLoading(false);
+                return;
+            }
             setLoading(true);
             browseProducts({ search, limit: 6 }).then((res) => {
                 setSearchResults(res?.data?.products || []);

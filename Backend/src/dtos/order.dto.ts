@@ -58,6 +58,7 @@ export const toOrderItemResponseDTO = (item: any) => {
 
   return {
     id: item.id,
+    orderId: item.orderId,
     quantity: item.quantity,
     priceAtPurchase: price,
     status: item.status,
@@ -81,14 +82,21 @@ export const toOrderItemResponseDTO = (item: any) => {
       },
     },
     order: item.order ? {
+      id: item.order.id,
+      paymentMethod: item.order.paymentMethod || "COD",
+      status: item.order.status,
+      totalAmount: Number(item.order.totalAmount || 0),
+      createdAt: item.order.createdAt,
       shippingAddress: toAddressResponseDTO(item.order.shippingAddress),
       user: item.order.user,
     } : undefined,
     customerInfo: item.order?.shippingAddress ? {
       name: item.order.shippingAddress.fullName,
       phone: item.order.shippingAddress.phone,
+      street: item.order.shippingAddress.street,
       city: item.order.shippingAddress.city,
       state: item.order.shippingAddress.state,
+      zipCode: item.order.shippingAddress.zipCode,
     } : undefined,
   };
 };
