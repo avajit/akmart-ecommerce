@@ -243,6 +243,25 @@ export default function Product() {
     }
   };
 
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Compute all available images for this product or current variant
+  const productImages = useMemo(() => {
+    const variantImgs = (currentVariant?.images || []).filter((img: any) => img?.url);
+    if (variantImgs.length > 0) return variantImgs;
+    const prodImgs = (product?.images || []).filter((img: any) => img?.url);
+    if (prodImgs.length > 0) return prodImgs;
+    if (product?.primaryImage) return [{ id: 'primary', url: product.primaryImage, isPrimary: true }];
+    return [];
+  }, [currentVariant?.images, product?.images, product?.primaryImage]);
+
+  // Reset active image index whenever variant changes
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [selectedVariantId]);
+
+  const activeImageUrl = productImages[activeImageIndex]?.url || currentVariant?.images?.[0]?.url || product?.primaryImage;
+
   const handleAddToCart = async (listingId?: string) => {
     if (isMerchantOrAdmin) {
       toast.info("Merchant and Administrator accounts cannot place consumer orders. Please use a Consumer account to purchase.");
@@ -351,24 +370,6 @@ export default function Product() {
     );
   }
 
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-
-  // Compute all available images for this product or current variant
-  const productImages = useMemo(() => {
-    const variantImgs = (currentVariant?.images || []).filter((img: any) => img?.url);
-    if (variantImgs.length > 0) return variantImgs;
-    const prodImgs = (product?.images || []).filter((img: any) => img?.url);
-    if (prodImgs.length > 0) return prodImgs;
-    if (product?.primaryImage) return [{ id: 'primary', url: product.primaryImage, isPrimary: true }];
-    return [];
-  }, [currentVariant?.images, product?.images, product?.primaryImage]);
-
-  // Reset active image index whenever variant changes
-  useEffect(() => {
-    setActiveImageIndex(0);
-  }, [selectedVariantId]);
-
-  const activeImageUrl = productImages[activeImageIndex]?.url || currentVariant?.images?.[0]?.url || product.primaryImage;
   const price = primaryListing?.price != null ? Number(primaryListing.price) : null;
   const mrp = primaryListing?.mrp != null ? Number(primaryListing.mrp) : null;
   const savings = mrp && price && mrp > price ? mrp - price : 0;
