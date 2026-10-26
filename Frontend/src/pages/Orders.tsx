@@ -234,11 +234,11 @@ export default function Orders() {
               <div className="bg-black/60 px-6 py-4 border-b border-gray-800 flex flex-wrap justify-between items-center gap-4 text-xs">
                 <div className="flex flex-wrap gap-6 items-center">
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Placed On</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Placed On</p>
                     <p className="text-white font-medium mt-0.5">{orderDate}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Total Amount</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Total Amount</p>
                     <p className="text-white font-extrabold mt-0.5">
                       {currency}{Number(order.totalAmount).toLocaleString()}
                     </p>
@@ -250,7 +250,7 @@ export default function Orders() {
                   </div>
                   {address && (
                     <div>
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Destination</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Destination</p>
                       <p className="text-gray-300 font-medium mt-0.5 truncate max-w-xs">{address.fullName} ({address.city})</p>
                     </div>
                   )}
@@ -258,7 +258,7 @@ export default function Orders() {
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Reference ID</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Reference ID</p>
                     <p className="text-gray-400 font-mono text-xs mt-0.5">#{order.id.slice(0, 8)}</p>
                   </div>
 

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { Prisma } from '@prisma/client';
 import { env } from '../config/env';
+import { logger } from '../utils/logger';
 
 export const errorHandler = (
   err: Error | AppError,
@@ -21,6 +22,12 @@ export const errorHandler = (
     errorCode = err.errorCode;
     errors = err.errors;
   } 
+  // 1b. Handle CORS policy rejections cleanly with HTTP 403 Forbidden
+  else if (err.message && err.message.includes('CORS policy')) {
+    statusCode = 403;
+    message = 'Cross-Origin Request Blocked by CORS policy.';
+    errorCode = 'CORS_REJECTED';
+  }
   // 2. Handle Prisma Database Errors
   else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     statusCode = 400; // Bad Request
@@ -32,8 +39,15 @@ export const errorHandler = (
       statusCode = 404;
       message = 'Database record not found.';
       errorCode = 'DB_RECORD_NOT_FOUND';
+    } else if (err.code === 'P2003') {
+      statusCode = 400;
+      message = 'Database foreign key constraint violation. A referenced record does not exist or is in use.';
+      errorCode = 'DB_FOREIGN_KEY_VIOLATION';
     } else {
-      message = `Database Error: ${err.message}`;
+      statusCode = 400;
+      message = env.NODE_ENV === 'production'
+        ? 'Database operation failed. Please verify your request data.'
+        : `Database Error: ${err.message}`;
       errorCode = `DB_ERROR_${err.code}`;
     }
   } 
@@ -72,8 +86,8 @@ export const errorHandler = (
   }
   // 6. Unhandled / Unexpected Errors
   else {
-    // Log unexpected errors for monitoring
-    console.error('💥 UNEXPECTED ERROR:', err);
+    // Log unexpected errors through structured logger
+    logger.error('Unhandled Application Exception', { error: err.message, stack: err.stack });
   }
 
   // Build the standardized unified response payload adhering to contract

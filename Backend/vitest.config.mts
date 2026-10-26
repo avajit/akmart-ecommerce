@@ -6,7 +6,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/tests/setup.ts'],
     fileParallelism: false,
-    exclude: ['dist', 'node_modules'],
+    include: ['src/**/*.test.ts', '../tests/**/*.test.ts'],
+    exclude: ['dist', 'node_modules', '../tests/ui/**', '../tests/e2e/**'],
     pool: 'threads',
     coverage: {
       provider: 'v8',

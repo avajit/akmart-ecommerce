@@ -23,14 +23,14 @@ To ensure a bug-free and scalable product, development is broken down into stric
 6. **Module 6: Admin Control** (Super Admin Dashboard, User Management)
 
 ## ⚙️ Current Status
-- ✅ **Frontend UI (Phase 1):** Initial UI designs for Consumer facing pages are complete (Home, Collection, Cart) but rely on mock data.
-- ⏳ **Backend (Module 1):** Currently initializing the Node.js/TypeScript environment and designing the PostgreSQL database schema.
+- ✅ **Frontend:** React 19, Vite 7, Tailwind CSS, Zustand, React Query with responsive consumer storefront, merchant dashboards, and order tracking.
+- ✅ **Backend:** Node.js, Express 5, TypeScript modular monolith with 46 REST API routes, PostgreSQL (Prisma ORM), and Redis caching.
 
 ---
 
 ## 🖥️ How to Run This Project (Local Development)
 
-### 🎨 Frontend (“The Showroom”)
+### 🎨 Frontend
 Inside the `Frontend` folder:
 ```bash
 npm install
@@ -38,5 +38,26 @@ npm run dev
 ```
 Site opens at: 👉 http://localhost:5173
 
-### 🗄️ Backend (Coming Soon)
-*Instructions for setting up the PostgreSQL database and Node.js server will be added as Module 1 is completed.*
+### 🗄️ Backend
+Inside the `Backend` folder:
+```bash
+npm install
+# Set up database and generate Prisma client:
+npx prisma generate
+npx prisma migrate dev
+# Start the backend server:
+npm run dev
+```
+API runs at: 👉 http://localhost:5000 (Healthcheck: http://localhost:5000/health)
+
+### 🧪 Automated QA & Test Suites
+```bash
+# Run backend unit tests:
+cd Backend && npx vitest run ../tests/unit
+
+# Run automated smoke suite (< 30 seconds):
+cd Backend && npx vitest run ../tests/api/smoke.test.ts
+
+# Run Playwright E2E suites:
+npx playwright test tests/e2e
+```

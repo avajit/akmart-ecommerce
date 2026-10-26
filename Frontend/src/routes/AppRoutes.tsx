@@ -78,8 +78,8 @@ function AppRoutes() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* ----- Consumer Protected Routes (Strictly CONSUMER only) ----- */}
-          <Route element={<ProtectedRoute allowedRoles={['CONSUMER']} />}>
+          {/* ----- Consumer & Merchant Protected Routes ----- */}
+          <Route element={<ProtectedRoute allowedRoles={['CONSUMER', 'SELLER']} />}>
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/place-order" element={<PlaceOrder />} />
             <Route path="/orders" element={<Orders />} />
