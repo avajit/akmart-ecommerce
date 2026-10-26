@@ -9,7 +9,7 @@ export const createProductSchema = z.object({
     variants: z.array(z.object({
       name: z.string().min(1, 'Variant name is required'),
       sku: z.string().min(1, 'SKU is required'),
-      attributes: z.record(z.any()).optional(),
+      attributes: z.record(z.string(), z.any()).optional(),
       images: z.array(z.object({
         url: z.string().url('Invalid image URL'),
         altText: z.string().optional(),

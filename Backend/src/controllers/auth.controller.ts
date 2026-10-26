@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { URL } from 'url';
 import { AuthService } from '../services/auth.service';
 import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
