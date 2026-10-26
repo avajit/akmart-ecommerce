@@ -192,9 +192,31 @@ export const updateSellerOrderStatus = async (userId: string, orderItemId: strin
   });
   if (!orderItem) throw new AppError("Order item not found", 404, "NOT_FOUND");
 
+  // If seller cancels an item that was previously active, restore stock back to the seller listing
+  if (status === "CANCELLED" && orderItem.status !== "CANCELLED") {
+    await prisma.sellerListing.update({
+      where: { id: orderItem.sellerListingId },
+      data: { stock: { increment: orderItem.quantity } },
+    });
+  }
+
   return prisma.orderItem.update({
     where: { id: orderItemId },
     data: { status },
+    include: {
+      order: {
+        include: {
+          user: { select: { fullName: true, email: true, phoneNumber: true } },
+          shippingAddress: true,
+        },
+      },
+      sellerListing: {
+        include: {
+          variant: { include: { product: { select: { name: true, slug: true } } } },
+          sellerProfile: { select: { shopName: true } },
+        },
+      },
+    },
   });
 };
 

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ShopContext } from '../context/ShopContext';
 import { 
@@ -28,7 +28,14 @@ import {
 const PlaceOrder: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currency } = (useContext(ShopContext) as any) || { currency: 'NPR ' };
+  const { currency, refreshCart } = (useContext(ShopContext) as any) || { currency: 'NPR ' };
+
+  // Ensure cart is refreshed from server as soon as order confirmation mounts
+  useEffect(() => {
+    if (typeof refreshCart === 'function') {
+      refreshCart();
+    }
+  }, []);
 
   // Retrieve placed order and payment metadata passed from Checkout.tsx
   const order = location.state?.order;

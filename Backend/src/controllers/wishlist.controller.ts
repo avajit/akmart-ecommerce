@@ -26,3 +26,11 @@ export const removeItem = async (req: AuthenticatedRequest, res: Response, next:
     res.json({ success: true, message: "Removed from wishlist" });
   } catch (err) { next(err); }
 };
+
+export const clearWishlist = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    await wishlistService.clearWishlist(req.user!.userId);
+    res.json({ success: true, message: "Wishlist cleared successfully" });
+  } catch (err) { next(err); }
+};
+

@@ -11,6 +11,7 @@ import {
   validateCoupon 
 } from "../api/consumer.api";
 import { useAuthStore } from "../store/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 
 export interface AddToCartPayload {
@@ -54,6 +55,7 @@ interface ShopContextType {
   // Cart Actions (Optimistic & Debounced)
   refreshCart: () => Promise<void>;
   refreshCartCount: () => void;
+  clearCartLocally: (clearedItemIds?: string[]) => void;
   updateCartItemQty: (itemId: string, newQty: number) => void;
   removeCartItemOptimistic: (itemId: string) => Promise<void>;
   undoRemoveItem: () => Promise<void>;
@@ -112,6 +114,7 @@ export const ShopContext = createContext<ShopContextType>({
 
   refreshCart: async () => {},
   refreshCartCount: () => {},
+  clearCartLocally: () => {},
   updateCartItemQty: () => {},
   removeCartItemOptimistic: async () => {},
   undoRemoveItem: async () => {},
@@ -165,6 +168,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const currency = "NPR ";
   const FREE_SHIPPING_THRESHOLD = 2500;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuthStore();
   const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
   const isConsumerOrGuest = !isAuthenticated || role === 'CONSUMER';
@@ -185,17 +189,45 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setCartLoading(true);
         const res: any = await getCart();
         setCart(res.data);
+        queryClient.setQueryData(['cart'], res);
       } catch {
         setCart(null);
       } finally {
         setCartLoading(false);
       }
     } else if (!isAuthenticated) {
-      setCart({ id: 'guest-cart', items: getGuestCartItems() });
+      const guestCart = { id: 'guest-cart', items: getGuestCartItems() };
+      setCart(guestCart);
+      queryClient.setQueryData(['cart'], { success: true, data: guestCart });
       setCartLoading(false);
     } else {
       setCart(null);
       setCartLoading(false);
+    }
+  };
+
+  // Synchronously clears checked out items (or entire cart) with 0ms UI lag
+  const clearCartLocally = (clearedItemIds?: string[]) => {
+    if (clearedItemIds && clearedItemIds.length > 0) {
+      setCart((prev: any) => {
+        if (!prev || !prev.items) return prev;
+        const updatedItems = prev.items.filter((item: any) => !clearedItemIds.includes(item.id));
+        const updatedCart = { ...prev, items: updatedItems };
+        queryClient.setQueryData(['cart'], { success: true, data: updatedCart });
+        return updatedCart;
+      });
+      if (!isAuthenticated) {
+        const currentGuest = getGuestCartItems();
+        const updated = currentGuest.filter((item: any) => !clearedItemIds.includes(item.id));
+        saveGuestCartItems(updated);
+      }
+    } else {
+      const emptyCart = { id: isAuthenticated ? cart?.id || 'cart' : 'guest-cart', items: [] };
+      setCart(emptyCart);
+      queryClient.setQueryData(['cart'], { success: true, data: emptyCart });
+      if (!isAuthenticated) {
+        localStorage.removeItem(GUEST_CART_STORAGE_KEY);
+      }
     }
   };
 
@@ -219,7 +251,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
               }
             }
             localStorage.removeItem(GUEST_CART_STORAGE_KEY);
-            toast.success("Guest items synchronized with your account cart! 🛒");
+            toast.success("Guest items synchronized with your account cart!");
           } finally {
             await refreshCart();
           }
@@ -431,7 +463,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const updated = [item, ...currentGuest];
       saveGuestCartItems(updated);
       setCart({ id: 'guest-cart', items: updated });
-      toast.success("Item restored to cart! 🛒");
+      toast.success("Item restored to cart!");
       return;
     }
 
@@ -441,7 +473,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
         variantId: item.variantId,
         quantity: item.quantity,
       });
-      toast.success("Item restored to cart! 🛒");
+      toast.success("Item restored to cart!");
       await refreshCart();
     } catch {
       toast.error("Could not restore item");
@@ -470,7 +502,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }));
       await removeCartItem(itemId);
 
-      toast.success("Moved to your Wishlist! 💖");
+      toast.success("Moved to your Wishlist!");
     } catch {
       toast.error("Failed to move item to Wishlist");
       await refreshCart();
@@ -542,7 +574,8 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       saveGuestCartItems(updatedItems);
       setCart({ id: 'guest-cart', items: updatedItems });
-      toast.success("Added to cart! 🛍️");
+      queryClient.setQueryData(['cart'], { success: true, data: { id: 'guest-cart', items: updatedItems } });
+      toast.success("Added to cart!");
       return;
     }
 
@@ -552,7 +585,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
         variantId: data.variantId,
         quantity: data.quantity,
       });
-      toast.success("Added to cart! 🛍️");
+      toast.success("Added to cart!");
       await refreshCart();
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || err.response?.data?.message || err.message || "Failed to add to cart");
@@ -652,6 +685,7 @@ export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     refreshCart,
     refreshCartCount,
+    clearCartLocally,
     updateCartItemQty,
     removeCartItemOptimistic,
     undoRemoveItem,

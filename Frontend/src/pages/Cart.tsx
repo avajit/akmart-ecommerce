@@ -46,6 +46,7 @@ export default function Cart() {
     removeCoupon,
     discountAmount,
     finalPayable,
+    refreshCart,
   } = useContext(ShopContext) as any;
 
   // Coupon Input & Backend Available Coupons
@@ -53,6 +54,9 @@ export default function Cart() {
   const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
 
   useEffect(() => {
+    if (typeof refreshCart === 'function') {
+      refreshCart();
+    }
     getActiveCoupons().then((res: any) => {
       setActiveCoupons(res.data || []);
     }).catch(() => {});
@@ -706,6 +710,7 @@ export default function Cart() {
 
             {/* Checkout Action Button */}
             <button
+              id="proceed-to-checkout-btn"
               type="button"
               onClick={handleProceedToCheckout}
               disabled={selectedItems.length === 0 || hasOutOfStockInSelected}

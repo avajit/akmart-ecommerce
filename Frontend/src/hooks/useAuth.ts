@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '../api/auth.service';
 import { useAuthStore } from '../store/authStore';
 import { ApiError } from '../utils/ApiError';
@@ -155,12 +155,14 @@ export const useResendOTP = () => {
 export const useLogout = () => {
   const logoutState = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: () => authService.logout(),
     
     onSuccess: () => {
       logoutState();
+      queryClient.clear();
       toast.success('Logged out successfully', { toastId: 'logout-success' });
       navigate('/login');
     },
@@ -168,6 +170,7 @@ export const useLogout = () => {
     onError: () => {
       // Even if server fails, force clear local state to prevent being stuck
       logoutState();
+      queryClient.clear();
       navigate('/login');
     }
   });

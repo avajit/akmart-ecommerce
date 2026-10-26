@@ -116,7 +116,7 @@ export const getAllSellers = async (status?: string, page = 1, limit = 20) => {
     prisma.sellerProfile.findMany({
       where,
       include: {
-        user: { select: { id: true, fullName: true, email: true, createdAt: true, isActive: true } },
+        user: { select: { id: true, fullName: true, email: true, phoneNumber: true, createdAt: true, isActive: true } },
         _count: { select: { listings: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -147,6 +147,31 @@ export const verifySeller = async (sellerProfileId: string) => {
   if (updated.user?.email) {
     import('./email.service')
       .then(({ EmailService }) => EmailService.sendSellerStatusEmail(updated.user.email!, updated.shopName, true))
+      .catch(() => {});
+  }
+
+  return updated;
+};
+
+export const rejectSeller = async (sellerProfileId: string) => {
+  const profile = await prisma.sellerProfile.findUnique({ where: { id: sellerProfileId } });
+  if (!profile) throw new AppError("Seller profile not found", 404, "PROFILE_NOT_FOUND");
+
+  // Deactivate all their listings if any exist
+  await prisma.sellerListing.updateMany({
+    where: { sellerProfileId, deletedAt: null },
+    data: { isActive: false },
+  });
+
+  const updated = await prisma.sellerProfile.update({
+    where: { id: sellerProfileId },
+    data: { verificationStatus: "REJECTED", isPayoutEnabled: false },
+    include: { user: { select: { email: true } } },
+  });
+
+  if (updated.user?.email) {
+    import('./email.service')
+      .then(({ EmailService }) => EmailService.sendSellerStatusEmail(updated.user.email!, updated.shopName, false))
       .catch(() => {});
   }
 

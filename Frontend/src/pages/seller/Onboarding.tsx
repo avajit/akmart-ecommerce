@@ -40,7 +40,7 @@ export default function Onboarding() {
     try {
       await createSellerProfile(formData);
       updateUser({ role: 'SELLER', roleName: 'SELLER' });
-      toast.success('🎉 Congratulations! Your seller store has been created.', { toastId: 'seller-created' });
+      toast.success('Congratulations! Your seller store has been created.', { toastId: 'seller-created' });
       navigate('/seller/dashboard');
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.response?.data?.error?.message || err.message || '';
