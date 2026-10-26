@@ -210,7 +210,7 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     const rawTokens = rawSearch.split(/\s+/).filter(Boolean);
 
     // Build conditions for each search word, dynamically matching its singular/plural stems across all catalog relations
-    const tokenConditions = rawTokens.map(token => {
+    const tokenConditions = rawTokens.map((token: string) => {
       const stems = getSearchTokenVariations(token);
       return {
         OR: stems.flatMap(stem => [

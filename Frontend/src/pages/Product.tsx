@@ -25,6 +25,7 @@ import {
 
 export default function Product() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { currency, refreshCartCount, isInWishlist, toggleWishlist, addToCartOptimistic } = (useContext(ShopContext) as any) || { 
     currency: 'NPR ', 
     refreshCartCount: () => {},

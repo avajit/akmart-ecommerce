@@ -3,7 +3,7 @@ import { prisma } from "../app";
 import { validateCoupon } from "./coupon.service";
 
 export const checkout = async (userId: string, body: any) => {
-  const { shippingAddressId, paymentMethod, couponCode } = body;
+  const { shippingAddressId, paymentMethod, couponCode, selectedItemIds } = body;
 
   const cart = await prisma.cart.findUnique({
     where: { userId },
@@ -20,11 +20,20 @@ export const checkout = async (userId: string, body: any) => {
     throw new AppError("Cart is empty", 400, "CART_EMPTY");
   }
 
+  // Industry Standard: Support selective checkout (buy 1 or selected items while keeping remainder in cart)
+  const itemsToCheckout = selectedItemIds && Array.isArray(selectedItemIds) && selectedItemIds.length > 0
+    ? cart.items.filter((item: any) => selectedItemIds.includes(item.id))
+    : cart.items;
+
+  if (itemsToCheckout.length === 0) {
+    throw new AppError("No items selected for checkout", 400, "NO_ITEMS_SELECTED");
+  }
+
   // Calculate subtotal and prepare items
   let subtotal = 0;
   const orderItems: any[] = [];
 
-  for (const item of cart.items) {
+  for (const item of itemsToCheckout) {
     if (!item.sellerListing.isActive || item.sellerListing.deletedAt) {
       throw new AppError("One or more items in your cart are no longer available", 400, "ITEM_UNAVAILABLE");
     }
@@ -68,7 +77,7 @@ export const checkout = async (userId: string, body: any) => {
   const order = await prisma.$transaction(async (tx) => {
     // Deduct stock atomically with conditional check (stock >= quantity)
     // Prevents race conditions and overselling during flash-sales
-    for (const item of cart.items) {
+    for (const item of itemsToCheckout) {
       const updateResult = await tx.sellerListing.updateMany({
         where: {
           id: item.sellerListingId,
@@ -138,9 +147,10 @@ export const checkout = async (userId: string, body: any) => {
       }
     });
 
-    // Clear cart
+    // Clear only checked-out items from cart (leaving unselected items safely in cart)
+    const checkedOutItemIds = itemsToCheckout.map((i: any) => i.id);
     await tx.cartItem.deleteMany({
-      where: { cartId: cart.id }
+      where: { id: { in: checkedOutItemIds } }
     });
 
     return newOrder;
