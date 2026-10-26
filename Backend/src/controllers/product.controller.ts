@@ -7,6 +7,7 @@ const reviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
   title: z.string().max(200).optional(),
   body: z.string().max(2000).optional(),
+  imageKeys: z.array(z.string()).max(5, 'Maximum of 5 photos per review').optional(),
 });
 
 const qi = (val: unknown, def = 1): number => parseInt(typeof val === "string" ? val : String(def)) || def;

@@ -73,6 +73,8 @@ import cartRoutes from './routes/cart.routes';
 import wishlistRoutes from './routes/wishlist.routes';
 import orderRoutes from './routes/order.routes';
 import couponRoutes from './routes/coupon.routes';
+import uploadRoutes from './routes/upload.routes';
+import { streamFile } from './controllers/upload.controller';
 
 // Health Check Endpoint (For orchestrators/load balancers)
 app.get('/health', async (req, res) => {
@@ -98,6 +100,12 @@ app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/wishlist', wishlistRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/coupons', couponRoutes);
+app.use('/api/v1/uploads', uploadRoutes);
+app.use('/api/uploads', uploadRoutes);
+
+// Dedicated File Streaming Endpoints
+app.get('/api/v1/files/{*key}', streamFile);
+app.get('/api/files/{*key}', streamFile);
 
 // --- ERROR HANDLING ---
 

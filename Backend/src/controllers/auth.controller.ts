@@ -227,6 +227,7 @@ export const deleteAccount = async (req: AuthenticatedRequest, res: Response, ne
 export const me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { prisma } = await import('../app');
+    const { resolveStorageUrl } = await import('../lib/storage');
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId, deletedAt: null },
       select: {
@@ -234,6 +235,7 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
         email: true,
         phoneNumber: true,
         fullName: true,
+        avatarKey: true,
         avatarUrl: true,
         isEmailVerified: true,
         isPhoneVerified: true,
@@ -244,7 +246,12 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
 
     if (!user) throw new AppError('User not found', 404);
 
-    res.status(200).json({ success: true, message: 'Profile fetched successfully', data: user });
+    const resolvedData = {
+      ...user,
+      avatarUrl: resolveStorageUrl(user.avatarKey) || user.avatarUrl || null,
+    };
+
+    res.status(200).json({ success: true, message: 'Profile fetched successfully', data: resolvedData });
   } catch (err) {
     next(err);
   }
@@ -252,13 +259,58 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
 
 export const updateMe = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { fullName, phoneNumber, avatarUrl } = req.body;
+    const { fullName, phoneNumber, avatarUrl, avatarKey } = req.body;
     const { prisma } = await import('../app');
-    const user = await prisma.user.update({
+    const { objectExists, deleteObject, resolveStorageUrl, validateStorageKey } = await import('../lib/storage');
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { id: true, avatarKey: true, avatarUrl: true },
+    });
+    if (!currentUser) throw new AppError('User not found', 404);
+
+    // If avatarKey is provided, verify it exists and belongs to this user
+    if (avatarKey !== undefined) {
+      if (avatarKey !== null && typeof avatarKey === 'string' && avatarKey.trim() !== '') {
+        const cleanKey = avatarKey.trim();
+        validateStorageKey(cleanKey);
+
+        // Ownership enforcement: key must belong to users/:userId/avatar/
+        const expectedPrefix = `users/${req.user!.userId}/avatar/`;
+        if (!cleanKey.startsWith(expectedPrefix)) {
+          throw new AppError('Access denied: Avatar key does not belong to this user', 403, 'FORBIDDEN_KEY');
+        }
+
+        // Verify object actually exists in S3/MinIO
+        const exists = await objectExists(cleanKey);
+        if (!exists) {
+          throw new AppError('Specified avatar object does not exist in storage', 400, 'OBJECT_NOT_FOUND');
+        }
+
+        // Lifecycle: if replacing an existing avatar key, clean up old object
+        if (currentUser.avatarKey && currentUser.avatarKey !== cleanKey) {
+          try {
+            await deleteObject(currentUser.avatarKey);
+          } catch (e) {
+            console.warn(`[Storage Lifecycle] Failed to delete old avatar object ${currentUser.avatarKey}:`, e);
+          }
+        }
+      } else if (avatarKey === null && currentUser.avatarKey) {
+        // Avatar removed: delete old storage object
+        try {
+          await deleteObject(currentUser.avatarKey);
+        } catch (e) {
+          console.warn(`[Storage Lifecycle] Failed to delete old avatar object ${currentUser.avatarKey}:`, e);
+        }
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
       where: { id: req.user!.userId },
       data: { 
         ...(fullName && { fullName }),
         ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(avatarKey !== undefined && { avatarKey }),
         ...(avatarUrl !== undefined && { avatarUrl }),
       },
       select: {
@@ -266,6 +318,7 @@ export const updateMe = async (req: AuthenticatedRequest, res: Response, next: N
         email: true,
         phoneNumber: true,
         fullName: true,
+        avatarKey: true,
         avatarUrl: true,
         isEmailVerified: true,
         isPhoneVerified: true,
@@ -273,7 +326,13 @@ export const updateMe = async (req: AuthenticatedRequest, res: Response, next: N
         role: { select: { name: true, description: true } },
       }
     });
-    res.status(200).json({ success: true, message: 'Profile updated successfully', data: user });
+
+    const responseData = {
+      ...updatedUser,
+      avatarUrl: resolveStorageUrl(updatedUser.avatarKey) || updatedUser.avatarUrl || null,
+    };
+
+    res.status(200).json({ success: true, message: 'Profile updated successfully', data: responseData });
   } catch (err) {
     next(err);
   }

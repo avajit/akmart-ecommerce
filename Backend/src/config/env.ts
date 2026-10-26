@@ -45,6 +45,17 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_S3_BUCKET_NAME: z.string().optional(),
+
+  // S3-compatible object storage (MinIO in dev, AWS S3 / Cloudflare R2 in prod)
+  S3_ENDPOINT: z.string().default('http://localhost:9000'),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_ACCESS_KEY: z.string().default('minioadmin'),
+  S3_SECRET_KEY: z.string().default('minioadmin'),
+  S3_BUCKET: z.string().default('akmart-media'),
+  S3_FORCE_PATH_STYLE: z.preprocess((val) => val === 'true' || val === true || val === '1', z.boolean()).default(true),
+  S3_PUBLIC_BASE_URL: z.preprocess((val) => (val === '' || !val ? undefined : val), z.string().url().optional()),
+  S3_PRESIGN_EXPIRES_SECONDS: z.coerce.number().default(300),
+  MAX_IMAGE_SIZE_MB: z.coerce.number().default(5),
 });
 
 // Validate process.env against the schema

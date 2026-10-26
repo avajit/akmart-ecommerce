@@ -52,10 +52,10 @@ export default function SellerSettings() {
   if (!profile) return <div className="text-center py-20 text-white">Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <h1 className="text-3xl font-bold text-white mb-8">Shop Settings</h1>
+    <div className="max-w-4xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-6 sm:mb-8 tracking-tight">Shop Settings</h1>
 
-      <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 p-8 rounded-2xl space-y-6">
+      <form onSubmit={handleSubmit} className="bg-[#141414] border border-gray-800 p-5 sm:p-8 rounded-2xl space-y-6 shadow-xl">
         
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-2">Shop Name</label>
@@ -136,7 +136,7 @@ export default function SellerSettings() {
           <button 
             type="submit" 
             disabled={loading}
-            className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 px-8 rounded-lg transition-colors"
+            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3.5 px-8 rounded-xl transition-colors min-h-[44px]"
           >
             {loading ? "Saving..." : "Save Changes"}
           </button>

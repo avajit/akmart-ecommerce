@@ -84,7 +84,23 @@ export const errorHandler = (
     message = 'Malformed JSON syntax in request body.';
     errorCode = 'INVALID_JSON';
   }
-  // 6. Unhandled / Unexpected Errors
+  // 6. Handle Storage & File Upload Errors
+  else if (err.name === 'StorageValidationError') {
+    statusCode = 400;
+    message = err.message;
+    errorCode = 'STORAGE_VALIDATION_ERROR';
+  } else if (err.name === 'StorageNotFoundError' || (err as any).statusCode === 404) {
+    statusCode = 404;
+    message = err.message || 'File not found in storage.';
+    errorCode = 'STORAGE_NOT_FOUND';
+  } else if (err.name === 'StorageUploadError' || (err as any).code === 'STORAGE_UPLOAD_ERROR') {
+    statusCode = 500;
+    message = env.NODE_ENV === 'production'
+      ? 'File upload failed. Please try again.'
+      : err.message || 'File upload failed.';
+    errorCode = 'STORAGE_UPLOAD_ERROR';
+  }
+  // 7. Unhandled / Unexpected Errors
   else {
     // Log unexpected errors through structured logger
     logger.error('Unhandled Application Exception', { error: err.message, stack: err.stack });

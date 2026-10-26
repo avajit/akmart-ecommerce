@@ -33,7 +33,7 @@ export default function AdminBrands() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 font-poppins">
       <h1 className="text-3xl font-bold text-white mb-8">Brand Management</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -77,8 +77,8 @@ export default function AdminBrands() {
 
         {/* List */}
         <div className="md:col-span-2">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-            <table className="w-full text-left">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
+            <table className="w-full text-left min-w-[500px]">
               <thead className="bg-gray-800/50">
                 <tr>
                   <th className="p-4 text-gray-400 font-medium w-16">Logo</th>

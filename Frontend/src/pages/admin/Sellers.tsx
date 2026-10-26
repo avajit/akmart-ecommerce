@@ -223,7 +223,7 @@ export default function AdminSellers() {
         </div>
 
         {/* Search */}
-        <div className="relative min-w-[280px]">
+        <div className="relative w-full md:w-72">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
           <input
             type="text"
@@ -311,10 +311,10 @@ export default function AdminSellers() {
                   </div>
 
                   {/* Actions Bar */}
-                  <div className="flex items-center gap-2.5 self-end lg:self-auto">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
                     <button
                       onClick={() => setExpandedSellerId(isExpanded ? null : seller.id)}
-                      className="px-3 py-2 bg-[#1F1F1F] hover:bg-[#282828] text-gray-300 hover:text-white rounded-xl text-xs font-semibold border border-gray-800 transition flex items-center gap-1.5"
+                      className="px-3.5 py-2.5 bg-[#1F1F1F] hover:bg-[#282828] text-gray-300 hover:text-white rounded-xl text-xs font-semibold border border-gray-800 transition flex items-center gap-1.5 min-h-[40px]"
                     >
                       <FiFileText size={13} />
                       {isExpanded ? "Hide KYC" : "Inspect KYC"}
@@ -325,17 +325,17 @@ export default function AdminSellers() {
                       <>
                         <button
                           onClick={() => setActionModal({ type: 'VERIFY', seller })}
-                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20"
+                          className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20 min-h-[40px]"
                         >
                           <FiCheckCircle size={13} />
-                          Verify & Approve
+                          <span>Verify & Approve</span>
                         </button>
                         <button
                           onClick={() => setActionModal({ type: 'REJECT', seller })}
-                          className="px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                          className="px-3.5 py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[40px]"
                         >
                           <FiXCircle size={13} />
-                          Reject
+                          <span>Reject</span>
                         </button>
                       </>
                     )}
@@ -485,16 +485,18 @@ export default function AdminSellers() {
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => setActionModal(null)}
                 disabled={processingAction}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-xl transition"
+                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-xl transition min-h-[44px]"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleExecuteAction}
                 disabled={processingAction}
-                className={`px-4 py-2 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
+                className={`px-5 py-2.5 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 min-h-[44px] ${
                   actionModal.type === 'VERIFY'
                     ? 'bg-emerald-600 hover:bg-emerald-700'
                     : 'bg-rose-600 hover:bg-rose-700'

@@ -20,6 +20,7 @@ export const globalLimiter = rateLimit({
   max: env.NODE_ENV === 'development' ? 5000 : env.RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   skip: () => env.NODE_ENV === 'test',
   message: {
     success: false,
@@ -94,6 +95,7 @@ export const cancelRegistrationLimiter = rateLimit({
   max: env.NODE_ENV === 'development' ? 50 : 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   skip: () => env.NODE_ENV === 'test',
   message: {
     success: false,
@@ -102,6 +104,29 @@ export const cancelRegistrationLimiter = rateLimit({
       code: 429,
       errorCode: 'TOO_MANY_REQUESTS',
       message: 'Too many cancellation requests from this IP, please try again later.',
+    },
+  },
+});
+
+// Upload Rate Limiter: Protects presign & direct upload endpoints from abuse
+export const uploadLimiter = rateLimit({
+  store: new RedisStore({
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
+    sendCommand: (...args: string[]) => redisClient.call(...args),
+  }),
+  windowMs: 60 * 1000,
+  max: env.NODE_ENV === 'development' ? 100 : 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: false,
+  skip: () => env.NODE_ENV === 'test',
+  message: {
+    success: false,
+    message: 'Too many upload requests, please try again later.',
+    error: {
+      code: 429,
+      errorCode: 'UPLOAD_RATE_LIMIT_EXCEEDED',
+      message: 'Too many upload requests, please try again later.',
     },
   },
 });

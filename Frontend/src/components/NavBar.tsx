@@ -3,7 +3,7 @@ import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { 
   FiMenu, FiX, FiShoppingCart, FiUser, FiSearch, FiHeart, FiChevronDown, 
   FiBriefcase, FiShield, FiHome, FiGrid, FiArrowRight, FiSmartphone, FiCpu, 
-  FiShoppingBag, FiTag, FiMonitor, FiTv, FiSmile, FiPackage, FiZap, FiFeather, FiLayers
+  FiShoppingBag, FiTag, FiMonitor, FiTv, FiSmile, FiPackage, FiZap, FiFeather, FiLayers, FiLogOut
 } from "react-icons/fi";
 import { assets } from "../assets/frontend_assets/assets";
 import BrandLogo from "./BrandLogo";
@@ -62,6 +62,7 @@ export default function Navbar() {
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileExpandedCats, setMobileExpandedCats] = useState<Record<string, boolean>>({});
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const profileRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -384,7 +385,7 @@ export default function Navbar() {
           {/* Mobile search trigger */}
           <button
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-            className="sm:hidden p-2 text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors"
+            className="sm:hidden w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             aria-label="Search"
           >
             <FiSearch className="w-5 h-5" />
@@ -396,7 +397,7 @@ export default function Navbar() {
             aria-label="Wishlist"
             title="My Wishlist"
             className={({ isActive }) => 
-              `hidden sm:flex w-10 h-10 rounded-xl items-center justify-center transition-all relative border ${
+              `hidden sm:flex w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl items-center justify-center transition-all relative border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${
                 isActive 
                   ? 'text-orange-400 bg-orange-500/10 border-orange-500/30 shadow-sm' 
                   : 'text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700'
@@ -419,7 +420,7 @@ export default function Navbar() {
               onClick={() => navigate('/cart')} 
               aria-label="Shopping Cart"
               title="Shopping Cart"
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all relative border text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all relative border text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             >
               <FiShoppingCart className="w-4.5 h-4.5" />
               {cartCount > 0 && (
@@ -438,9 +439,17 @@ export default function Navbar() {
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#161616] hover:bg-[#202020] border border-gray-800/80 hover:border-gray-700 transition-all cursor-pointer shadow-sm group"
                 aria-label="User Account Menu"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-orange-500/30 shrink-0">
-                  {user?.fullName ? user.fullName[0].toUpperCase() : 'U'}
-                </div>
+                {user?.avatarUrl ? (
+                  <img 
+                    src={user.avatarUrl} 
+                    alt={user.fullName || 'User Avatar'} 
+                    className="w-8 h-8 rounded-full object-cover ring-1 ring-orange-500/40 shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-orange-500/30 shrink-0">
+                    {user?.fullName ? user.fullName[0].toUpperCase() : 'U'}
+                  </div>
+                )}
                 <div className="hidden xl:flex flex-col text-left leading-tight">
                   <span className="text-xs font-semibold text-white max-w-[125px] truncate group-hover:text-orange-400 transition-colors">
                     {getDisplayName()}
@@ -506,11 +515,13 @@ export default function Navbar() {
 
                 <div className="pt-1 border-t border-gray-800">
                   <button 
-                    onClick={() => { closeAll(); logout(); }}
+                    type="button"
+                    onClick={() => { closeAll(); setShowLogoutConfirm(true); }}
                     disabled={isLoggingOut}
                     className="w-full text-left px-5 py-2.5 hover:bg-red-500/10 transition-colors text-red-400 font-semibold text-xs flex items-center justify-between"
                   >
                     <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
+                    <FiLogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -521,7 +532,7 @@ export default function Navbar() {
           <button 
             onClick={() => setMenuOpen(!menuOpen)} 
             aria-label="Toggle menu"
-            className="md:hidden p-2 text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors"
+            className="md:hidden w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
           >
             {menuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>
@@ -919,17 +930,19 @@ export default function Navbar() {
           <div className="pt-4 border-t border-gray-800">
             {isAuthenticated ? (
               <button 
-                onClick={() => { closeAll(); logout(); }}
+                type="button"
+                onClick={() => { closeAll(); setShowLogoutConfirm(true); }}
                 disabled={isLoggingOut}
-                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2.5 rounded-xl text-xs font-semibold transition-colors"
+                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 min-h-[44px]"
               >
-                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+                <FiLogOut className="w-4 h-4" />
+                <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
               </button>
             ) : (
               <NavLink 
                 to="/login" 
                 onClick={closeAll}
-                className="block text-center bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-xs font-semibold transition-colors shadow-sm"
+                className="w-full text-center bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-sm min-h-[44px] flex items-center justify-center"
               >
                 Login / Register
               </NavLink>
@@ -1031,6 +1044,48 @@ export default function Navbar() {
           <span>{isAuthenticated ? 'Account' : 'Login'}</span>
         </NavLink>
       </div>
+      )}
+
+      {/* ── 5. LOGOUT CONFIRMATION MODAL ── */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#161616] border border-gray-800 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center mx-auto shadow-lg">
+              <FiLogOut className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Sign Out Confirmation
+              </h3>
+              <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                Are you sure you want to end your current session? You will need to sign in again to access your account orders and saved cart.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={isLoggingOut}
+                className="w-full py-3 px-4 rounded-xl bg-[#222222] hover:bg-[#2a2a2a] text-gray-300 text-xs font-semibold transition active:scale-95 min-h-[44px]"
+              >
+                Keep Logged In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  logout();
+                }}
+                disabled={isLoggingOut}
+                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider transition active:scale-95 shadow-lg shadow-rose-600/30 min-h-[44px]"
+              >
+                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </header>

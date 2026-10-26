@@ -26,6 +26,7 @@ export interface UserDTO {
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isActive: boolean;
+  avatarKey?: string | null;
   avatarUrl?: string;
   createdAt: string;
 }

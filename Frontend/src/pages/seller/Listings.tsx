@@ -153,7 +153,7 @@ export default function Listings() {
   }, [listings, activeTab, searchQuery]);
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white pb-20 space-y-8">
+    <div className="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white pb-20 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-800">
         <div>
@@ -269,7 +269,7 @@ export default function Listings() {
         </div>
 
         {/* Search */}
-        <div className="relative min-w-[280px]">
+        <div className="relative w-full md:w-72">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
           <input
             type="text"
@@ -281,8 +281,136 @@ export default function Listings() {
         </div>
       </div>
 
-      {/* Listings Table Container */}
-      <div className="bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl">
+      {/* ── MOBILE CARD VIEW (< md) ── */}
+      <div className="block md:hidden space-y-3.5">
+        {loading ? (
+          <div className="p-12 text-center text-gray-400 bg-[#141414] rounded-2xl border border-gray-800">
+            <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-3 text-xs">Loading listings catalog...</p>
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="p-10 text-center text-gray-400 bg-[#141414] rounded-2xl border border-gray-800">
+            <FiBox className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+            <p className="text-sm font-bold text-white">No Listings Found</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {searchQuery ? `No listings match "${searchQuery}"` : 'No listings in this view.'}
+            </p>
+          </div>
+        ) : (
+          filteredListings.map((l: any) => {
+            const avail = l.availableStock ?? (l.stock - (l.reservedStock || 0));
+            const isUpdating = updatingId === l.id;
+
+            return (
+              <div key={l.id} className="bg-[#141414] border border-gray-800/80 rounded-2xl p-4 space-y-3.5 shadow-lg">
+                {/* Header: Name, SKU, Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-white text-sm truncate">{l.variant?.product?.name || "Product"}</h3>
+                    <p className="text-xs text-orange-400 font-medium mt-0.5">{l.variant?.name}</p>
+                    <span className="font-mono text-[10px] text-gray-400 bg-black/60 px-2 py-0.5 rounded border border-gray-800 mt-1 inline-block">
+                      SKU: {l.variant?.sku}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => handleToggleActive(l.id, l.isActive)}
+                    disabled={isUpdating}
+                    className="focus:outline-none shrink-0"
+                    title="Toggle active status"
+                  >
+                    {l.isActive ? (
+                      <span className="text-emerald-400 text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md uppercase tracking-wide">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-[10px] font-bold bg-gray-800 border border-gray-700 px-2.5 py-1 rounded-md uppercase tracking-wide">
+                        INACTIVE
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Price and Stock Inputs Grid */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="bg-black/40 border border-gray-800 rounded-xl p-2.5">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Price ({currency.trim()})
+                    </label>
+                    <input 
+                      type="number" 
+                      defaultValue={l.price} 
+                      disabled={isUpdating}
+                      onBlur={(e) => {
+                        const val = Number(e.target.value);
+                        if (val !== l.price) handleUpdate(l.id, 'price', val);
+                      }}
+                      className="w-full bg-[#161616] border border-gray-700/80 rounded-lg p-2 text-white font-bold text-xs focus:border-orange-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="bg-black/40 border border-gray-800 rounded-xl p-2.5">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Stock Units
+                    </label>
+                    <input 
+                      type="number" 
+                      defaultValue={l.stock} 
+                      disabled={isUpdating}
+                      onBlur={(e) => {
+                        const val = Number(e.target.value);
+                        if (val !== l.stock) handleUpdate(l.id, 'stock', val);
+                      }}
+                      className={`w-full bg-[#161616] border rounded-lg p-2 font-bold text-xs focus:border-orange-500 outline-none ${
+                        avail <= 0 ? 'border-rose-500/60 text-rose-400' : avail <= 5 ? 'border-amber-500/60 text-amber-400' : 'border-gray-700/80 text-white'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Restock & Delete Action Bar */}
+                <div className="pt-2 border-t border-gray-800/80 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-gray-400 font-semibold uppercase">Restock:</span>
+                    <button
+                      onClick={() => handleQuickRestock(l.id, l.stock, 5)}
+                      disabled={isUpdating}
+                      className="bg-[#1F1F1F] hover:bg-orange-500 text-gray-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-gray-800 transition"
+                    >
+                      +5
+                    </button>
+                    <button
+                      onClick={() => handleQuickRestock(l.id, l.stock, 10)}
+                      disabled={isUpdating}
+                      className="bg-[#1F1F1F] hover:bg-orange-500 text-gray-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-gray-800 transition"
+                    >
+                      +10
+                    </button>
+                    <button
+                      onClick={() => handleQuickRestock(l.id, l.stock, 25)}
+                      disabled={isUpdating}
+                      className="bg-[#1F1F1F] hover:bg-orange-500 text-gray-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold border border-gray-800 transition"
+                    >
+                      +25
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={() => setDeletingListing(l)}
+                    className="text-gray-400 hover:text-rose-400 p-2 rounded-xl hover:bg-rose-500/10 transition"
+                    title="Delete listing"
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── DESKTOP TABLE VIEW (>= md) ── */}
+      <div className="hidden md:block bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -477,14 +605,16 @@ export default function Listings() {
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => setDeletingListing(null)}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-xl transition"
+                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-xl transition min-h-[44px]"
               >
                 Keep Active
               </button>
               <button
+                type="button"
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition"
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition min-h-[44px]"
               >
                 Confirm Deactivate
               </button>

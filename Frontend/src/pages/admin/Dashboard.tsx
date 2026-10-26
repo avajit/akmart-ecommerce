@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+    <div className="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
       <div className="mb-8 pb-6 border-b border-gray-800">
         <span className="text-orange-500 text-xs font-bold tracking-widest uppercase">Administration</span>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 uppercase">Platform Control Center</h1>

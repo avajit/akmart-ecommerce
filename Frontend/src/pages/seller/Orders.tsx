@@ -143,7 +143,7 @@ export default function SellerOrders() {
   }
 
   return (
-    <div className="space-y-8 font-poppins text-white max-w-7xl mx-auto pb-16">
+    <div className="space-y-8 font-poppins text-white max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 pb-16">
       {/* Top Banner Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-800">
         <div>
@@ -271,7 +271,7 @@ export default function SellerOrders() {
         </div>
 
         {/* Search Input */}
-        <div className="relative min-w-[280px]">
+        <div className="relative w-full md:w-72">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
           <input
             type="text"

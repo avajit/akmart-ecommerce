@@ -73,7 +73,7 @@ const OrderTrackingStepper = ({ status }: { status: string }) => {
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                   isDone 
                     ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' 
-                    : 'bg-[#1F1F1F] text-gray-500 border border-gray-700'
+                    : 'bg-[#1F1F1F] text-gray-400 border border-gray-700'
                 } ${isCurrent ? 'ring-4 ring-orange-500/20 scale-110' : ''}`}
               >
                 {idx < currentIdx ? (
@@ -83,7 +83,7 @@ const OrderTrackingStepper = ({ status }: { status: string }) => {
                 )}
               </div>
               <span className={`text-[10px] mt-2 font-semibold tracking-wide text-center max-w-[65px] sm:max-w-none leading-tight sm:whitespace-nowrap ${
-                isCurrent ? 'text-orange-400 font-bold' : isDone ? 'text-gray-300' : 'text-gray-600'
+                isCurrent ? 'text-orange-400 font-bold' : isDone ? 'text-gray-300' : 'text-gray-400'
               }`}>
                 {step.label}
               </span>
@@ -231,7 +231,7 @@ export default function Orders() {
               className="bg-[#141414] border border-gray-800/80 rounded-3xl overflow-hidden shadow-2xl"
             >
               {/* Order Card Header */}
-              <div className="bg-black/60 px-6 py-4 border-b border-gray-800 flex flex-wrap justify-between items-center gap-4 text-xs">
+              <div className="bg-black/60 px-4 sm:px-6 py-4 border-b border-gray-800 flex flex-wrap justify-between items-center gap-4 text-xs">
                 <div className="flex flex-wrap gap-6 items-center">
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Placed On</p>
@@ -256,7 +256,7 @@ export default function Orders() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                   <div className="text-right">
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Reference ID</p>
                     <p className="text-gray-400 font-mono text-xs mt-0.5">#{order.id.slice(0, 8)}</p>
@@ -299,12 +299,12 @@ export default function Orders() {
               </div>
 
               {/* Interactive Tracking Stepper */}
-              <div className="px-6 py-4 bg-[#111111] border-b border-gray-800/80">
+              <div className="px-4 sm:px-6 py-4 bg-[#111111] border-b border-gray-800/80 overflow-x-auto">
                 <OrderTrackingStepper status={order.status} />
               </div>
 
               {/* Order Items */}
-              <div className="p-6 divide-y divide-gray-800/70">
+              <div className="p-4 sm:p-6 divide-y divide-gray-800/70">
                 {items.map((item: any) => {
                   const productName = item.productName || item.sellerListing?.variant?.product?.name || "Product";
                   const productSlug = item.productSlug || item.sellerListing?.variant?.product?.slug || "";
@@ -354,7 +354,7 @@ export default function Orders() {
 
               {/* Delivery Details Footer */}
               {address && (
-                <div className="bg-black/40 px-6 py-3.5 border-t border-gray-800 text-xs text-gray-400 flex flex-wrap items-center justify-between gap-2">
+                <div className="bg-black/40 px-4 sm:px-6 py-3.5 border-t border-gray-800 text-xs text-gray-400 flex flex-wrap items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5">
                     <FiMapPin className="text-orange-500 shrink-0" />
                     <span>

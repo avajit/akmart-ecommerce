@@ -55,8 +55,28 @@ API runs at: 👉 http://localhost:5000 (Healthcheck: http://localhost:5000/heal
 # Run backend unit tests:
 cd Backend && npx vitest run ../tests/unit
 
+# Run storage unit & integration suites:
+cd Backend && npx vitest run src/tests/unit/storage.unit.test.ts src/tests/integration/storage.flow.test.ts
+
 # Run automated smoke suite (< 30 seconds):
 cd Backend && npx vitest run ../tests/api/smoke.test.ts
+```
+
+### 📦 S3-Compatible Storage (MinIO in Dev, AWS S3/R2 in Prod)
+AkMart uses an industry-standard, reusable direct-upload storage architecture.
+
+1. **Start MinIO via Docker Compose**:
+```bash
+docker compose up -d minio minio-init
+```
+2. **Default Local Credentials**:
+- **API Endpoint:** `http://localhost:9000`
+- **Web Console:** `http://localhost:9001`
+- **Access Key:** `minioadmin`
+- **Secret Key:** `minioadmin`
+- **Default Bucket:** `akmart-media` (auto-provisioned by `minio-init`)
+
+For full API documentation, code examples, and instructions on switching to AWS S3/Cloudflare R2, see [docs/STORAGE.md](docs/STORAGE.md).
 
 # Run Playwright E2E suites:
 npx playwright test tests/e2e

@@ -239,8 +239,8 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Form Panel - Consistent height to prevent jarring jumps */}
-        <div className="w-full md:w-7/12 p-6 sm:p-8 lg:p-10 flex flex-col justify-start min-h-[620px]">
+        {/* Right Side: Form Panel - Responsive height without excessive mobile scrolling */}
+        <div className="w-full md:w-7/12 p-6 sm:p-8 lg:p-10 flex flex-col justify-start min-h-[auto] sm:min-h-[580px]">
           
           {/* Mobile Logo */}
           <div className="md:hidden flex flex-col items-center mb-6">
