@@ -30,7 +30,7 @@ beforeAll(async () => {
   }
 
   // Ensure essential test data like Roles/Permissions exist
-  const consumerRole = await prismaTest.role.upsert({
+  await prismaTest.role.upsert({
     where: { name: 'CONSUMER' },
     update: {},
     create: { name: 'CONSUMER', description: 'Standard user' }

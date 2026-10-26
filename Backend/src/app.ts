@@ -110,7 +110,7 @@ app.get('/api/files/{*key}', streamFile);
 // --- ERROR HANDLING ---
 
 // Catch-all unhandled route handler
-app.use((req, res, next) => {
+app.use((req, res, _next) => {
   res.status(404).json({
     success: false,
     error: {

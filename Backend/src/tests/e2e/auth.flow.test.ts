@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../app';
 import { redis } from '../../app';
-import { prismaTest } from '../setup';
 
 describe('E2E: User Authentication Journey', () => {
   const e2eUser = {

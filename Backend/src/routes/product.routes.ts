@@ -5,8 +5,8 @@ import * as productController from "../controllers/product.controller";
 const router = Router();
 
 // Public / browse routes (auth optional for role-based filtering)
-import { NextFunction, Request, Response } from "express";
-import { verifyAccessToken, JwtPayload } from "../utils/jwt";
+import { NextFunction, Response } from "express";
+import { verifyAccessToken } from "../utils/jwt";
 import { prisma } from "../app";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
@@ -20,7 +20,7 @@ const optionalAuth = async (req: AuthenticatedRequest, res: Response, next: Next
       if (user && user.isActive) {
         req.user = { ...decoded, roleName: user.role.name };
       }
-    } catch (e) {
+    } catch {
       // ignore invalid tokens for optional auth
     }
   }

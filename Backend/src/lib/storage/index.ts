@@ -48,10 +48,9 @@ import {
   StorageNotFoundError,
   StorageValidationError,
   StorageUploadError,
-  StoragePermissionError,
 } from './errors';
-import { generateKey, validateStorageKey, GenerateKeyOptions } from './keyGenerator';
-import { isAllowedMimeType, detectMimeType, validateMagicBytes } from './magicBytes';
+import { validateStorageKey } from './keyGenerator';
+import { isAllowedMimeType, detectMimeType } from './magicBytes';
 
 export * from './errors';
 export * from './keyGenerator';
@@ -110,7 +109,7 @@ export async function ensureBucketAndCors(): Promise<void> {
     );
 
     bucketInitialized = true;
-  } catch (err: any) {
+  } catch {
     // If strict IAM or offline, proceed without failing
     bucketInitialized = true;
   }
@@ -135,18 +134,18 @@ export async function uploadObject(
   await ensureBucketAndCors();
 
   let resolvedBody: Buffer | Uint8Array;
-  let resolvedLength = contentLength;
+  let resolvedLength: number;
 
   if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
     resolvedBody = body;
-    resolvedLength = body.length;
+    resolvedLength = contentLength !== undefined ? contentLength : body.length;
   } else if (body instanceof Readable) {
     const chunks: Buffer[] = [];
     for await (const chunk of body) {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
     resolvedBody = Buffer.concat(chunks);
-    resolvedLength = resolvedBody.length;
+    resolvedLength = contentLength !== undefined ? contentLength : resolvedBody.length;
   } else {
     resolvedBody = Buffer.alloc(0);
     resolvedLength = 0;
@@ -187,7 +186,7 @@ export async function uploadObject(
 export async function getPresignedUploadUrl(
   key: string,
   contentType: string,
-  maxSize?: number
+  _maxSize?: number
 ): Promise<{ uploadUrl: string; key: string; expiresIn: number }> {
   validateStorageKey(key);
 

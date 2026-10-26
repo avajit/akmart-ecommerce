@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import busboy from 'busboy';
-import { PassThrough } from 'stream';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { env } from '../config/env';
 import {
@@ -9,12 +8,9 @@ import {
   getPublicUrl,
   streamObject,
   uploadObject,
-  validateMagicBytes,
   validateStorageKey,
   isAllowedMimeType,
-  StorageValidationError,
   StorageNotFoundError,
-  findLocalStorageFile,
 } from '../lib/storage';
 
 const MAX_BYTES = (env.MAX_IMAGE_SIZE_MB || 5) * 1024 * 1024;

@@ -229,7 +229,7 @@ export class AuthService {
       const tokenInfo = await client.getTokenInfo(data.idToken);
       googleEmail = tokenInfo.email;
       googleSub = tokenInfo.sub;
-    } catch (error) {
+    } catch {
       throw new AppError('Invalid Google Token', 401, 'UNAUTHORIZED');
     }
 
