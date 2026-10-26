@@ -76,7 +76,7 @@ export class AuthService {
       if (data.email) {
         const cancelToken = crypto.randomBytes(16).toString('hex');
         await redis.set(`revoke:reg:${cancelToken}`, data.email, 'EX', 48 * 3600);
-        const cancelUrl = `http://localhost:5000/api/v1/auth/cancel-registration?token=${cancelToken}`;
+        const cancelUrl = `${env.BACKEND_URL}/api/v1/auth/cancel-registration?token=${cancelToken}`;
         await OTPService.generateAndSendOTP(data.email, 'EMAIL_VERIFY', cancelUrl);
       } else if (data.phoneNumber) {
         await OTPService.generateAndSendOTP(data.phoneNumber, 'PHONE_VERIFY');
@@ -147,19 +147,42 @@ export class AuthService {
       include: { user: { include: { role: true } } },
     });
 
-    if (!existingToken || existingToken.revokedAt || existingToken.expiresAt < new Date()) {
+    if (!existingToken) {
       throw new AppError('Invalid or expired refresh token. Please login again.', 401, 'INVALID_REFRESH_TOKEN');
+    }
+
+    // Token Reuse Detection (RFC 6749 / OWASP): If a previously revoked token is replayed,
+    // assume token theft and revoke the entire token family for this user immediately.
+    if (existingToken.revokedAt) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: existingToken.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new AppError('Compromised session detected. All active sessions have been invalidated. Please log in again.', 401, 'TOKEN_REUSE_DETECTED');
+    }
+
+    if (existingToken.expiresAt < new Date()) {
+      throw new AppError('Refresh token expired. Please login again.', 401, 'EXPIRED_REFRESH_TOKEN');
     }
 
     if (!existingToken.user.isActive) {
       throw new AppError('Account is disabled', 403, 'ACCOUNT_DISABLED');
     }
 
-    // Revoke old token
-    await prisma.refreshToken.update({
-      where: { id: existingToken.id },
+    // Atomically revoke old token: ensure revokedAt was null
+    const revokeResult = await prisma.refreshToken.updateMany({
+      where: { id: existingToken.id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+
+    // If count is 0, another concurrent request already rotated this token!
+    if (revokeResult.count === 0) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: existingToken.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new AppError('Compromised session detected. All active sessions have been invalidated. Please log in again.', 401, 'TOKEN_REUSE_DETECTED');
+    }
 
     // Generate new tokens
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(

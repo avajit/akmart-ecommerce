@@ -10,10 +10,14 @@ export const checkout = async (userId: string, body: any) => {
     include: {
       items: {
         include: {
-          sellerListing: true
-        }
-      }
-    }
+          sellerListing: {
+            include: {
+              sellerProfile: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!cart || cart.items.length === 0) {
@@ -36,6 +40,11 @@ export const checkout = async (userId: string, body: any) => {
   for (const item of itemsToCheckout) {
     if (!item.sellerListing.isActive || item.sellerListing.deletedAt) {
       throw new AppError("One or more items in your cart are no longer available", 400, "ITEM_UNAVAILABLE");
+    }
+
+    // Anti-Self-Purchase Gatekeeper: Prevent seller checking out their own products
+    if (item.sellerListing.sellerProfile?.userId === userId) {
+      throw new AppError("You cannot purchase products from your own store", 400, "CANNOT_PURCHASE_OWN_PRODUCT");
     }
 
     const availableStock = item.sellerListing.stock - item.sellerListing.reservedStock;
@@ -99,12 +108,28 @@ export const checkout = async (userId: string, body: any) => {
       }
     }
 
-    // Atomically increment coupon usage count
+    // Atomically increment coupon usage count with race-condition gatekeeper
     if (couponId) {
-      await tx.coupon.update({
-        where: { id: couponId },
+      const couponRecord = await tx.coupon.findUnique({ where: { id: couponId } });
+      if (couponRecord?.usageLimit && couponRecord.usedCount >= couponRecord.usageLimit) {
+        throw new AppError("This promo code has reached its maximum redemption limit", 400, "COUPON_LIMIT_REACHED");
+      }
+
+      const updateCouponRes = await tx.coupon.updateMany({
+        where: {
+          id: couponId,
+          isActive: true,
+          OR: [
+            { usageLimit: null },
+            { usedCount: { lt: couponRecord?.usageLimit ?? 999999 } },
+          ],
+        },
         data: { usedCount: { increment: 1 } },
       });
+
+      if (updateCouponRes.count === 0) {
+        throw new AppError("This promo code has reached its maximum redemption limit", 400, "COUPON_LIMIT_REACHED");
+      }
     }
 
     // Create Order with full financial snapshot
@@ -161,10 +186,10 @@ export const checkout = async (userId: string, body: any) => {
       if (user?.email) {
         import('./email.service')
           .then(({ EmailService }) => EmailService.sendOrderConfirmationEmail(user.email!, order))
-          .catch(() => {});
+          .catch(() => { });
       }
     })
-    .catch(() => {});
+    .catch(() => { });
 
   return order;
 };
@@ -178,8 +203,8 @@ export const getMyOrders = async (userId: string) => {
           sellerListing: {
             include: {
               variant: {
-                include: { 
-                  product: { 
+                include: {
+                  product: {
                     include: { images: { where: { isPrimary: true }, take: 1 } }
                   },
                   images: { take: 1 }
@@ -205,8 +230,8 @@ export const getOrderById = async (userId: string, orderId: string) => {
           sellerListing: {
             include: {
               variant: {
-                include: { 
-                  product: { 
+                include: {
+                  product: {
                     include: { images: { where: { isPrimary: true }, take: 1 } }
                   },
                   images: { take: 1 }
@@ -300,7 +325,7 @@ export const getAddresses = async (userId: string) => {
 export const addAddress = async (userId: string, body: any) => {
   // If it's the first address, make it default
   const count = await prisma.address.count({ where: { userId } });
-  
+
   if (body.isDefault) {
     await prisma.address.updateMany({ where: { userId }, data: { isDefault: false } });
   }
@@ -320,9 +345,21 @@ export const addAddress = async (userId: string, body: any) => {
 };
 
 export const deleteAddress = async (userId: string, addressId: string) => {
-  const address = await prisma.address.findUnique({ where: { id: addressId } });
+  const address = await prisma.address.findUnique({
+    where: { id: addressId },
+    include: { _count: { select: { orders: true } } },
+  });
+
   if (!address || address.userId !== userId) {
     throw new AppError("Address not found", 404, "NOT_FOUND");
+  }
+
+  if (address._count.orders > 0) {
+    throw new AppError(
+      "Cannot delete this address because it is associated with past orders in your order history.",
+      400,
+      "ADDRESS_IN_USE"
+    );
   }
 
   await prisma.address.delete({ where: { id: addressId } });

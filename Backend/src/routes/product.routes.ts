@@ -31,10 +31,13 @@ router.get("/", optionalAuth, productController.browseProducts);
 router.get("/slug/:slug", productController.getProductBySlug);
 router.get("/:id/reviews", productController.getProductReviews);
 
+import { validateRequest } from "../middlewares/validateRequest";
+import { createProductSchema, updateProductSchema } from "../validators/product.validator";
+
 // Protected routes (Admin / Seller)
-router.post("/", requireAuth, requireRole(["ADMIN", "SELLER"]), productController.createProduct);
+router.post("/", requireAuth, requireRole(["ADMIN", "SELLER"]), validateRequest(createProductSchema), productController.createProduct);
 router.patch("/:id/submit", requireAuth, requireRole(["ADMIN", "SELLER"]), productController.submitProduct);
-router.patch("/:id", requireAuth, requireRole(["ADMIN", "SELLER"]), productController.updateProduct);
+router.patch("/:id", requireAuth, requireRole(["ADMIN", "SELLER"]), validateRequest(updateProductSchema), productController.updateProduct);
 router.delete("/:id", requireAuth, requireRole(["ADMIN", "SELLER"]), productController.deleteProduct);
 
 // Protected route (Consumer only - verified buyer reviews)

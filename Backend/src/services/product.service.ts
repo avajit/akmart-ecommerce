@@ -489,6 +489,21 @@ export const submitReview = async (userId: string, productId: string, body: { ra
   });
   if (existing) throw new AppError("You have already reviewed this product", 409, "ALREADY_REVIEWED");
 
+  // Check if customer has an actual purchase order for this product
+  const verifiedPurchase = await prisma.orderItem.findFirst({
+    where: {
+      order: {
+        userId,
+        status: { in: ["CONFIRMED", "SHIPPED", "DELIVERED"] },
+      },
+      sellerListing: {
+        variant: {
+          productId,
+        },
+      },
+    },
+  });
+
   const review = await prisma.review.create({
     data: {
       productId,
@@ -496,6 +511,7 @@ export const submitReview = async (userId: string, productId: string, body: { ra
       rating: body.rating,
       title: body.title,
       body: body.body,
+      isVerifiedPurchase: !!verifiedPurchase,
     },
     include: { user: { select: { fullName: true, avatarUrl: true } } },
   });

@@ -32,7 +32,7 @@ export const globalLimiter = rateLimit({
   },
 });
 
-// Auth Rate Limiter: Stricter limits for login/register endpoints to prevent brute-force
+// Auth Rate Limiter: IP-based limits for login/register endpoints to prevent rapid IP flooding
 export const authLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
@@ -43,6 +43,7 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Crucial: Successful logins/verifications do not count towards brute-force limits
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   skip: () => env.NODE_ENV === 'test' && !process.env.ENABLE_RATE_LIMIT_TEST,
   message: {
     success: false,
@@ -51,6 +52,56 @@ export const authLimiter = rateLimit({
       code: 429,
       errorCode: 'AUTH_RATE_LIMIT_EXCEEDED',
       message: 'Too many authentication attempts from this IP, please try again later.',
+    },
+  },
+});
+
+// Account Rate Limiter: Per-account protection against distributed botnet credential stuffing
+export const accountLimiter = rateLimit({
+  store: new RedisStore({
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
+    sendCommand: (...args: string[]) => redisClient.call(...args),
+  }),
+  windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
+  max: env.NODE_ENV === 'development' ? 100 : env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => {
+    const identifier = req.body?.email || req.body?.phoneNumber || req.body?.identifier;
+    return identifier && typeof identifier === 'string'
+      ? `account:${identifier.trim().toLowerCase()}`
+      : req.ip || '127.0.0.1';
+  },
+  validate: false,
+  skip: () => env.NODE_ENV === 'test' && !process.env.ENABLE_RATE_LIMIT_TEST,
+  message: {
+    success: false,
+    message: 'Too many authentication attempts for this account, please try again later.',
+    error: {
+      code: 429,
+      errorCode: 'ACCOUNT_RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts for this account, please try again later.',
+    },
+  },
+});
+
+// Cancel Registration Limiter: Prevents enumeration / DB flooding
+export const cancelRegistrationLimiter = rateLimit({
+  store: new RedisStore({
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
+    sendCommand: (...args: string[]) => redisClient.call(...args),
+  }),
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === 'development' ? 50 : 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => env.NODE_ENV === 'test',
+  message: {
+    success: false,
+    message: 'Too many cancellation requests from this IP, please try again later.',
+    error: {
+      code: 429,
+      errorCode: 'TOO_MANY_REQUESTS',
+      message: 'Too many cancellation requests from this IP, please try again later.',
     },
   },
 });

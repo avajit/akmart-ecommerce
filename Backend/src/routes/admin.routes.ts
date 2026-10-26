@@ -22,17 +22,25 @@ router.patch("/sellers/:id/verify", adminController.verifySeller);
 router.patch("/sellers/:id/reject", adminController.rejectSeller);
 router.patch("/sellers/:id/suspend", adminController.suspendSeller);
 
+import { validateRequest } from "../middlewares/validateRequest";
+import { 
+  createCategorySchema, 
+  updateCategorySchema, 
+  createBrandSchema, 
+  updateBrandSchema 
+} from "../validators/admin.validator";
+
 // ── Category Management ────────────────────────────────────────
-router.post("/categories", adminController.createCategory);
-router.patch("/categories/:id", adminController.updateCategory);
+router.post("/categories", validateRequest(createCategorySchema), adminController.createCategory);
+router.patch("/categories/:id", validateRequest(updateCategorySchema), adminController.updateCategory);
 router.delete("/categories/:id", adminController.deactivateCategory);
 router.get("/categories/:id/attributes", adminController.getCategoryAttributes);
 router.post("/categories/:id/attributes", adminController.addCategoryAttribute);
 router.delete("/categories/:id/attributes/:attrId", adminController.deleteCategoryAttribute);
 
 // ── Brand Management ───────────────────────────────────────────
-router.post("/brands", adminController.createBrand);
-router.patch("/brands/:id", adminController.updateBrand);
+router.post("/brands", validateRequest(createBrandSchema), adminController.createBrand);
+router.patch("/brands/:id", validateRequest(updateBrandSchema), adminController.updateBrand);
 router.delete("/brands/:id", adminController.deactivateBrand);
 
 export default router;
