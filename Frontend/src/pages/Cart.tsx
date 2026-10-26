@@ -248,7 +248,7 @@ export default function Cart() {
 
         {/* Quick Category Discovery Pills */}
         <div className="border-t border-gray-800/80 pt-10">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">Popular Departments to Explore</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Popular Departments to Explore</h2>
           <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl mx-auto">
             {[
               { label: "Electronics & Tech", slug: "electronics" },
@@ -554,13 +554,13 @@ export default function Cart() {
                           onClick={() => moveToWishlist(item)}
                           className="sm:hidden text-[11px] font-semibold text-gray-400 hover:text-orange-400 flex items-center gap-1 transition-colors"
                         >
-                          <FiHeart className="w-3 h-3 text-gray-500" />
+                          <FiHeart className="w-3 h-3 text-gray-400" />
                           <span>Save</span>
                         </button>
 
                         {/* Item Total */}
                         <div className="text-right min-w-[70px] sm:min-w-[85px]">
-                          <p className="text-[10px] text-gray-500 sm:hidden">Total</p>
+                          <p className="text-[10px] text-gray-400 sm:hidden">Total</p>
                           <p className="text-sm sm:text-base font-extrabold text-white">
                             {currency}{(price * item.quantity).toLocaleString()}
                           </p>
@@ -570,7 +570,7 @@ export default function Cart() {
                         <button
                           type="button"
                           onClick={() => removeCartItemOptimistic(item.id)}
-                          className="text-gray-500 hover:text-rose-400 p-2 rounded-xl hover:bg-gray-800/80 transition-colors active:scale-90"
+                          className="text-gray-400 hover:text-rose-400 p-2 rounded-xl hover:bg-gray-800/80 transition-colors active:scale-90"
                           title="Remove item"
                           aria-label="Remove item"
                         >
@@ -636,8 +636,9 @@ export default function Cart() {
                     <button 
                       type="button"
                       onClick={removeCoupon} 
-                      className="text-gray-400 hover:text-rose-400 transition-colors"
+                      className="text-gray-400 hover:text-rose-400 transition-colors p-1"
                       title="Remove coupon"
+                      aria-label="Remove coupon"
                     >
                       <FiX size={14} />
                     </button>

@@ -73,7 +73,7 @@ const OrderTrackingStepper = ({ status }: { status: string }) => {
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                   isDone 
                     ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' 
-                    : 'bg-[#1F1F1F] text-gray-500 border border-gray-700'
+                    : 'bg-[#1F1F1F] text-gray-400 border border-gray-700'
                 } ${isCurrent ? 'ring-4 ring-orange-500/20 scale-110' : ''}`}
               >
                 {idx < currentIdx ? (
@@ -83,7 +83,7 @@ const OrderTrackingStepper = ({ status }: { status: string }) => {
                 )}
               </div>
               <span className={`text-[10px] mt-2 font-semibold tracking-wide text-center max-w-[65px] sm:max-w-none leading-tight sm:whitespace-nowrap ${
-                isCurrent ? 'text-orange-400 font-bold' : isDone ? 'text-gray-300' : 'text-gray-600'
+                isCurrent ? 'text-orange-400 font-bold' : isDone ? 'text-gray-300' : 'text-gray-400'
               }`}>
                 {step.label}
               </span>

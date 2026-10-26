@@ -1054,7 +1054,7 @@ export default function Checkout() {
                 <p className="text-gray-400 text-xs max-w-xs mx-auto leading-relaxed">
                   Connecting to {paymentMethod === 'ESEWA' ? 'eSewa Secure Switch' : 'Khalti Payment Engine'}. Please do not refresh or navigate away.
                 </p>
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 font-mono">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 font-mono">
                   <FiLock className="text-emerald-400" />
                   <span>NCHL 256-bit Handshake Verified</span>
                 </div>
@@ -1071,7 +1071,7 @@ export default function Checkout() {
                 <p className="text-xs text-gray-400">
                   Transaction reference: <span className="text-emerald-400 font-mono font-bold">{simulatedTxnId}</span>
                 </p>
-                <p className="text-[11px] text-gray-500">Redirecting to order confirmation receipt...</p>
+                <p className="text-[11px] text-gray-400">Redirecting to order confirmation receipt...</p>
               </div>
             )}
 
@@ -1114,7 +1114,7 @@ export default function Checkout() {
                         {paymentMethod === 'ESEWA' ? 'eSewa ID / Mobile Number' : 'Khalti ID / Mobile Number'}
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-3 text-xs text-gray-500 font-mono">+977</span>
+                        <span className="absolute left-3 top-3 text-xs text-gray-400 font-mono">+977</span>
                         <input
                           type="tel"
                           value={walletPhone}

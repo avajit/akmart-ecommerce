@@ -385,7 +385,7 @@ export default function Navbar() {
           {/* Mobile search trigger */}
           <button
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-            className="sm:hidden p-2 text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors"
+            className="sm:hidden w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             aria-label="Search"
           >
             <FiSearch className="w-5 h-5" />
@@ -397,7 +397,7 @@ export default function Navbar() {
             aria-label="Wishlist"
             title="My Wishlist"
             className={({ isActive }) => 
-              `hidden sm:flex w-10 h-10 rounded-xl items-center justify-center transition-all relative border ${
+              `hidden sm:flex w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl items-center justify-center transition-all relative border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${
                 isActive 
                   ? 'text-orange-400 bg-orange-500/10 border-orange-500/30 shadow-sm' 
                   : 'text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700'
@@ -420,7 +420,7 @@ export default function Navbar() {
               onClick={() => navigate('/cart')} 
               aria-label="Shopping Cart"
               title="Shopping Cart"
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all relative border text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all relative border text-gray-300 hover:text-orange-400 bg-[#161616] hover:bg-[#202020] border-gray-800/80 hover:border-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             >
               <FiShoppingCart className="w-4.5 h-4.5" />
               {cartCount > 0 && (
@@ -524,7 +524,7 @@ export default function Navbar() {
           <button 
             onClick={() => setMenuOpen(!menuOpen)} 
             aria-label="Toggle menu"
-            className="md:hidden p-2 text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors"
+            className="md:hidden w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300 hover:text-orange-500 rounded-xl hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
           >
             {menuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>

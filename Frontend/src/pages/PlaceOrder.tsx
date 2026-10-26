@@ -122,7 +122,7 @@ const PlaceOrder: React.FC = () => {
                     ? 'Paid via Khalti • Confirmed'
                     : 'Order Confirmed (COD)'}
                 </span>
-                <span className="text-gray-500 text-xs">• {orderDate}</span>
+                <span className="text-gray-400 text-xs">• {orderDate}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1.5 tracking-tight">
                 Thank you for your order!
@@ -238,7 +238,7 @@ const PlaceOrder: React.FC = () => {
                       <p className="text-sm font-bold text-white">
                         {currency}{(itemPrice * item.quantity).toLocaleString()}
                       </p>
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-[11px] text-gray-400">
                         {currency}{itemPrice.toLocaleString()} each
                       </p>
                     </div>
@@ -377,7 +377,7 @@ const PlaceOrder: React.FC = () => {
                     Pay Upon Arrival
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-500 leading-relaxed">
+                <p className="text-[11px] text-gray-400 leading-relaxed">
                   Please have exact cash ready ({currency}{totalAmount.toLocaleString()}) or Fonepay QR at your doorstep when our courier arrives.
                 </p>
               </div>
