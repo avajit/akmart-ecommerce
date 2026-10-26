@@ -3,7 +3,7 @@ import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { 
   FiMenu, FiX, FiShoppingCart, FiUser, FiSearch, FiHeart, FiChevronDown, 
   FiBriefcase, FiShield, FiHome, FiGrid, FiArrowRight, FiSmartphone, FiCpu, 
-  FiShoppingBag, FiTag, FiMonitor, FiTv, FiSmile, FiPackage, FiZap, FiFeather, FiLayers
+  FiShoppingBag, FiTag, FiMonitor, FiTv, FiSmile, FiPackage, FiZap, FiFeather, FiLayers, FiLogOut
 } from "react-icons/fi";
 import { assets } from "../assets/frontend_assets/assets";
 import BrandLogo from "./BrandLogo";
@@ -62,6 +62,7 @@ export default function Navbar() {
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileExpandedCats, setMobileExpandedCats] = useState<Record<string, boolean>>({});
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const profileRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -506,11 +507,13 @@ export default function Navbar() {
 
                 <div className="pt-1 border-t border-gray-800">
                   <button 
-                    onClick={() => { closeAll(); logout(); }}
+                    type="button"
+                    onClick={() => { closeAll(); setShowLogoutConfirm(true); }}
                     disabled={isLoggingOut}
                     className="w-full text-left px-5 py-2.5 hover:bg-red-500/10 transition-colors text-red-400 font-semibold text-xs flex items-center justify-between"
                   >
                     <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
+                    <FiLogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -919,17 +922,19 @@ export default function Navbar() {
           <div className="pt-4 border-t border-gray-800">
             {isAuthenticated ? (
               <button 
-                onClick={() => { closeAll(); logout(); }}
+                type="button"
+                onClick={() => { closeAll(); setShowLogoutConfirm(true); }}
                 disabled={isLoggingOut}
-                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2.5 rounded-xl text-xs font-semibold transition-colors"
+                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 min-h-[44px]"
               >
-                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+                <FiLogOut className="w-4 h-4" />
+                <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
               </button>
             ) : (
               <NavLink 
                 to="/login" 
                 onClick={closeAll}
-                className="block text-center bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-xs font-semibold transition-colors shadow-sm"
+                className="w-full text-center bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-sm min-h-[44px] flex items-center justify-center"
               >
                 Login / Register
               </NavLink>
@@ -1031,6 +1036,48 @@ export default function Navbar() {
           <span>{isAuthenticated ? 'Account' : 'Login'}</span>
         </NavLink>
       </div>
+      )}
+
+      {/* ── 5. LOGOUT CONFIRMATION MODAL ── */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#161616] border border-gray-800 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center mx-auto shadow-lg">
+              <FiLogOut className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Sign Out Confirmation
+              </h3>
+              <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                Are you sure you want to end your current session? You will need to sign in again to access your account orders and saved cart.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={isLoggingOut}
+                className="w-full py-3 px-4 rounded-xl bg-[#222222] hover:bg-[#2a2a2a] text-gray-300 text-xs font-semibold transition active:scale-95 min-h-[44px]"
+              >
+                Keep Logged In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  logout();
+                }}
+                disabled={isLoggingOut}
+                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider transition active:scale-95 shadow-lg shadow-rose-600/30 min-h-[44px]"
+              >
+                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </header>

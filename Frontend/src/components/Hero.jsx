@@ -16,7 +16,7 @@ const Hero = () => {
   const { title, desc, image, link } = heroData[index];
 
   return (
-    <section className="relative w-full min-h-[580px] lg:h-[88vh] py-12 lg:py-0 overflow-hidden bg-black text-white flex items-center justify-center font-poppins">
+    <section className="relative w-full min-h-[540px] lg:h-[78vh] max-h-[700px] py-12 lg:py-0 overflow-hidden bg-black text-white flex items-center justify-center font-poppins">
       
       {/* ================= GLOBAL STYLES (GOOGLE FONTS) ================= */}
       <style>{`
@@ -49,7 +49,7 @@ const Hero = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-800/60 via-black to-black opacity-90" />
 
       {/* ================= MAIN CONTAINER ================= */}
-      <div className="relative z-10 w-full max-w-[1240px] px-4 sm:px-8 lg:px-12 flex flex-col-reverse md:flex-row items-center justify-between gap-6 md:gap-12">
+      <div className="relative z-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col-reverse md:flex-row items-center justify-between gap-6 md:gap-12">
         
         {/* LEFT: TEXT CONTENT */}
         <div key={index} className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left gap-4 animate-fade-up">

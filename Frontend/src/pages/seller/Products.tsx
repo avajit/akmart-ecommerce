@@ -48,22 +48,108 @@ export default function Products() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-6 border-b border-gray-800">
+    <div className="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+      {/* Responsive Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8 pb-6 border-b border-gray-800">
         <div>
           <span className="text-orange-500 text-xs font-bold tracking-widest uppercase">Inventory</span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 uppercase">My Products</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage your catalog items and create listings</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Manage your catalog items and create listings</p>
         </div>
         <Link 
           to="/seller/products/new" 
-          className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-500/20 text-xs uppercase tracking-wider flex items-center gap-2"
+          className="w-full sm:w-auto text-center justify-center bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-3 rounded-xl transition shadow-lg shadow-orange-500/20 text-xs uppercase tracking-wider flex items-center gap-2 active:scale-[0.99]"
         >
-          <FiPlus /> Add New Product
+          <FiPlus className="w-4 h-4" /> Add New Product
         </Link>
       </div>
 
-      <div className="bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl">
+      {/* ── MOBILE CARD VIEW (< md) ── */}
+      <div className="block md:hidden space-y-3.5">
+        {loading ? (
+          <div className="p-12 text-center text-gray-400 bg-[#141414] rounded-2xl border border-gray-800">
+            <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-3 text-xs">Loading products...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="p-10 text-center text-gray-400 bg-[#141414] rounded-2xl border border-gray-800">
+            <FiBox className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+            <p className="text-sm font-bold text-white">No products found</p>
+            <p className="text-xs text-gray-500 mt-1">Start by adding your first catalog item.</p>
+          </div>
+        ) : (
+          products.map((p: any) => (
+            <div key={p.id} className="bg-[#141414] border border-gray-800/80 rounded-2xl p-4 space-y-3 shadow-lg">
+              <div className="flex items-start gap-3.5">
+                {p.primaryImage ? (
+                  <img src={p.primaryImage} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-800 shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-black border border-gray-800 flex items-center justify-center text-gray-600 text-xs shrink-0">
+                    <FiBox className="w-6 h-6 text-gray-600" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-gray-400 bg-[#1A1A1A] px-2 py-0.5 rounded border border-gray-800 uppercase font-medium truncate max-w-[120px]">
+                      {p.category?.name || 'General'}
+                    </span>
+                    {getStatusBadge(p.status)}
+                  </div>
+                  <h3 className="text-white font-bold text-sm truncate mt-1">{p.name}</h3>
+                  <p className="text-gray-500 text-[11px] font-mono truncate">{p.slug}</p>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                    <span className="text-gray-300 font-semibold">{p.variants?.length || 0}</span> variant{(p.variants?.length || 0) !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button - 44px touch target */}
+              <div className="pt-2 border-t border-gray-800/80">
+                {p.status === 'DRAFT' && (
+                  <button 
+                    onClick={async () => {
+                      try {
+                        await submitProduct(p.id);
+                        toast.success("Submitted for review");
+                        window.location.reload();
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.error?.message || "Error submitting");
+                      }
+                    }}
+                    className="w-full text-xs bg-orange-500/15 hover:bg-orange-500 text-orange-400 hover:text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5"
+                  >
+                    Submit for Review
+                  </button>
+                )}
+                {p.status === 'APPROVED' && p.variants?.[0]?.hasListing && (
+                  <Link 
+                    to="/seller/listings" 
+                    className="w-full text-center block text-xs bg-[#1A1A1A] hover:bg-[#222] border border-gray-800 text-gray-200 py-3 rounded-xl font-semibold transition"
+                  >
+                    Manage Listing →
+                  </Link>
+                )}
+                {p.status === 'APPROVED' && !p.variants?.[0]?.hasListing && (
+                  <button 
+                    onClick={() => {
+                      if (!p.variants?.[0]?.id) return toast.error("No variant found");
+                      setSelectedVariant(p.variants[0]);
+                      setListingForm({ price: '', stock: '' });
+                      setShowListingModal(true);
+                    }}
+                    className="w-full text-xs bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold transition shadow-sm"
+                  >
+                    + Create Listing
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ── DESKTOP TABLE VIEW (>= md) ── */}
+      <div className="hidden md:block bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -180,9 +266,20 @@ export default function Products() {
                   placeholder="e.g. 50"
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setShowListingModal(false)} className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-400 hover:text-white">Cancel</button>
-                <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow">Launch Listing</button>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setShowListingModal(false)} 
+                  className="w-full sm:w-auto px-4 py-3 rounded-xl text-xs font-semibold text-gray-400 hover:text-white bg-[#1A1A1A] border border-gray-800 min-h-[44px] text-center"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shadow min-h-[44px] text-center"
+                >
+                  Launch Listing
+                </button>
               </div>
             </form>
           </div>

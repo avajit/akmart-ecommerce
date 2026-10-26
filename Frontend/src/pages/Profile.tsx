@@ -4,6 +4,7 @@ import { authService } from '../api/auth.service';
 import { getAddresses, addAddress, deleteAddress } from '../api/order.api';
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLogout } from '../hooks/useAuth';
 import { 
   FiUser, 
   FiMail, 
@@ -23,7 +24,8 @@ import {
   FiShoppingBag,
   FiBriefcase, 
   FiLock,
-  FiArrowRight
+  FiArrowRight,
+  FiLogOut
 } from 'react-icons/fi';
 
 const NEPAL_PROVINCES = [
@@ -55,6 +57,8 @@ const POPULAR_NEPAL_CITIES = [
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'ADDRESSES' | 'SERVICES'>('DETAILS');
   const [isEdit, setIsEdit] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -755,7 +759,74 @@ const Profile: React.FC = () => {
           </div>
         )}
 
+        {/* ── ACCOUNT SECURITY & LOGOUT BOX (Visible on Mobile & Desktop) ── */}
+        <div className='mt-10 pt-8 border-t border-gray-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5'>
+          <div>
+            <h3 className='text-sm font-bold text-white flex items-center gap-2'>
+              <FiLock className='text-orange-500 w-4 h-4' />
+              <span>Active Account Session</span>
+            </h3>
+            <p className='text-xs text-gray-400 mt-1 leading-relaxed'>
+              Signed in as <span className='text-white font-semibold'>{userData.email || 'Current User'}</span> &bull; Role: <span className='text-orange-400 font-semibold'>{userData.role || 'CONSUMER'}</span>
+            </p>
+          </div>
+
+          <button
+            id="profile-logout-btn"
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            disabled={isLoggingOut}
+            className='w-full sm:w-auto px-6 py-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2.5 transition active:scale-95 shadow-sm min-h-[44px]'
+          >
+            <FiLogOut className='w-4 h-4' />
+            <span>Sign Out of Account</span>
+          </button>
+        </div>
+
       </div>
+
+      {/* ── CONFIRMATION LOGOUT BOX / MODAL ── */}
+      {showLogoutModal && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn'>
+          <div className='bg-[#161616] border border-gray-800 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl space-y-4 text-center'>
+            <div className='w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center mx-auto shadow-lg'>
+              <FiLogOut className='w-6 h-6' />
+            </div>
+
+            <div>
+              <h3 className='text-base font-bold text-white'>
+                Sign Out Confirmation
+              </h3>
+              <p className='text-xs text-gray-400 mt-1.5 leading-relaxed'>
+                Are you sure you want to end your current active session? You will need to sign in again to access your orders and saved cart.
+              </p>
+            </div>
+
+            <div className='grid grid-cols-2 gap-3 pt-2'>
+              <button
+                type='button'
+                onClick={() => setShowLogoutModal(false)}
+                disabled={isLoggingOut}
+                className='w-full py-3 px-4 rounded-xl bg-[#222222] hover:bg-[#2a2a2a] text-gray-300 text-xs font-semibold transition active:scale-95 min-h-[44px]'
+              >
+                Keep Logged In
+              </button>
+              <button
+                id="confirm-logout-btn"
+                type='button'
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  logout();
+                }}
+                disabled={isLoggingOut}
+                className='w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider transition active:scale-95 shadow-lg shadow-red-600/30 min-h-[44px]'
+              >
+                {isLoggingOut ? 'Signing out...' : 'Yes, Sign Out'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

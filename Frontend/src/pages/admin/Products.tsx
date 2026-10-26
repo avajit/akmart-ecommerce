@@ -49,7 +49,7 @@ export default function AdminProducts() {
   }, [products, searchQuery]);
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white pb-20 space-y-8">
+    <div className="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white pb-20 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-800">
         <div>
@@ -118,7 +118,7 @@ export default function AdminProducts() {
         </div>
 
         {/* Search */}
-        <div className="relative min-w-[280px]">
+        <div className="relative w-full md:w-72">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
           <input
             type="text"
@@ -130,8 +130,79 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* Products Table Container */}
-      <div className="bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl">
+      {/* ── MOBILE CARD VIEW (< md) ── */}
+      <div className="block md:hidden space-y-3.5">
+        {loading ? (
+          <div className="p-12 text-center text-gray-400 bg-[#141414] rounded-2xl border border-gray-800">
+            <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-3 text-xs">Loading moderation queue...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="p-10 text-center text-gray-400 bg-[#141414] rounded-2xl border border-gray-800">
+            <FiBox className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+            <p className="text-sm font-bold text-white">No Products Found</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {searchQuery ? `No products match "${searchQuery}"` : 'No submissions found in this status.'}
+            </p>
+          </div>
+        ) : (
+          filteredProducts.map((p) => {
+            const shop = p.createdBy?.sellerProfile?.shopName || p.createdBy?.fullName || "AkMart Supplier";
+            const variantCount = p._count?.variants || p.variants?.length || 0;
+
+            return (
+              <div 
+                key={p.id}
+                onClick={() => navigate(`/admin/products/${p.id}`)}
+                className="bg-[#141414] border border-gray-800/80 rounded-2xl p-4 space-y-3 shadow-lg active:border-orange-500/50 cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-white text-sm truncate">{p.name}</h3>
+                    <p className="text-xs text-orange-400/90 font-medium mt-0.5">{shop}</p>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                      p.status === 'APPROVED'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        : p.status === 'PENDING_REVIEW'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                        : p.status === 'REJECTED'
+                        ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                        : 'bg-gray-800 text-gray-400'
+                    }`}
+                  >
+                    {p.status}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                  <span className="bg-black/50 border border-gray-800 px-2 py-0.5 rounded text-[11px]">
+                    {p.category?.name || "General"}
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                    <FiLayers size={11} /> {variantCount} variant{variantCount !== 1 ? 's' : ''}
+                  </span>
+                  {p.brand?.name && (
+                    <span className="text-[11px] text-gray-400">
+                      • Brand: {p.brand.name}
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-gray-800/80">
+                  <div className="w-full py-2.5 bg-[#1A1A1A] hover:bg-orange-500 text-gray-200 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+                    Review Submission <FiArrowRight size={13} />
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── DESKTOP TABLE VIEW (>= md) ── */}
+      <div className="hidden md:block bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

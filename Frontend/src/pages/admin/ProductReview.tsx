@@ -63,7 +63,7 @@ export default function ProductReview() {
   const isPending = product.status === 'PENDING_REVIEW';
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+    <div className="max-w-4xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
       <div className="mb-8 pb-6 border-b border-gray-800">
         <button onClick={() => navigate('/admin/products')} className="text-xs text-orange-400 hover:underline flex items-center gap-1 mb-2">
           <FiArrowLeft /> Back to Review Queue
@@ -89,9 +89,9 @@ export default function ProductReview() {
           <div className="pt-4 border-t border-gray-800">
             <button 
               onClick={handleApprove} 
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg shadow-orange-500/25 flex items-center gap-2 text-xs uppercase tracking-wider"
+              className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-xs uppercase tracking-wider min-h-[44px]"
             >
-              <FiCheckCircle /> Approve Product
+              <FiCheckCircle /> <span>Approve Product</span>
             </button>
           </div>
         ) : (
@@ -104,7 +104,7 @@ export default function ProductReview() {
       {isPending && (
         <div className="bg-[#141414] border border-rose-900/50 p-6 rounded-2xl shadow-xl space-y-4">
           <h3 className="text-rose-400 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
-            <FiXCircle /> Reject Product
+            <FiXCircle /> <span>Reject Product</span>
           </h3>
           <textarea 
             placeholder="Provide a detailed reason for rejection..." 
@@ -115,7 +115,7 @@ export default function ProductReview() {
           />
           <button 
             onClick={handleReject} 
-            className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-6 rounded-xl transition text-xs uppercase tracking-wider shadow"
+            className="w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white font-bold py-3.5 px-6 rounded-xl transition text-xs uppercase tracking-wider shadow min-h-[44px] flex items-center justify-center"
           >
             Confirm Rejection
           </button>

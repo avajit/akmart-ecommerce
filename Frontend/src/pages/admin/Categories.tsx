@@ -190,7 +190,7 @@ export default function AdminCategories() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-poppins text-white">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 pb-6 border-b border-gray-800">
         <div>
@@ -208,7 +208,7 @@ export default function AdminCategories() {
         
         {/* Create Form (Left Column) */}
         <div className="lg:col-span-1">
-          <div className="bg-[#141414] border border-gray-800 p-6 rounded-2xl shadow-xl sticky top-6">
+          <div className="bg-[#141414] border border-gray-800 p-5 sm:p-6 rounded-2xl shadow-xl lg:sticky lg:top-6">
             <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <FiPlus className="text-emerald-400" /> Add New Category
             </h2>

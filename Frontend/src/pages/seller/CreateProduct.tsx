@@ -236,7 +236,7 @@ export default function CreateProduct() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
+    <div className="max-w-5xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-poppins text-white">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-800">
         <div>
@@ -563,11 +563,11 @@ export default function CreateProduct() {
         </div>
 
         {/* Submit Actions */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4">
           <button 
             type="button" 
             onClick={() => navigate('/seller/products')} 
-            className="px-6 py-3.5 rounded-xl font-semibold text-xs text-gray-400 hover:text-white transition bg-gray-900 border border-gray-800"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-xs text-gray-400 hover:text-white transition bg-gray-900 border border-gray-800 text-center min-h-[44px]"
           >
             Cancel Listing
           </button>
@@ -575,10 +575,10 @@ export default function CreateProduct() {
           <button 
             type="submit" 
             disabled={loading}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-orange-500/20 active:scale-[0.99] disabled:opacity-60 flex items-center gap-2"
+            className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-8 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-orange-500/20 active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-2 min-h-[44px]"
           >
             <FiCheckCircle className="text-base" />
-            {loading ? 'Submitting Product...' : 'Save & Submit Product'}
+            <span>{loading ? 'Submitting Product...' : 'Save & Submit Product'}</span>
           </button>
         </div>
       </form>
