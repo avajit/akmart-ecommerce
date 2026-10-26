@@ -50,7 +50,7 @@ import {
   StorageUploadError,
 } from './errors';
 import { validateStorageKey } from './keyGenerator';
-import { isAllowedMimeType, detectMimeType } from './magicBytes';
+import { isAllowedMimeType } from './magicBytes';
 
 export * from './errors';
 export * from './keyGenerator';
