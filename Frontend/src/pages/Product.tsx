@@ -21,7 +21,9 @@ import {
   FiEdit3,
   FiCheckCircle,
   FiX,
-  FiShoppingCart
+  FiShoppingCart,
+  FiChevronLeft,
+  FiChevronRight
 } from 'react-icons/fi';
 import { ImageUploader } from '../components/common/ImageUploader';
 
@@ -255,7 +257,7 @@ export default function Product() {
       productName: product?.name || 'Product',
       productSlug: product?.slug || '',
       variantName: currentVariant?.name || 'Standard',
-      imageUrl: currentVariant?.images?.[0]?.url || product?.images?.[0]?.url,
+      imageUrl: activeImageUrl || currentVariant?.images?.[0]?.url || product?.images?.[0]?.url,
       price: Number(targetListing?.price || 0),
       stock: Number(targetListing?.stock || 10),
       shopName: targetListing?.sellerProfile?.shopName || 'AkMart Verified Seller'
@@ -296,7 +298,7 @@ export default function Product() {
       productName: product?.name || 'Product',
       productSlug: product?.slug || '',
       variantName: currentVariant?.name || 'Standard',
-      imageUrl: currentVariant?.images?.[0]?.url || product?.images?.[0]?.url,
+      imageUrl: activeImageUrl || currentVariant?.images?.[0]?.url || product?.images?.[0]?.url,
       price: Number(targetListing?.price || 0),
       stock: Number(targetListing?.stock || 10),
       shopName: targetListing?.sellerProfile?.shopName || 'AkMart Verified Seller'
@@ -349,7 +351,24 @@ export default function Product() {
     );
   }
 
-  const imageUrl = currentVariant?.images?.[0]?.url || product.primaryImage || product.images?.[0]?.url;
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Compute all available images for this product or current variant
+  const productImages = useMemo(() => {
+    const variantImgs = (currentVariant?.images || []).filter((img: any) => img?.url);
+    if (variantImgs.length > 0) return variantImgs;
+    const prodImgs = (product?.images || []).filter((img: any) => img?.url);
+    if (prodImgs.length > 0) return prodImgs;
+    if (product?.primaryImage) return [{ id: 'primary', url: product.primaryImage, isPrimary: true }];
+    return [];
+  }, [currentVariant?.images, product?.images, product?.primaryImage]);
+
+  // Reset active image index whenever variant changes
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [selectedVariantId]);
+
+  const activeImageUrl = productImages[activeImageIndex]?.url || currentVariant?.images?.[0]?.url || product.primaryImage;
   const price = primaryListing?.price != null ? Number(primaryListing.price) : null;
   const mrp = primaryListing?.mrp != null ? Number(primaryListing.mrp) : null;
   const savings = mrp && price && mrp > price ? mrp - price : 0;
@@ -361,9 +380,13 @@ export default function Product() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         {/* Product Images Gallery */}
         <div className="space-y-4">
-          <div className="w-full aspect-square bg-[#141414] rounded-3xl border border-gray-800/80 flex items-center justify-center overflow-hidden shadow-2xl relative">
-            {imageUrl ? (
-              <img src={imageUrl} alt={product.name} className="w-full h-full object-cover object-center" />
+          <div className="w-full aspect-square bg-[#141414] rounded-3xl border border-gray-800/80 flex items-center justify-center overflow-hidden shadow-2xl relative group">
+            {activeImageUrl ? (
+              <img 
+                src={activeImageUrl} 
+                alt={product.name} 
+                className="w-full h-full object-cover object-center transition-all duration-300" 
+              />
             ) : (
               <span className="text-gray-600">No Image Available</span>
             )}
@@ -374,7 +397,71 @@ export default function Product() {
                 {savingsPercent}% OFF
               </div>
             )}
+
+            {/* Photo Counter Badge */}
+            {productImages.length > 1 && (
+              <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md text-gray-300 font-mono text-[11px] px-2.5 py-1 rounded-lg border border-gray-700/50 select-none">
+                {activeImageIndex + 1} / {productImages.length}
+              </div>
+            )}
+
+            {/* Carousel Previous / Next Chevrons */}
+            {productImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : productImages.length - 1));
+                  }}
+                  aria-label="Previous product image"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-gray-700/60 shadow-lg active:scale-95"
+                >
+                  <FiChevronLeft className="text-lg" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev < productImages.length - 1 ? prev + 1 : 0));
+                  }}
+                  aria-label="Next product image"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-gray-700/60 shadow-lg active:scale-95"
+                >
+                  <FiChevronRight className="text-lg" />
+                </button>
+              </>
+            )}
           </div>
+
+          {/* Thumbnail Gallery Strip (up to 5 or more photos) */}
+          {productImages.length > 1 && (
+            <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {productImages.map((img: any, idx: number) => {
+                const isActive = idx === activeImageIndex;
+                return (
+                  <button
+                    key={img.id || `${img.url}-${idx}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(idx)}
+                    onMouseEnter={() => setActiveImageIndex(idx)}
+                    aria-label={`View photo ${idx + 1}`}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 shrink-0 relative ${
+                      isActive
+                        ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-black scale-105 border-transparent shadow-lg shadow-orange-500/20'
+                        : 'border border-gray-800 opacity-60 hover:opacity-100 hover:border-gray-600'
+                    }`}
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.altText || `${product.name} photo ${idx + 1}`}
+                      className="w-full h-full object-cover object-center"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Product Details & Purchase Engine */}

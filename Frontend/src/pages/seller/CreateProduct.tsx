@@ -15,6 +15,8 @@ import {
   FiTag
 } from 'react-icons/fi';
 
+import { MultiImageUploader, ProductImageItem } from '../../components/common/MultiImageUploader';
+
 interface CategoryAttributeConfig {
   id: string;
   key: string;
@@ -27,7 +29,7 @@ interface CategoryAttributeConfig {
 interface VariantFormItem {
   name: string;
   sku: string;
-  images: { url: string; isPrimary: boolean }[];
+  images: ProductImageItem[];
   attributes: Record<string, string>;
 }
 
@@ -55,7 +57,7 @@ export default function CreateProduct() {
       {
         name: '',
         sku: '',
-        images: [{ url: '', isPrimary: true }],
+        images: [],
         attributes: {},
       },
     ],
@@ -175,7 +177,7 @@ export default function CreateProduct() {
         {
           name: `Variant ${nextIndex}`,
           sku: `${baseSku}-VAR-${nextIndex}`,
-          images: [{ url: '', isPrimary: true }],
+          images: [],
           attributes: initialAttrs,
         },
       ],
@@ -203,12 +205,13 @@ export default function CreateProduct() {
       const v = formData.variants[i];
       if (!v.name.trim()) return toast.error(`Variant #${i + 1} name is required`);
       if (!v.sku.trim()) return toast.error(`Variant #${i + 1} SKU is required`);
-      if (!v.images[0]?.url.trim()) return toast.error(`Variant #${i + 1} primary image URL is required`);
+      const validImgs = v.images.filter(img => img && img.url && img.url.trim() !== '');
+      if (validImgs.length === 0) return toast.error(`Variant #${i + 1} requires at least 1 product photo`);
     }
 
     setLoading(true);
     try {
-      // Clean attributes by removing empty strings
+      // Clean attributes and images
       const payload = {
         ...formData,
         variants: formData.variants.map(v => {
@@ -218,8 +221,15 @@ export default function CreateProduct() {
               cleanAttrs[k] = val.trim();
             }
           });
+          const validImgs = v.images.filter(img => img && img.url && img.url.trim() !== '');
+          const hasPrimary = validImgs.some(img => img.isPrimary);
           return {
             ...v,
+            images: validImgs.map((img, idx) => ({
+              url: img.url.trim(),
+              altText: img.altText || v.name,
+              isPrimary: hasPrimary ? img.isPrimary : idx === 0,
+            })),
             attributes: cleanAttrs,
           };
         }),
@@ -448,33 +458,16 @@ export default function CreateProduct() {
                   </div>
                 </div>
 
-                {/* Primary Image URL */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <FiImage className="text-gray-400" /> Primary Photo URL *
-                  </label>
-                  <input 
-                    required 
-                    type="url" 
-                    placeholder="https://images.unsplash.com/..." 
-                    className="w-full bg-[#121212] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500" 
-                    value={variant.images[0]?.url || ''} 
-                    onChange={e => {
-                      const updatedImages = [{ url: e.target.value, isPrimary: true }];
-                      updateVariant(vIdx, 'images', updatedImages);
-                    }} 
+                {/* Variant Product Photos (Up to 5) */}
+                <div className="pt-1">
+                  <MultiImageUploader
+                    label={`Variant ${vIdx + 1} Photos (Up to 5)`}
+                    images={variant.images}
+                    onChange={(newImages) => updateVariant(vIdx, 'images', newImages)}
+                    maxImages={5}
+                    maxSizeMB={5}
+                    purpose="product-image"
                   />
-                  {variant.images[0]?.url && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <img 
-                        src={variant.images[0].url} 
-                        alt="Preview" 
-                        className="w-12 h-12 object-cover rounded-lg border border-gray-800"
-                        onError={(e: any) => { e.target.style.display = 'none'; }}
-                      />
-                      <span className="text-[11px] text-gray-400">Photo preview</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Dynamic Category Attributes Fields */}

@@ -288,7 +288,15 @@ export async function streamObject(key: string): Promise<{
   if (localFilePath) {
     try {
       const stat = await fs.promises.stat(localFilePath);
-      const mime = detectMimeType(key);
+      const ext = path.extname(key).toLowerCase();
+      const mimeMap: Record<string, string> = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif',
+      };
+      const mime = mimeMap[ext] || 'application/octet-stream';
       return {
         stream: fs.createReadStream(localFilePath),
         contentType: mime,

@@ -10,7 +10,9 @@ import {
   uploadObject,
   validateStorageKey,
   isAllowedMimeType,
+  validateMagicBytes,
   StorageNotFoundError,
+  StorageValidationError,
 } from '../lib/storage';
 
 const MAX_BYTES = (env.MAX_IMAGE_SIZE_MB || 5) * 1024 * 1024;

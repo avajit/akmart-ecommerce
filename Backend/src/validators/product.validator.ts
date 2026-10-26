@@ -11,8 +11,9 @@ export const createProductSchema = z.object({
       sku: z.string().min(1, 'SKU is required'),
       attributes: z.record(z.string(), z.any()).optional(),
       images: z.array(z.object({
-        url: z.string().url('Invalid image URL'),
+        url: z.string().min(1, 'Image URL or storage key is required'),
         altText: z.string().optional(),
+        isPrimary: z.boolean().optional(),
       })).optional(),
     })).optional(),
   }),

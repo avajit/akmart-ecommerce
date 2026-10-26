@@ -34,7 +34,14 @@ export const createProduct = async (userId: string, roleName: string, body: any)
               sku: v.sku,
               attributes: v.attributes || {},
               images: v.images
-                ? { create: v.images.map((img: any, i: number) => ({ url: img.url, altText: img.altText, isPrimary: i === 0, order: i + 1 })) }
+                ? {
+                    create: v.images.map((img: any, i: number) => ({
+                      url: img.url,
+                      altText: img.altText || null,
+                      isPrimary: img.isPrimary !== undefined ? Boolean(img.isPrimary) : i === 0,
+                      order: i + 1,
+                    })),
+                  }
                 : undefined,
             })),
           }
@@ -370,7 +377,7 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
       status: p.status,
       category: p.category,
       brand: p.brand,
-      primaryImage: p.images[0]?.url ?? p.variants[0]?.images[0]?.url ?? null,
+      primaryImage: resolveStorageUrl(p.images[0]?.url ?? p.variants[0]?.images[0]?.url) ?? null,
       cheapestPrice: cheapestListing?.price ?? null,
       reviewCount: p._count?.reviews ?? 0,
       variants: p.variants.map((v: any) => ({ 
@@ -432,11 +439,20 @@ export const getProductBySlug = async (slug: string) => {
 
   if (!product || product.deletedAt) throw new AppError("Product not found", 404, "NOT_FOUND");
 
-  // Add availableStock to each listing
+  // Add availableStock to each listing and resolve storage URLs
   const shaped = {
     ...product,
+    primaryImage: resolveStorageUrl(product.images[0]?.url ?? product.variants[0]?.images[0]?.url) ?? null,
+    images: (product.images || []).map(img => ({
+      ...img,
+      url: resolveStorageUrl(img.url) || img.url,
+    })),
     variants: product.variants.map(v => ({
       ...v,
+      images: (v.images || []).map(img => ({
+        ...img,
+        url: resolveStorageUrl(img.url) || img.url,
+      })),
       listings: v.listings.map(l => ({
         ...l,
         availableStock: l.stock - l.reservedStock,
