@@ -15,6 +15,7 @@ export const globalLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
+    prefix: 'rl:global:',
   }),
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.NODE_ENV === 'development' ? 5000 : env.RATE_LIMIT_MAX_REQUESTS,
@@ -38,6 +39,7 @@ export const authLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
+    prefix: 'rl:auth:',
   }),
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
   max: env.NODE_ENV === 'development' ? 100 : env.AUTH_RATE_LIMIT_MAX_REQUESTS,
@@ -62,6 +64,7 @@ export const accountLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
+    prefix: 'rl:account:',
   }),
   windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
   max: env.NODE_ENV === 'development' ? 100 : env.AUTH_RATE_LIMIT_MAX_REQUESTS,
@@ -90,6 +93,7 @@ export const cancelRegistrationLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
+    prefix: 'rl:cancel:',
   }),
   windowMs: 15 * 60 * 1000,
   max: env.NODE_ENV === 'development' ? 50 : 10,
@@ -113,6 +117,7 @@ export const uploadLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
     sendCommand: (...args: string[]) => redisClient.call(...args),
+    prefix: 'rl:upload:',
   }),
   windowMs: 60 * 1000,
   max: env.NODE_ENV === 'development' ? 100 : 30,
