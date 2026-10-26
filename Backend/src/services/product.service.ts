@@ -91,9 +91,13 @@ export const updateProduct = async (userId: string, roleName: string, productId:
 
   const updated = await prisma.product.update({ where: { id: productId }, data: updateData });
 
-  // Invalidate cached product by slug
+  // Invalidate cached product and catalog browse cache
   try {
     await redis.del(`cache:product:slug:${product.slug}`);
+    const catalogKeys = await redis.keys("cache:catalog:*");
+    if (catalogKeys.length > 0) {
+      await redis.del(...catalogKeys);
+    }
   } catch {
     // Non-fatal
   }
@@ -124,6 +128,20 @@ export const deleteProduct = async (userId: string, roleName: string, productId:
 };
 
 // ── Product Browse (Public / Role-filtered) ───────────────────
+
+// Dynamic linguistic stemmer: automatically matches singular & plural forms without hardcoding
+const getSearchTokenVariations = (word: string): string[] => {
+  const w = word.toLowerCase().trim();
+  const variations = new Set<string>([w]);
+  if (w.endsWith('ies') && w.length > 4) {
+    variations.add(w.slice(0, -3) + 'y'); // e.g. "groceries" -> "grocery", "batteries" -> "battery"
+  } else if (w.endsWith('es') && w.length > 3) {
+    variations.add(w.slice(0, -2)); // e.g. "watches" -> "watch", "boxes" -> "box"
+  } else if (w.endsWith('s') && !w.endsWith('ss') && w.length > 2) {
+    variations.add(w.slice(0, -1)); // e.g. "shoes" -> "shoe", "shirts" -> "shirt", "laptops" -> "laptop"
+  }
+  return Array.from(variations);
+};
 
 export const browseProducts = async (userId: string | undefined, roleName: string | undefined, query: any) => {
   const { category, brand, sort, page = "1", limit = "20", ...attrFilters } = query;
@@ -186,9 +204,36 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     }
   }
 
-  // Search filter
-  if (query.search) {
-    where.name = { contains: query.search, mode: 'insensitive' };
+  // Enterprise Multi-Vendor Dynamic Search: Zero hardcoding, multi-token, relational indexing
+  if (query.search && typeof query.search === 'string' && query.search.trim()) {
+    const rawSearch = query.search.trim();
+    const rawTokens = rawSearch.split(/\s+/).filter(Boolean);
+
+    // Build conditions for each search word, dynamically matching its singular/plural stems across all catalog relations
+    const tokenConditions = rawTokens.map((token: string) => {
+      const stems = getSearchTokenVariations(token);
+      return {
+        OR: stems.flatMap(stem => [
+          { name: { contains: stem, mode: 'insensitive' as const } },
+          { description: { contains: stem, mode: 'insensitive' as const } },
+          { brand: { name: { contains: stem, mode: 'insensitive' as const } } },
+          { category: { name: { contains: stem, mode: 'insensitive' as const } } },
+          { category: { parent: { name: { contains: stem, mode: 'insensitive' as const } } } },
+          { variants: { some: { name: { contains: stem, mode: 'insensitive' as const } } } },
+          { variants: { some: { sku: { contains: stem, mode: 'insensitive' as const } } } },
+          { variants: { some: { listings: { some: { sellerProfile: { shopName: { contains: stem, mode: 'insensitive' as const } } } } } } },
+        ])
+      };
+    });
+
+    if (tokenConditions.length === 1) {
+      where.OR = tokenConditions[0].OR;
+    } else {
+      where.AND = [
+        ...(where.AND || []),
+        ...tokenConditions
+      ];
+    }
   }
 
   // Brand filter

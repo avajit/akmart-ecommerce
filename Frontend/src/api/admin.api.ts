@@ -12,6 +12,7 @@ export const rejectProduct = (id: string, reason: string) => api.patch(`/admin/p
 // Sellers
 export const getAllSellersAdmin = (params?: any) => api.get("/admin/sellers", { params }).then((res: any) => res.data);
 export const verifySeller = (id: string) => api.patch(`/admin/sellers/${id}/verify`).then((res: any) => res.data);
+export const rejectSeller = (id: string) => api.patch(`/admin/sellers/${id}/reject`).then((res: any) => res.data);
 export const suspendSeller = (id: string) => api.patch(`/admin/sellers/${id}/suspend`).then((res: any) => res.data);
 
 // Categories

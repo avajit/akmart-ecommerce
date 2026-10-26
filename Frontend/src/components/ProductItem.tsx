@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiHeart } from "react-icons/fi";
 
 const FALLBACK_IMAGES = [
@@ -18,11 +18,24 @@ export interface ProductItemProps {
   brand?: string;
   oldPrice?: number | string;
   discount?: string;
+  variantId?: string;
+  bestseller?: boolean;
 }
 
-const ProductItem: React.FC<ProductItemProps> = ({ slug, image, name, price, brand = "AkMart", oldPrice, discount = "15% OFF" }) => {
-  const { currency } = useContext(ShopContext) as any;
-  const [isWishlisted, setIsWishlisted] = useState(false);
+const ProductItem: React.FC<ProductItemProps> = ({ 
+  slug, 
+  image, 
+  name, 
+  price, 
+  brand = "AkMart", 
+  oldPrice, 
+  discount = "15% OFF",
+  variantId
+}) => {
+  const { currency, isInWishlist, toggleWishlist } = useContext(ShopContext) as any;
+  const navigate = useNavigate();
+
+  const isWishlisted = variantId ? isInWishlist(variantId) : false;
 
   // Use fallback if image is missing or is a placeholder URL
   const displayImage = (!image || image.includes('placehold.co') || image.includes('400x400'))
@@ -32,10 +45,23 @@ const ProductItem: React.FC<ProductItemProps> = ({ slug, image, name, price, bra
   const displayPrice = price && Number(price) > 0 ? Number(price) : 2499; // Clean fallback price for demo items
   const displayOldPrice = oldPrice ? Number(oldPrice) : Math.round(displayPrice * 1.25);
 
-  const handleWishlistClick = (e: React.MouseEvent) => {
+  const [isPending, setIsPending] = useState(false);
+
+  const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
+    if (isPending) return;
+
+    if (variantId && toggleWishlist) {
+      setIsPending(true);
+      try {
+        await toggleWishlist(variantId);
+      } finally {
+        setIsPending(false);
+      }
+    } else {
+      navigate(`/product/${slug}`);
+    }
   };
 
   return (
@@ -51,13 +77,24 @@ const ProductItem: React.FC<ProductItemProps> = ({ slug, image, name, price, bra
           alt={name}
         />
 
-        {/* Wishlist Heart Button */}
+        {/* Wishlist Heart Toggle Button (WCAG 2.1 AA Compliant) */}
         <button
+          type="button"
           onClick={handleWishlistClick}
-          aria-label="Wishlist"
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all duration-200 hover:bg-orange-500 md:opacity-0 md:group-hover:opacity-100"
+          disabled={isPending}
+          aria-label={isWishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
+          aria-pressed={isWishlisted}
+          className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-md ${
+            isWishlisted
+              ? "bg-black/85 text-orange-500 border border-orange-500/60 opacity-100 scale-100"
+              : "bg-black/60 backdrop-blur-md text-white hover:bg-orange-500 hover:text-white md:opacity-0 md:group-hover:opacity-100"
+          } ${isPending ? 'opacity-70 cursor-wait' : ''}`}
         >
-          <FiHeart className={`w-4 h-4 ${isWishlisted ? 'fill-orange-500 text-orange-500' : 'text-white'}`} />
+          <FiHeart 
+            className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-200 active:scale-125 ${
+              isWishlisted ? 'fill-orange-500 text-orange-500' : 'text-white'
+            }`} 
+          />
         </button>
 
         {/* Discount Badge */}

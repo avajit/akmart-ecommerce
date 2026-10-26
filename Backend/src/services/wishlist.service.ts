@@ -1,4 +1,4 @@
-﻿import { AppError } from "../utils/AppError";
+import { AppError } from "../utils/AppError";
 import { prisma } from "../app";
 
 const getOrCreateWishlist = async (userId: string) => {
@@ -41,12 +41,17 @@ const getOrCreateWishlist = async (userId: string) => {
 
 export const getWishlist = async (userId: string) => {
   const wishlist = await getOrCreateWishlist(userId);
-  // Add availability info per item
-  const items = wishlist.items.map(item => ({
-    ...item,
-    cheapestPrice: item.variant.listings[0]?.price ?? null,
-    isAvailable: item.variant.listings.length > 0,
-  }));
+  // Add precise stock availability info per item
+  const items = wishlist.items.map(item => {
+    const primaryListing = item.variant.listings[0];
+    const availableStock = primaryListing ? (primaryListing.stock - (primaryListing.reservedStock || 0)) : 0;
+    return {
+      ...item,
+      cheapestPrice: primaryListing?.price ?? null,
+      isAvailable: !!primaryListing && availableStock > 0,
+      availableStock,
+    };
+  });
   return { ...wishlist, items };
 };
 
@@ -69,14 +74,25 @@ export const addToWishlist = async (userId: string, variantId: string) => {
 
 export const removeFromWishlist = async (userId: string, variantId: string) => {
   const wishlist = await prisma.wishlist.findUnique({ where: { userId } });
-  if (!wishlist) throw new AppError("Wishlist not found", 404, "NOT_FOUND");
+  if (!wishlist) return { alreadyRemoved: true };
 
   const item = await prisma.wishlistItem.findUnique({
     where: { wishlistId_variantId: { wishlistId: wishlist.id, variantId } },
   });
-  if (!item) throw new AppError("Item not in wishlist", 404, "NOT_FOUND");
+  if (!item) return { alreadyRemoved: true };
 
   return prisma.wishlistItem.delete({
     where: { wishlistId_variantId: { wishlistId: wishlist.id, variantId } },
   });
 };
+
+export const clearWishlist = async (userId: string) => {
+  const wishlist = await prisma.wishlist.findUnique({ where: { userId } });
+  if (!wishlist) return { cleared: true };
+
+  await prisma.wishlistItem.deleteMany({
+    where: { wishlistId: wishlist.id }
+  });
+  return { cleared: true };
+};
+

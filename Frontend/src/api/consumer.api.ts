@@ -15,6 +15,7 @@ export const clearCart = () => api.delete("/cart").then((res: any) => res.data);
 export const getWishlist = () => api.get("/wishlist").then((res: any) => res.data);
 export const addToWishlist = (variantId: string) => api.post("/wishlist/items", { variantId }).then((res: any) => res.data);
 export const removeFromWishlist = (variantId: string) => api.delete(`/wishlist/items/${variantId}`).then((res: any) => res.data);
+export const clearWishlist = () => api.delete("/wishlist").then((res: any) => res.data);
 
 // Reviews
 export const getProductReviews = (productId: string, params?: any) => api.get(`/products/${productId}/reviews`, { params }).then((res: any) => res.data);
@@ -24,4 +25,9 @@ export const submitReview = (productId: string, data: any) => api.post(`/product
 export const getCategoryTree = () => api.get("/categories/tree").then((res: any) => res.data);
 export const getCategoryFilters = (slug: string) => api.get(`/categories/${slug}/filters`).then((res: any) => res.data);
 export const getBrands = () => api.get("/categories/brands").then((res: any) => res.data);
+
+// Coupons & Promotions
+export const validateCoupon = (data: { code: string; subtotal: number }) => api.post("/coupons/validate", data).then((res: any) => res.data);
+export const getActiveCoupons = () => api.get("/coupons").then((res: any) => res.data);
+
 

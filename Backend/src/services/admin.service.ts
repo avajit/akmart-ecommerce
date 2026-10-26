@@ -72,10 +72,22 @@ export const approveProduct = async (productId: string) => {
   if (product.status !== "PENDING_REVIEW") {
     throw new AppError(`Cannot approve a product with status: ${product.status}`, 400, "INVALID_STATUS");
   }
-  return prisma.product.update({
+  const approved = await prisma.product.update({
     where: { id: productId },
     data: { status: "APPROVED", rejectionReason: null },
   });
+
+  // Invalidate public catalog cache so the new approved product appears in search & collection immediately
+  try {
+    const catalogKeys = await redis.keys("cache:catalog:*");
+    if (catalogKeys.length > 0) {
+      await redis.del(...catalogKeys);
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  return approved;
 };
 
 export const rejectProduct = async (productId: string, reason: string) => {
@@ -104,7 +116,7 @@ export const getAllSellers = async (status?: string, page = 1, limit = 20) => {
     prisma.sellerProfile.findMany({
       where,
       include: {
-        user: { select: { id: true, fullName: true, email: true, createdAt: true, isActive: true } },
+        user: { select: { id: true, fullName: true, email: true, phoneNumber: true, createdAt: true, isActive: true } },
         _count: { select: { listings: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -120,26 +132,46 @@ export const verifySeller = async (sellerProfileId: string) => {
   const profile = await prisma.sellerProfile.findUnique({ where: { id: sellerProfileId } });
   if (!profile) throw new AppError("Seller profile not found", 404, "PROFILE_NOT_FOUND");
 
-  // Validate payout fields are filled before enabling payout
-  const hasPayoutFields = profile.gstNumber && profile.panNumber &&
-    profile.bankAccountNumber && profile.bankIfscCode && profile.bankAccountName;
-  if (!hasPayoutFields) {
-    throw new AppError(
-      "Cannot verify seller: GST number, PAN number, and bank details are required before payout verification",
-      400,
-      "PAYOUT_FIELDS_MISSING"
-    );
-  }
+  // Enable payout automatically if bank & tax fields are provided, or leave pending until configured
+  const hasPayoutFields = Boolean(
+    profile.gstNumber && profile.panNumber &&
+    profile.bankAccountNumber && profile.bankIfscCode && profile.bankAccountName
+  );
 
   const updated = await prisma.sellerProfile.update({
     where: { id: sellerProfileId },
-    data: { verificationStatus: "VERIFIED", isPayoutEnabled: true },
+    data: { verificationStatus: "VERIFIED", isPayoutEnabled: hasPayoutFields },
     include: { user: { select: { email: true } } },
   });
 
   if (updated.user?.email) {
     import('./email.service')
       .then(({ EmailService }) => EmailService.sendSellerStatusEmail(updated.user.email!, updated.shopName, true))
+      .catch(() => {});
+  }
+
+  return updated;
+};
+
+export const rejectSeller = async (sellerProfileId: string) => {
+  const profile = await prisma.sellerProfile.findUnique({ where: { id: sellerProfileId } });
+  if (!profile) throw new AppError("Seller profile not found", 404, "PROFILE_NOT_FOUND");
+
+  // Deactivate all their listings if any exist
+  await prisma.sellerListing.updateMany({
+    where: { sellerProfileId, deletedAt: null },
+    data: { isActive: false },
+  });
+
+  const updated = await prisma.sellerProfile.update({
+    where: { id: sellerProfileId },
+    data: { verificationStatus: "REJECTED", isPayoutEnabled: false },
+    include: { user: { select: { email: true } } },
+  });
+
+  if (updated.user?.email) {
+    import('./email.service')
+      .then(({ EmailService }) => EmailService.sendSellerStatusEmail(updated.user.email!, updated.shopName, false))
       .catch(() => {});
   }
 
