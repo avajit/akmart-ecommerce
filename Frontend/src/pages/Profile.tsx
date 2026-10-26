@@ -5,6 +5,7 @@ import { getAddresses, addAddress, deleteAddress } from '../api/order.api';
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogout } from '../hooks/useAuth';
+import { useAuthStore } from '../store/authStore';
 import { 
   FiUser, 
   FiMail, 
@@ -25,8 +26,12 @@ import {
   FiBriefcase, 
   FiLock,
   FiArrowRight,
-  FiLogOut
+  FiLogOut,
+  FiCamera,
+  FiRefreshCw,
+  FiUploadCloud
 } from 'react-icons/fi';
+import { uploadImage } from '../api/storage.service';
 
 const NEPAL_PROVINCES = [
   "Bagmati Province",
@@ -75,7 +80,67 @@ const Profile: React.FC = () => {
     isPhoneVerified: false,
     createdAt: '',
     avatarUrl: '',
+    avatarKey: '' as string | null,
   });
+
+  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
+
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      toast.error('Avatar image must be under 5MB');
+      return;
+    }
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      toast.error('Please upload a JPG, PNG, WebP, or GIF image');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setAvatarProgress(10);
+
+    try {
+      const result = await uploadImage(file, {
+        purpose: 'avatar',
+        maxSizeMB: 5,
+        onProgress: (p) => setAvatarProgress(p),
+      });
+
+      setUserData((prev) => ({
+        ...prev,
+        avatarKey: result.key,
+        avatarUrl: result.url,
+      }));
+      toast.success('Avatar uploaded! Click "Save Changes" to apply.');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+      setAvatarProgress(0);
+      if (avatarFileInputRef.current) avatarFileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setUserData((prev) => ({
+      ...prev,
+      avatarKey: null,
+      avatarUrl: '',
+    }));
+    toast.info('Avatar cleared. Click "Save Changes" to apply.');
+  };
+
+  const handleCancelEdit = () => {
+    setIsEdit(false);
+    fetchProfile();
+  };
 
   // Addresses State
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -112,6 +177,7 @@ const Profile: React.FC = () => {
           year: 'numeric'
         }) : 'N/A',
         avatarUrl: me.avatarUrl || '',
+        avatarKey: me.avatarKey || '',
       });
     } catch (err: any) {
       toast.error(err.message || 'Failed to load profile');
@@ -145,7 +211,12 @@ const Profile: React.FC = () => {
       await authService.updateMe({
         fullName: userData.fullName.trim(),
         phoneNumber: userData.phoneNumber.trim() || null,
-        avatarUrl: userData.avatarUrl.trim() || null,
+        avatarKey: userData.avatarKey || null,
+        avatarUrl: userData.avatarUrl ? userData.avatarUrl.trim() : null,
+      });
+      useAuthStore.getState().updateUser({
+        fullName: userData.fullName.trim(),
+        avatarUrl: userData.avatarUrl || undefined,
       });
       toast.success('Profile updated successfully!');
       setIsEdit(false);
@@ -240,21 +311,69 @@ const Profile: React.FC = () => {
         {/* Top Header Profile Banner */}
         <div className='flex flex-col sm:flex-row items-center justify-between gap-6 pb-8 border-b border-gray-800/80'>
           <div className='flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left'>
-            <div className='relative'>
-              {userData.avatarUrl ? (
-                <img 
-                  src={userData.avatarUrl} 
-                  alt="Profile Avatar" 
-                  className='w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-orange-500/30 shadow-lg'
-                />
+            <div className='relative group'>
+              {/* Circular Avatar Container */}
+              <div className='relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-orange-500/40 shadow-xl bg-[#1A1A1A] flex items-center justify-center'>
+                {userData.avatarUrl ? (
+                  <img 
+                    src={userData.avatarUrl} 
+                    alt="Profile Avatar" 
+                    className='w-full h-full object-cover'
+                  />
+                ) : (
+                  <div className='w-full h-full bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg'>
+                    {userData.fullName ? userData.fullName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
+
+                {/* Uploading progress overlay */}
+                {isUploadingAvatar && (
+                  <div className='absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center p-2 z-10'>
+                    <FiRefreshCw className='w-5 h-5 text-orange-400 animate-spin mb-1' />
+                    <span className='text-[10px] font-bold text-white'>{avatarProgress}%</span>
+                  </div>
+                )}
+
+                {/* Edit Mode Hover Trigger */}
+                {isEdit && !isUploadingAvatar && (
+                  <button
+                    type="button"
+                    onClick={() => avatarFileInputRef.current?.click()}
+                    aria-label="Change profile photo"
+                    className='absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer z-10'
+                  >
+                    <FiCamera className='w-5 h-5 mb-0.5 text-orange-400' />
+                    <span className='text-[9px] font-bold tracking-wider uppercase'>Change</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Action Button Badge on Avatar Bottom-Right */}
+              {isEdit ? (
+                <button 
+                  type="button"
+                  onClick={() => avatarFileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  title="Upload profile photo"
+                  className='absolute bottom-0 right-0 bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-full text-xs shadow-lg transition active:scale-95 border-2 border-[#141414] cursor-pointer'
+                >
+                  <FiCamera className='w-3.5 h-3.5' />
+                </button>
               ) : (
-                <div className='w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white text-3xl font-extrabold shadow-lg'>
-                  {userData.fullName ? userData.fullName.charAt(0).toUpperCase() : 'U'}
-                </div>
+                <span className='absolute bottom-0 right-0 bg-orange-500 text-white p-1.5 rounded-full text-xs shadow-md border-2 border-[#141414]'>
+                  <FiShield className='w-3.5 h-3.5' />
+                </span>
               )}
-              <span className='absolute bottom-0 right-0 bg-orange-500 text-white p-1.5 rounded-full text-xs shadow-md'>
-                <FiShield className='w-3.5 h-3.5' />
-              </span>
+
+              {/* Hidden file input */}
+              <input
+                ref={avatarFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                disabled={isUploadingAvatar}
+                onChange={handleAvatarFileSelect}
+              />
             </div>
 
             <div>
@@ -274,6 +393,34 @@ const Profile: React.FC = () => {
               <p className='text-gray-500 text-xs mt-2 flex items-center justify-center sm:justify-start gap-1.5'>
                 <FiCalendar className='w-3.5 h-3.5' /> Member since {userData.createdAt}
               </p>
+
+              {/* In Edit mode: dedicated Change / Remove photo actions */}
+              {isEdit && (
+                <div className='flex items-center gap-2.5 mt-2 justify-center sm:justify-start'>
+                  <button
+                    type="button"
+                    onClick={() => avatarFileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className='text-[11px] font-bold text-orange-400 hover:text-orange-300 underline underline-offset-2 flex items-center gap-1 transition'
+                  >
+                    <FiUploadCloud className='w-3.5 h-3.5' />
+                    <span>{isUploadingAvatar ? `Uploading (${avatarProgress}%)` : 'Upload Photo'}</span>
+                  </button>
+                  {userData.avatarUrl && (
+                    <>
+                      <span className='text-gray-600 text-xs'>&bull;</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={isUploadingAvatar}
+                        className='text-[11px] font-semibold text-gray-400 hover:text-red-400 transition'
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -290,15 +437,15 @@ const Profile: React.FC = () => {
               ) : (
                 <div className='flex items-center gap-2'>
                   <button 
-                    onClick={() => setIsEdit(false)}
-                    disabled={saving}
+                    onClick={handleCancelEdit}
+                    disabled={saving || isUploadingAvatar}
                     className='flex items-center gap-1 bg-[#1A1A1A] hover:bg-gray-800 text-gray-300 px-4 py-2.5 rounded-xl text-xs font-semibold transition'
                   >
                     <FiX className='w-3.5 h-3.5' /> Cancel
                   </button>
                   <button 
                     onClick={handleSaveProfile}
-                    disabled={saving}
+                    disabled={saving || isUploadingAvatar}
                     className='flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg shadow-orange-500/20 active:scale-[0.99]'
                   >
                     <FiSave className='w-3.5 h-3.5' /> {saving ? 'Saving...' : 'Save Changes'}
@@ -416,21 +563,22 @@ const Profile: React.FC = () => {
               )}
             </div>
 
-            {/* Avatar URL */}
-            {isEdit && (
-              <div className='space-y-1.5'>
-                <label className='text-[11px] uppercase tracking-wider text-gray-400 font-semibold flex items-center gap-1.5'>
-                  <FiUser className='text-orange-500 w-3.5 h-3.5' /> Avatar Image URL
-                </label>
-                <input 
-                  type="url" 
-                  value={userData.avatarUrl}
-                  onChange={(e) => setUserData({...userData, avatarUrl: e.target.value})}
-                  className='w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-orange-500 transition'
-                  placeholder="https://example.com/avatar.jpg"
-                />
+            {/* Account Tier & Privileges Card */}
+            <div className='space-y-1.5'>
+              <label className='text-[11px] uppercase tracking-wider text-gray-400 font-semibold flex items-center gap-1.5'>
+                <FiShield className='text-orange-500 w-3.5 h-3.5' /> Account Status & Tier
+              </label>
+              <div className='bg-[#1A1A1A] border border-gray-800/80 rounded-xl px-4 py-2.5 flex items-center justify-between'>
+                <div>
+                  <p className='text-xs font-bold text-white capitalize'>{userData.role} Account</p>
+                  <p className='text-[10px] text-gray-400'>{userData.roleDescription}</p>
+                </div>
+                <span className='text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider'>
+                  Active
+                </span>
               </div>
-            )}
+              <p className='text-[10px] text-gray-500'>Standard shopping privileges and member discounts applied automatically.</p>
+            </div>
           </div>
         )}
 

@@ -95,3 +95,5 @@ Backend/test-listing.js
 Backend/flushRedis.mjs
 Backend/generateEthereal.js
 /ux-fixes/
+storage_local/
+**/storage_local/

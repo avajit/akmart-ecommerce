@@ -23,6 +23,7 @@ import {
   FiX,
   FiShoppingCart
 } from 'react-icons/fi';
+import { ImageUploader } from '../components/common/ImageUploader';
 
 export default function Product() {
   const { slug } = useParams();
@@ -72,6 +73,7 @@ export default function Product() {
       variantName: 'Verified Purchase',
       helpfulCount: 0,
       isVerified: !!r.isVerifiedPurchase,
+      images: r.images || [],
     }));
   }, [serverReviews]);
 
@@ -123,10 +125,11 @@ export default function Product() {
   const [reviewFilter, setReviewFilter] = useState<'ALL' | '5' | '4'>('ALL');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, title: '', comment: '' });
+  const [attachedReviewKey, setAttachedReviewKey] = useState<string | null>(null);
   const [helpfulClicked, setHelpfulClicked] = useState<Record<string, boolean>>({});
 
   const submitReviewMutation = useMutation({
-    mutationFn: (data: { rating: number; title: string; body: string }) => {
+    mutationFn: (data: { rating: number; title: string; body: string; imageKeys?: string[] }) => {
       if (!product?.id) throw new Error('Product not available');
       return submitReview(product.id, data);
     },
@@ -134,6 +137,7 @@ export default function Product() {
       queryClient.invalidateQueries({ queryKey: ['product-reviews', product?.id] });
       setShowReviewModal(false);
       setNewReview({ rating: 5, title: '', comment: '' });
+      setAttachedReviewKey(null);
       toast.success('Your verified review was published successfully!');
     },
     onError: (err: any) => {
@@ -870,6 +874,28 @@ export default function Product() {
                       <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">{rev.comment}</p>
                     </div>
 
+                    {/* Customer Photo Attachments */}
+                    {rev.images && rev.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {rev.images.map((img: any, idx: number) => (
+                          <a
+                            key={img.id || idx}
+                            href={img.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`View full customer review photo ${idx + 1}`}
+                            className="block group"
+                          >
+                            <img
+                              src={img.url}
+                              alt={`Customer Review Photo ${idx + 1}`}
+                              className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-gray-700/80 group-hover:border-orange-500 transition shadow-sm"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between pt-2 border-t border-gray-800/60 text-xs flex-wrap gap-2">
                       <span className="text-[11px] text-gray-400 font-mono">
                         Specification: <strong className="text-gray-300">{rev.variantName}</strong>
@@ -934,6 +960,7 @@ export default function Product() {
                   rating: newReview.rating,
                   title: newReview.title.trim(),
                   body: newReview.comment.trim(),
+                  imageKeys: attachedReviewKey ? [attachedReviewKey] : undefined,
                 });
               }}
               className="space-y-4"
@@ -992,6 +1019,17 @@ export default function Product() {
                   value={newReview.comment}
                   onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                   className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 focus-visible:ring-1 focus-visible:ring-orange-500"
+                />
+              </div>
+
+              {/* Customer Photo Attachment */}
+              <div>
+                <ImageUploader
+                  purpose="review-photo"
+                  label="Attach Customer Photo (Optional)"
+                  maxSizeMB={5}
+                  onUploaded={(res) => setAttachedReviewKey(res.key)}
+                  onCleared={() => setAttachedReviewKey(null)}
                 />
               </div>
 

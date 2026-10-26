@@ -1,4 +1,5 @@
 import { User, Role } from '@prisma/client';
+import { resolveStorageUrl } from '../lib/storage';
 
 // ---------------------------------------------------------
 // RESPONSE DTOs
@@ -11,6 +12,7 @@ export interface UserResponseDTO {
   phoneNumber: string | null;
   role: string;
   isActive: boolean;
+  avatarKey: string | null;
   avatarUrl: string | null;
   createdAt: Date;
 }
@@ -26,7 +28,7 @@ export interface AuthResponseDTO {
 
 /**
  * Strips raw Prisma User object of sensitive fields (passwordHash, deletedAt, googleId)
- * and formats it precisely for the frontend contract.
+ * and formats it precisely for the frontend contract with resolved storage URLs.
  */
 export const toUserResponseDTO = (user: User & { role?: Role }): UserResponseDTO => {
   return {
@@ -36,7 +38,8 @@ export const toUserResponseDTO = (user: User & { role?: Role }): UserResponseDTO
     phoneNumber: user.phoneNumber,
     role: user.role ? user.role.name : 'UNKNOWN_ROLE',
     isActive: user.isActive,
-    avatarUrl: user.avatarUrl,
+    avatarKey: user.avatarKey || null,
+    avatarUrl: resolveStorageUrl(user.avatarKey) || user.avatarUrl || null,
     createdAt: user.createdAt,
   };
 };

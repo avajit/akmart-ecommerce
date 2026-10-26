@@ -439,9 +439,17 @@ export default function Navbar() {
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#161616] hover:bg-[#202020] border border-gray-800/80 hover:border-gray-700 transition-all cursor-pointer shadow-sm group"
                 aria-label="User Account Menu"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-orange-500/30 shrink-0">
-                  {user?.fullName ? user.fullName[0].toUpperCase() : 'U'}
-                </div>
+                {user?.avatarUrl ? (
+                  <img 
+                    src={user.avatarUrl} 
+                    alt={user.fullName || 'User Avatar'} 
+                    className="w-8 h-8 rounded-full object-cover ring-1 ring-orange-500/40 shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-orange-500/30 shrink-0">
+                    {user?.fullName ? user.fullName[0].toUpperCase() : 'U'}
+                  </div>
+                )}
                 <div className="hidden xl:flex flex-col text-left leading-tight">
                   <span className="text-xs font-semibold text-white max-w-[125px] truncate group-hover:text-orange-400 transition-colors">
                     {getDisplayName()}

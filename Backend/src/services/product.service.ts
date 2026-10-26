@@ -2,6 +2,7 @@ import { AppError } from "../utils/AppError";
 import { prisma, redis } from "../app";
 import slugify from "slugify";
 import { nanoid } from "nanoid";
+import { resolveStorageUrl, objectExists, validateStorageKey } from "../lib/storage";
 
 // ── Product CRUD (Seller / Admin) ─────────────────────────────
 
@@ -457,10 +458,13 @@ export const getProductBySlug = async (slug: string) => {
 
 export const getProductReviews = async (productId: string, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
-  const [reviews, total] = await Promise.all([
+  const [rawReviews, total] = await Promise.all([
     prisma.review.findMany({
       where: { productId, deletedAt: null },
-      include: { user: { select: { id: true, fullName: true, avatarUrl: true } } },
+      include: {
+        user: { select: { id: true, fullName: true, avatarKey: true, avatarUrl: true } },
+        images: { orderBy: { order: "asc" } },
+      },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
@@ -468,14 +472,33 @@ export const getProductReviews = async (productId: string, page = 1, limit = 10)
     prisma.review.count({ where: { productId, deletedAt: null } }),
   ]);
 
+  const reviews = rawReviews.map((r) => ({
+    ...r,
+    user: {
+      ...r.user,
+      avatarUrl: resolveStorageUrl(r.user.avatarKey) || r.user.avatarUrl || null,
+    },
+    images: r.images.map((img) => ({
+      id: img.id,
+      key: img.key,
+      url: resolveStorageUrl(img.key),
+      order: img.order,
+      createdAt: img.createdAt,
+    })),
+  }));
+
   const avgRating = total > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    ? (rawReviews.reduce((sum, r) => sum + r.rating, 0) / rawReviews.length).toFixed(1)
     : null;
 
   return { reviews, total, page, limit, totalPages: Math.ceil(total / limit), avgRating };
 };
 
-export const submitReview = async (userId: string, productId: string, body: { rating: number; title?: string; body?: string }) => {
+export const submitReview = async (
+  userId: string,
+  productId: string,
+  body: { rating: number; title?: string; body?: string; imageKeys?: string[] }
+) => {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product || product.deletedAt || product.status !== "APPROVED") {
     throw new AppError("Product not found or not available for reviews", 404, "NOT_FOUND");
@@ -488,6 +511,29 @@ export const submitReview = async (userId: string, productId: string, body: { ra
     where: { productId_userId: { productId, userId } },
   });
   if (existing) throw new AppError("You have already reviewed this product", 409, "ALREADY_REVIEWED");
+
+  // Verify review photo attachment keys (ownership & existence in storage)
+  const validKeys: string[] = [];
+  if (body.imageKeys && Array.isArray(body.imageKeys) && body.imageKeys.length > 0) {
+    const expectedPrefix = `reviews/${userId}/`;
+    for (const key of body.imageKeys) {
+      if (typeof key !== 'string' || !key.trim()) continue;
+      const cleanKey = key.trim();
+      validateStorageKey(cleanKey);
+
+      // Enforce ownership: must belong to reviews/:userId/
+      if (!cleanKey.startsWith(expectedPrefix)) {
+        throw new AppError(`Access denied: Review image "${cleanKey}" does not belong to this user`, 403, "FORBIDDEN_KEY");
+      }
+
+      // Verify object exists in storage
+      const exists = await objectExists(cleanKey);
+      if (!exists) {
+        throw new AppError(`Attached review image "${cleanKey}" not found in storage`, 400, "OBJECT_NOT_FOUND");
+      }
+      validKeys.push(cleanKey);
+    }
+  }
 
   // Check if customer has an actual purchase order for this product
   const verifiedPurchase = await prisma.orderItem.findFirst({
@@ -512,8 +558,19 @@ export const submitReview = async (userId: string, productId: string, body: { ra
       title: body.title,
       body: body.body,
       isVerifiedPurchase: !!verifiedPurchase,
+      images: validKeys.length > 0
+        ? {
+            create: validKeys.map((key, index) => ({
+              key,
+              order: index,
+            })),
+          }
+        : undefined,
     },
-    include: { user: { select: { fullName: true, avatarUrl: true } } },
+    include: {
+      user: { select: { fullName: true, avatarKey: true, avatarUrl: true } },
+      images: { orderBy: { order: "asc" } },
+    },
   });
 
   // Invalidate product cache so review counts reflect immediately
@@ -523,5 +580,19 @@ export const submitReview = async (userId: string, productId: string, body: { ra
     // Non-fatal
   }
 
-  return review;
+  return {
+    ...review,
+    user: {
+      ...review.user,
+      avatarUrl: resolveStorageUrl(review.user.avatarKey) || review.user.avatarUrl || null,
+    },
+    images: review.images.map((img) => ({
+      id: img.id,
+      key: img.key,
+      url: resolveStorageUrl(img.key),
+      order: img.order,
+      createdAt: img.createdAt,
+    })),
+  };
 };
+

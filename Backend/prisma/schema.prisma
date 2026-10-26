@@ -23,6 +23,7 @@ model User {
   isEmailVerified  Boolean  @default(false)
   isPhoneVerified  Boolean  @default(false)
   isActive         Boolean  @default(true)
+  avatarKey        String?  @map("avatar_key")
   avatarUrl        String?
 
   deletedAt        DateTime? // Soft delete strategy (#4c)
@@ -363,6 +364,7 @@ model Review {
   title              String?
   body               String?
   isVerifiedPurchase Boolean   @default(false)
+  images             ReviewImage[]
   deletedAt          DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -371,6 +373,17 @@ model Review {
   @@index([productId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model ReviewImage {
+  id        String   @id @default(uuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  key       String   @map("image_key") // Storage object key ONLY (never full URL)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([reviewId])
 }
 
 // ============================================================
