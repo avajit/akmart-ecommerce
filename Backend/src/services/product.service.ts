@@ -494,7 +494,7 @@ export const submitReview = async (userId: string, productId: string, body: { ra
     where: {
       order: {
         userId,
-        status: { in: ["CONFIRMED", "SHIPPED", "DELIVERED"] },
+        status: "CONFIRMED",
       },
       sellerListing: {
         variant: {
