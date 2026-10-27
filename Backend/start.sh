@@ -7,6 +7,9 @@ npx prisma generate
 printf "*** Running prisma migrate deploy\n"
 npx prisma migrate deploy || true
 
+printf "*** Running prisma db push (sync schema & tables)\n"
+npx prisma db push --skip-generate || true
+
 printf "*** Running database seed\n"
 npx prisma db seed || true
 
