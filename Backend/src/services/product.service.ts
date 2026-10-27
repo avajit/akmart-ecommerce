@@ -3,6 +3,7 @@ import { prisma, redis } from "../app";
 import slugify from "slugify";
 import { nanoid } from "nanoid";
 import { resolveStorageUrl, objectExists, validateStorageKey } from "../lib/storage";
+import { parseSearchIntent, getSearchTokenVariations } from "../lib/search/searchParser";
 
 // ── Product CRUD (Seller / Admin) ─────────────────────────────
 
@@ -171,19 +172,8 @@ export const deleteProduct = async (userId: string, roleName: string, productId:
 
 // ── Product Browse (Public / Role-filtered) ───────────────────
 
-// Dynamic linguistic stemmer: automatically matches singular & plural forms without hardcoding
-const getSearchTokenVariations = (word: string): string[] => {
-  const w = word.toLowerCase().trim();
-  const variations = new Set<string>([w]);
-  if (w.endsWith('ies') && w.length > 4) {
-    variations.add(w.slice(0, -3) + 'y'); // e.g. "groceries" -> "grocery", "batteries" -> "battery"
-  } else if (w.endsWith('es') && w.length > 3) {
-    variations.add(w.slice(0, -2)); // e.g. "watches" -> "watch", "boxes" -> "box"
-  } else if (w.endsWith('s') && !w.endsWith('ss') && w.length > 2) {
-    variations.add(w.slice(0, -1)); // e.g. "shoes" -> "shoe", "shirts" -> "shirt", "laptops" -> "laptop"
-  }
-  return Array.from(variations);
-};
+// (Search synonyms, linguistic stemming, and intent parsing are decoupled into lib/search/searchParser.ts)
+
 
 export const browseProducts = async (userId: string | undefined, roleName: string | undefined, query: any) => {
   const { category, brand, sort, page = "1", limit = "20", ...attrFilters } = query;
@@ -242,35 +232,71 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     }
   }
 
-  // Enterprise Multi-Vendor Dynamic Search: Zero hardcoding, multi-token, relational indexing
+  // Enterprise Natural Language Search: Intent extraction, typo resilience, and synonym expansion
+  let parsedMinPrice: number | undefined;
+  let parsedMaxPrice: number | undefined;
+  let parsedSort: string | undefined;
+  let parsedInStock: boolean | undefined;
+
   if (query.search && typeof query.search === 'string' && query.search.trim()) {
-    const rawSearch = query.search.trim();
-    const rawTokens = rawSearch.split(/\s+/).filter(Boolean);
+    const parsed = parseSearchIntent(query.search);
+    parsedMinPrice = parsed.minPrice;
+    parsedMaxPrice = parsed.maxPrice;
+    parsedSort = parsed.sort;
+    parsedInStock = parsed.inStock;
 
-    // Build conditions for each search word, dynamically matching its singular/plural stems across all catalog relations
-    const tokenConditions = rawTokens.map((token: string) => {
-      const stems = getSearchTokenVariations(token);
-      return {
-        OR: stems.flatMap(stem => [
-          { name: { contains: stem, mode: 'insensitive' as const } },
-          { description: { contains: stem, mode: 'insensitive' as const } },
-          { brand: { name: { contains: stem, mode: 'insensitive' as const } } },
-          { category: { name: { contains: stem, mode: 'insensitive' as const } } },
-          { category: { parent: { name: { contains: stem, mode: 'insensitive' as const } } } },
-          { variants: { some: { name: { contains: stem, mode: 'insensitive' as const } } } },
-          { variants: { some: { sku: { contains: stem, mode: 'insensitive' as const } } } },
-          { variants: { some: { listings: { some: { sellerProfile: { shopName: { contains: stem, mode: 'insensitive' as const } } } } } } },
-        ])
-      };
-    });
+    // If brand wasn't explicitly given in query params, match parsed brand
+    if (!brand && parsed.brand) {
+      const b = await prisma.brand.findFirst({
+        where: {
+          OR: [
+            { slug: { contains: parsed.brand, mode: 'insensitive' } },
+            { name: { contains: parsed.brand, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (b) where.brandId = b.id;
+    }
 
-    if (tokenConditions.length === 1) {
-      where.OR = tokenConditions[0].OR;
-    } else {
-      where.AND = [
-        ...(where.AND || []),
-        ...tokenConditions
-      ];
+    // Build conditions for core tokens + attributes (color, size, material, specs, features)
+    const tokensToMatch = [...parsed.coreTokens];
+    if (parsed.color) tokensToMatch.push(parsed.color);
+    if (parsed.size) tokensToMatch.push(parsed.size);
+    if (parsed.material) tokensToMatch.push(parsed.material);
+    if (parsed.features && parsed.features.length > 0) tokensToMatch.push(...parsed.features);
+    Object.values(parsed.specs).forEach((val) => tokensToMatch.push(val));
+
+    // Deduplicate tokens
+    const uniqueTokens = Array.from(new Set(tokensToMatch));
+
+    if (uniqueTokens.length > 0) {
+      const tokenConditions = uniqueTokens.map((token: string) => {
+        const stems = getSearchTokenVariations(token);
+        return {
+          OR: stems.flatMap((stem) => [
+            { name: { contains: stem, mode: 'insensitive' as const } },
+            { description: { contains: stem, mode: 'insensitive' as const } },
+            { brand: { name: { contains: stem, mode: 'insensitive' as const } } },
+            { brand: { slug: { contains: stem, mode: 'insensitive' as const } } },
+            { category: { name: { contains: stem, mode: 'insensitive' as const } } },
+            { category: { slug: { contains: stem, mode: 'insensitive' as const } } },
+            { category: { parent: { name: { contains: stem, mode: 'insensitive' as const } } } },
+            { category: { parent: { slug: { contains: stem, mode: 'insensitive' as const } } } },
+            { variants: { some: { name: { contains: stem, mode: 'insensitive' as const } } } },
+            { variants: { some: { sku: { contains: stem, mode: 'insensitive' as const } } } },
+            { variants: { some: { listings: { some: { sellerProfile: { shopName: { contains: stem, mode: 'insensitive' as const } } } } } } },
+          ]),
+        };
+      });
+
+      if (tokenConditions.length === 1) {
+        where.OR = tokenConditions[0].OR;
+      } else {
+        where.AND = [
+          ...(where.AND || []),
+          ...tokenConditions,
+        ];
+      }
     }
   }
 
@@ -280,20 +306,21 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     if (b) where.brandId = b.id;
   }
 
-  // Price filter: we need to filter via SellerListing
-  const minPrice = query.minPrice ? parseFloat(query.minPrice) : undefined;
-  const maxPrice = query.maxPrice ? parseFloat(query.maxPrice) : undefined;
-  const inStockOnly = query.inStock === 'true' || query.inStock === true;
+  // Price filter: Respect explicit query params first, fallback to natural language extracted price intent
+  const minPrice = query.minPrice ? parseFloat(query.minPrice) : parsedMinPrice;
+  const maxPrice = query.maxPrice ? parseFloat(query.maxPrice) : parsedMaxPrice;
+  const inStockOnly = query.inStock === 'true' || query.inStock === true || parsedInStock === true;
 
   // Attribute filters — remaining query params applied to JSONB on ProductVariant
   const attrKeys = Object.keys(attrFilters).filter(k => !["minPrice", "maxPrice", "search", "inStock", "mine"].includes(k));
 
-  // Sort
+  // Sort: explicit query param first, then natural language extracted sort intent
+  const effectiveSort = sort || parsedSort;
   let orderBy: any = { createdAt: "desc" };
-  if (sort === "newest") orderBy = { createdAt: "desc" };
-  else if (sort === "oldest") orderBy = { createdAt: "asc" };
-  else if (sort === "name-asc") orderBy = { name: "asc" };
-  else if (sort === "name-desc") orderBy = { name: "desc" };
+  if (effectiveSort === "newest") orderBy = { createdAt: "desc" };
+  else if (effectiveSort === "oldest") orderBy = { createdAt: "asc" };
+  else if (effectiveSort === "name-asc") orderBy = { name: "asc" };
+  else if (effectiveSort === "name-desc") orderBy = { name: "desc" };
 
   const finalWhere: any = {
     ...where,
@@ -333,7 +360,7 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
       : {}),
   };
 
-  const isPriceSort = sort === "price-low" || sort === "price-high";
+  const isPriceSort = effectiveSort === "price-low" || effectiveSort === "price-high";
   let products: any[];
   let total: number;
 
@@ -363,9 +390,9 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     total = allProducts.length;
 
     allProducts.sort((a, b) => {
-      const priceA = a.variants.flatMap(v => v.listings)[0]?.price != null ? Number(a.variants.flatMap(v => v.listings)[0].price) : (sort === "price-low" ? Infinity : -Infinity);
-      const priceB = b.variants.flatMap(v => v.listings)[0]?.price != null ? Number(b.variants.flatMap(v => v.listings)[0].price) : (sort === "price-low" ? Infinity : -Infinity);
-      return sort === "price-low" ? priceA - priceB : priceB - priceA;
+      const priceA = a.variants.flatMap(v => v.listings)[0]?.price != null ? Number(a.variants.flatMap(v => v.listings)[0].price) : (effectiveSort === "price-low" ? Infinity : -Infinity);
+      const priceB = b.variants.flatMap(v => v.listings)[0]?.price != null ? Number(b.variants.flatMap(v => v.listings)[0].price) : (effectiveSort === "price-low" ? Infinity : -Infinity);
+      return effectiveSort === "price-low" ? priceA - priceB : priceB - priceA;
     });
 
     products = allProducts.slice(skip, skip + parseInt(limit));

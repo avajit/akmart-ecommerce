@@ -11,6 +11,7 @@ import { ShopContext } from "../context/ShopContext";
 import { useAuthStore } from "../store/authStore";
 import { useLogout } from "../hooks/useAuth";
 import { getCategoryTree, browseProducts } from "../api/consumer.api";
+import { parseSearchIntent, getSearchTokenVariations } from "../utils/searchParser";
 
 // Modern vector icon for Home & Living (interior / furniture) so shoppers never confuse it with Website Homepage
 const HomeLivingIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
@@ -110,18 +111,31 @@ export default function Navbar() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await browseProducts({ search: searchQuery.trim(), limit: 5 });
+        const parsed = parseSearchIntent(searchQuery);
+        const searchParam = parsed.cleanQuery || searchQuery.trim();
+        const res = await browseProducts({
+          search: searchParam,
+          limit: 5,
+          ...(parsed.minPrice ? { minPrice: parsed.minPrice } : {}),
+          ...(parsed.maxPrice ? { maxPrice: parsed.maxPrice } : {}),
+        });
         setSuggestions(res.data?.products || []);
 
-        const q = searchQuery.trim().toLowerCase();
+        const qStems = parsed.coreTokens.flatMap((t: string) => getSearchTokenVariations(t));
         const matched: any[] = [];
         categories.forEach((cat: any) => {
-          if (cat.name.toLowerCase().includes(q)) {
+          const catNameLower = cat.name.toLowerCase();
+          const catSlugLower = (cat.slug || '').toLowerCase();
+          const isMatch = qStems.some((stem: string) => catNameLower.includes(stem) || catSlugLower.includes(stem));
+          if (isMatch) {
             matched.push({ name: cat.name, slug: cat.slug, isParent: true });
           }
           if (cat.children) {
             cat.children.forEach((sub: any) => {
-              if (sub.name.toLowerCase().includes(q)) {
+              const subNameLower = sub.name.toLowerCase();
+              const subSlugLower = (sub.slug || '').toLowerCase();
+              const isSubMatch = qStems.some((stem: string) => subNameLower.includes(stem) || subSlugLower.includes(stem));
+              if (isSubMatch) {
                 matched.push({ name: sub.name, slug: sub.slug, parentName: cat.name, isParent: false });
               }
             });
@@ -171,7 +185,13 @@ export default function Navbar() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/collection?search=${encodeURIComponent(searchQuery.trim())}`);
+      const parsed = parseSearchIntent(searchQuery);
+      const params = new URLSearchParams();
+      const queryText = parsed.cleanQuery || searchQuery.trim();
+      params.set('search', queryText);
+      if (parsed.maxPrice) params.set('maxPrice', String(parsed.maxPrice));
+      if (parsed.minPrice) params.set('minPrice', String(parsed.minPrice));
+      navigate(`/collection?${params.toString()}`);
       closeAll();
     }
   };
