@@ -16,7 +16,7 @@ const Hero = () => {
   const { title, desc, image, link } = heroData[index];
 
   return (
-    <section className="relative w-full min-h-[540px] lg:h-[78vh] max-h-[700px] py-12 lg:py-0 overflow-hidden bg-black text-white flex items-center justify-center font-poppins">
+    <section className="relative w-full min-h-[440px] md:min-h-[540px] lg:h-[78vh] max-h-[700px] py-4 sm:py-8 lg:py-0 overflow-hidden bg-black text-white flex items-center justify-center font-poppins">
       
       {/* ================= GLOBAL STYLES (GOOGLE FONTS) ================= */}
       <style>{`
@@ -52,25 +52,25 @@ const Hero = () => {
       <div className="relative z-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col-reverse md:flex-row items-center justify-between gap-6 md:gap-12">
         
         {/* LEFT: TEXT CONTENT */}
-        <div key={index} className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left gap-4 animate-fade-up">
+        <div key={index} className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left gap-2 sm:gap-4 animate-fade-up">
           
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-[2px] bg-orange-500"></div>
-            <span className="text-orange-400 text-xs font-bold tracking-[0.2em] uppercase">
+          <div className="flex items-center gap-2">
+            <div className="w-6 sm:w-8 h-[2px] bg-orange-500"></div>
+            <span className="text-orange-400 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
               Trending Now
             </span>
           </div>
 
-          <h1 className="font-oswald text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold leading-[0.95] text-white uppercase tracking-wide">
+          <h1 className="font-oswald text-2xl sm:text-5xl md:text-6xl lg:text-8xl font-extrabold leading-[0.95] text-white uppercase tracking-wide">
             {title}
           </h1>
 
-          <p className="text-gray-400 text-sm sm:text-base md:text-lg font-light leading-relaxed max-w-md">
+          <p className="text-gray-400 text-xs sm:text-base md:text-lg font-light leading-relaxed max-w-md line-clamp-2 sm:line-clamp-none">
             {desc}
           </p>
 
-          <Link to={link || '/collection'} className="mt-2">
-            <button className="group relative px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-orange-500/25 active:scale-95">
+          <Link to={link || '/collection'} className="mt-1 sm:mt-2">
+            <button className="group relative px-6 sm:px-8 py-2.5 sm:py-3.5 bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#C2410C]/25 active:scale-95 min-h-[44px]">
               <span>SHOP COLLECTION</span>
             </button>
           </Link>
@@ -80,9 +80,9 @@ const Hero = () => {
         <div className="w-full md:w-1/2 flex justify-center items-center relative">
           
           {/* Glowing Circle Behind Image */}
-          <div className="absolute w-[240px] h-[240px] md:w-[450px] md:h-[450px] bg-orange-500/10 rounded-full blur-[80px]" />
+          <div className="absolute w-[180px] h-[180px] md:w-[450px] md:h-[450px] bg-orange-500/10 rounded-full blur-[60px] md:blur-[80px]" />
 
-          <div className="relative w-full h-[260px] sm:h-[360px] md:h-[500px] flex justify-center items-center">
+          <div className="relative w-full h-[180px] sm:h-[280px] md:h-[500px] flex justify-center items-center">
             <img
               key={index}
               src={image}

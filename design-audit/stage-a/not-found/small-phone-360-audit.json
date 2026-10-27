@@ -8,21 +8,27 @@
     "hasOverflow": false,
     "diff": 0
   },
-  "smallTapTargetsCount": 1,
+  "smallTapTargetsCount": 33,
   "axeViolations": {
-    "serious": 1,
+    "serious": 2,
     "critical": 0,
     "details": [
       {
         "id": "color-contrast",
         "impact": "serious",
         "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
         "nodes": 1
       }
     ]
   },
   "webVitals": {
-    "fcp": 588
+    "fcp": 972
   },
-  "timestamp": "2026-10-27T16:03:41.615Z"
+  "timestamp": "2026-10-27T16:27:36.179Z"
 }

@@ -133,8 +133,10 @@ function AppRoutes() {
           </Route>
         </Route>
 
-        {/* ----- 404 ----- */}
-        <Route path="*" element={<NotFound />} />
+        {/* ----- 404 with Consumer Layout Shell ----- */}
+        <Route element={<ConsumerLayout />}>
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Routes>
     </Suspense>
   );
