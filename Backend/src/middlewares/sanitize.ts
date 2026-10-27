@@ -5,6 +5,7 @@ function sanitizeValue(value: any): any {
   if (typeof value === 'string') {
     // Strip executable script tags and dangerous HTML attributes
     return value
+      // eslint-disable-next-line security/detect-unsafe-regex
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')

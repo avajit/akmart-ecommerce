@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </button>
             </div>
 
-            {process.env.NODE_ENV !== 'production' && this.state.error && (
+            {Boolean(import.meta.env.DEV) && this.state.error && (
               <details className="mt-4 text-left p-3 bg-black/60 border border-gray-800/80 rounded-xl text-[11px] text-gray-500 font-mono overflow-auto max-h-40">
                 <summary className="cursor-pointer text-gray-400 hover:text-gray-300 font-semibold mb-1">
                   Technical Details (Debug)

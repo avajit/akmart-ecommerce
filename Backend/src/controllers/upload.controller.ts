@@ -204,11 +204,11 @@ export const streamFile = async (req: Request, res: Response, next: NextFunction
     }
 
     if (!rawKey || typeof rawKey !== 'string') {
-      // Robust fallback extraction from originalUrl / path
+      // Robust fallback extraction from originalUrl / path without unsafe regex
       const urlToMatch = req.originalUrl || req.url || req.path || '';
-      const match = urlToMatch.match(/(?:\/api)?(?:\/v1)?\/(?:files|uploads(?:\/files)?)\/(.+?)(?:\?.*)?$/);
-      if (match) {
-        rawKey = match[1];
+      const filesIdx = urlToMatch.indexOf('/files/');
+      if (filesIdx !== -1) {
+        rawKey = urlToMatch.slice(filesIdx + 7);
       }
     }
 

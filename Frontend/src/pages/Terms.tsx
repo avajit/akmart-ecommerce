@@ -1,6 +1,6 @@
 import React from 'react';
 import Title from '../components/Title';
-import { FiFileText, FiAlertTriangle, FiCheckCircle, FiScale, FiDollarSign, FiTruck } from 'react-icons/fi';
+import { FiFileText, FiAlertTriangle, FiCheckCircle, FiDollarSign, FiTruck } from 'react-icons/fi';
 
 export default function Terms() {
   return (
