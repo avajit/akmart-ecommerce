@@ -1,8 +1,9 @@
 import React, { useContext, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { Link, useNavigate } from "react-router-dom";
-import { FiHeart } from "react-icons/fi";
+import { FiHeart, FiShoppingCart } from "react-icons/fi";
 import { formatImageUrl } from "../utils/imageUrl";
+import { Price, Badge } from "./ui";
 
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop",
@@ -23,7 +24,7 @@ export interface ProductItemProps {
   bestseller?: boolean;
 }
 
-const ProductItem: React.FC<ProductItemProps> = ({ 
+export const ProductItem: React.FC<ProductItemProps> = ({ 
   slug, 
   image, 
   name, 
@@ -73,13 +74,13 @@ const ProductItem: React.FC<ProductItemProps> = ({
 
   return (
     <Link 
-      className="group relative flex flex-col cursor-pointer bg-[#141414] border border-gray-800/80 rounded-2xl overflow-hidden p-3 transition-all duration-300 hover:border-orange-500/50" 
+      className="group relative flex flex-col bg-surface-card border border-border-subtle rounded-2xl overflow-hidden p-3 transition-all duration-200 hover:border-brand-saffron/50 hover:shadow-xl hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-brand-saffron focus-visible:outline-none" 
       to={`/product/${slug}`}
     >
       {/* 4:5 Image Container with Wishlist Heart */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[#1A1A1A]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-surface-subtle">
         <img
-          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+          className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
           src={displayImage}
           alt={name}
           referrerPolicy="no-referrer"
@@ -92,59 +93,56 @@ const ProductItem: React.FC<ProductItemProps> = ({
           }}
         />
 
-        {/* Wishlist Heart Toggle Button (WCAG 2.1 AA Compliant) */}
+        {/* Wishlist Heart Toggle Button (44x44px touch target) */}
         <button
           type="button"
           onClick={handleWishlistClick}
           disabled={isPending}
           aria-label={isWishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
           aria-pressed={isWishlisted}
-          className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-md ${
+          className={`absolute top-2 right-2 z-10 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all duration-150 shadow-md ${
             isWishlisted
-              ? "bg-black/85 text-orange-500 border border-orange-500/60 opacity-100 scale-100"
-              : "bg-black/60 backdrop-blur-md text-white hover:bg-orange-500 hover:text-white md:opacity-0 md:group-hover:opacity-100"
+              ? "bg-surface-base/90 text-brand-saffron border border-brand-saffron/60 scale-100"
+              : "bg-surface-base/60 backdrop-blur-md text-foreground-primary hover:bg-brand-saffron hover:text-dark md:opacity-0 md:group-hover:opacity-100"
           } ${isPending ? 'opacity-70 cursor-wait' : ''}`}
         >
           <FiHeart 
-            className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-200 active:scale-125 ${
-              isWishlisted ? 'fill-orange-500 text-orange-500' : 'text-white'
+            className={`w-4 h-4 transition-transform duration-150 active:scale-125 ${
+              isWishlisted ? 'fill-brand-saffron text-brand-saffron' : 'text-current'
             }`} 
           />
         </button>
 
         {/* Discount Badge */}
         {calculatedDiscount && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm uppercase tracking-wide">
-              {calculatedDiscount}
-            </span>
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <Badge variant="saffron" size="sm">{calculatedDiscount}</Badge>
           </div>
         )}
       </div>
 
       {/* Product Details */}
-      <div className="mt-3 flex flex-col flex-1 justify-between">
+      <div className="mt-3 flex flex-col flex-1 justify-between gap-2">
         <div>
-          {/* Brand in small uppercase grey */}
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+          {/* Brand */}
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground-secondary truncate">
             {brand}
           </p>
           {/* Product Name */}
-          <h3 className="text-sm font-medium text-white truncate mt-0.5 group-hover:text-orange-400 transition-colors">
+          <h3 className="text-sm font-medium text-foreground-primary line-clamp-2 mt-0.5 group-hover:text-brand-saffron transition-colors leading-snug">
             {name}
           </h3>
         </div>
 
-        {/* Pricing */}
-        <div className="flex items-center gap-2 mt-2">
-          <p className="text-sm font-bold text-white">
-            {currency}{displayPrice.toLocaleString('en-IN')}
-          </p>
-          {displayOldPrice && (
-            <p className="text-xs text-gray-500 line-through">
-              {currency}{displayOldPrice.toLocaleString('en-IN')}
-            </p>
-          )}
+        {/* Pricing with South Asian Lakh / Crore format */}
+        <div className="pt-1 border-t border-border-subtle/50">
+          <Price
+            amount={displayPrice}
+            originalPrice={displayOldPrice || undefined}
+            size="sm"
+            showDiscountBadge={false}
+            highlight
+          />
         </div>
       </div>
     </Link>

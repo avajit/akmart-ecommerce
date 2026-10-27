@@ -8,7 +8,7 @@
     "hasOverflow": false,
     "diff": 0
   },
-  "smallTapTargetsCount": 53,
+  "smallTapTargetsCount": 32,
   "axeViolations": {
     "serious": 2,
     "critical": 0,
@@ -17,7 +17,7 @@
         "id": "color-contrast",
         "impact": "serious",
         "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
-        "nodes": 4
+        "nodes": 1
       },
       {
         "id": "list",
@@ -28,7 +28,7 @@
     ]
   },
   "webVitals": {
-    "fcp": 548
+    "fcp": 816
   },
-  "timestamp": "2026-10-27T16:03:27.418Z"
+  "timestamp": "2026-10-27T17:54:49.671Z"
 }

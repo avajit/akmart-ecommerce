@@ -221,8 +221,39 @@ export default function Navbar() {
   // Priority slugs for the primary visible slots in desktop sub-nav (Amazon / Flipkart pattern)
   const CORE_DEPARTMENT_SLUGS = ['electronics', 'home', 'kids', 'men', 'women'];
 
+  // Deduplicate categories and subcategories by slug & name to eliminate duplicate Men/Women dropdown entries
+  const uniqueCategoryMap = new Map<string, any>();
+  categories.forEach((cat: any) => {
+    const key = (cat.name || cat.slug || '').toLowerCase().trim();
+    if (!key) return;
+
+    if (!uniqueCategoryMap.has(key)) {
+      uniqueCategoryMap.set(key, { ...cat, children: [] });
+    }
+
+    const existingCat = uniqueCategoryMap.get(key);
+    const existingChildrenMap = new Map<string, any>();
+    (existingCat.children || []).forEach((c: any) => {
+      existingChildrenMap.set((c.name || '').toLowerCase().trim(), c);
+    });
+
+    (cat.children || []).forEach((c: any) => {
+      const cNameKey = (c.name || '').toLowerCase().trim();
+      if (!cNameKey) return;
+      const existingChild = existingChildrenMap.get(cNameKey);
+      // Prefer child with specific prefix (e.g. 'men-', 'women-') or hyphenated slug over generic slug
+      const isMoreSpecific = c.slug?.startsWith(`${cat.slug}-`) || (c.slug && c.slug.includes('-'));
+      if (!existingChild || isMoreSpecific) {
+        existingChildrenMap.set(cNameKey, c);
+      }
+    });
+
+    existingCat.children = Array.from(existingChildrenMap.values());
+  });
+  const deduplicatedCategories = Array.from(uniqueCategoryMap.values());
+
   // Sort categories placing core flagship departments first, followed by all other dynamic categories
-  const sortedDepartments = [...categories].sort((a, b) => {
+  const sortedDepartments = [...deduplicatedCategories].sort((a, b) => {
     const aSlug = (a.slug || '').toLowerCase();
     const bSlug = (b.slug || '').toLowerCase();
     const idxA = CORE_DEPARTMENT_SLUGS.findIndex(s => aSlug.includes(s));

@@ -26,14 +26,21 @@ const Home = () => {
   useEffect(() => {
     getCategoryTree().then((res: any) => {
       const allCats = res.data || [];
-      // Filter out junk/test categories
-      const cleanCats = allCats.filter((c: any) => !c.name?.toLowerCase().includes('fasttest') && !c.name?.toLowerCase().includes('test'));
-      setCategories(cleanCats);
+      const catMap = new Map<string, any>();
+      allCats.forEach((c: any) => {
+        const name = (c.name || c.slug || '').toLowerCase().trim();
+        if (name && !name.includes('test') && !name.includes('fasttest') && !catMap.has(name)) {
+          catMap.set(name, c);
+        }
+      });
+      setCategories(Array.from(catMap.values()));
     }).catch(() => {});
   }, []);
 
   return (
-    <div className="bg-[#0D0D0D] text-white font-poppins min-h-screen">
+    <div className="bg-[#0B0E14] text-white font-poppins min-h-screen relative overflow-hidden">
+      {/* Ambient background glow for rich commercial atmosphere */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-transparent blur-3xl pointer-events-none -z-0" />
       
       {/* 1. HERO SECTION */}
       <Hero />

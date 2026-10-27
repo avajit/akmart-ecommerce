@@ -423,7 +423,7 @@ export default function Checkout() {
                       placeholder="e.g. Ramesh Shrestha"
                       value={newAddress.fullName}
                       onChange={(e) => setNewAddress({ ...newAddress, fullName: e.target.value })}
-                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
                     />
                   </div>
 
@@ -439,7 +439,7 @@ export default function Checkout() {
                         setNewAddress({ ...newAddress, phone: e.target.value });
                         if (phoneError) setPhoneError('');
                       }}
-                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 font-mono"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 font-mono"
                     />
                     {phoneError && <p className="text-[11px] text-rose-400">{phoneError}</p>}
                   </div>
@@ -450,7 +450,7 @@ export default function Checkout() {
                     <select
                       value={newAddress.state}
                       onChange={(e) => handleProvinceChange(e.target.value)}
-                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:border-orange-500"
                     >
                       {Object.keys(NEPAL_PROVINCES_DISTRICTS).map((p) => (
                         <option key={p} value={p}>{p}</option>
@@ -464,7 +464,7 @@ export default function Checkout() {
                     <select
                       value={newAddress.district}
                       onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
-                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:border-orange-500"
                     >
                       {(NEPAL_PROVINCES_DISTRICTS[newAddress.state] || []).map((d) => (
                         <option key={d} value={d}>{d}</option>
@@ -478,7 +478,7 @@ export default function Checkout() {
                     <select
                       value={newAddress.city}
                       onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:border-orange-500"
                     >
                       {POPULAR_NEPAL_CITIES.map((c) => (
                         <option key={c} value={c}>{c}</option>
@@ -497,7 +497,7 @@ export default function Checkout() {
                         placeholder="Enter your town / municipality"
                         value={newAddress.customCity}
                         onChange={(e) => setNewAddress({ ...newAddress, customCity: e.target.value })}
-                        className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                        className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:border-orange-500"
                       />
                     </div>
                   )}
@@ -510,7 +510,7 @@ export default function Checkout() {
                       placeholder="e.g. 44600"
                       value={newAddress.zipCode}
                       onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value })}
-                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500 font-mono"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white focus:outline-none focus:border-orange-500 font-mono"
                     />
                   </div>
                 </div>
@@ -524,7 +524,7 @@ export default function Checkout() {
                     placeholder="e.g. New Baneshwor, near Standard Chartered Bank, House #14"
                     value={newAddress.street}
                     onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                    className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                    className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
                   />
                 </div>
 

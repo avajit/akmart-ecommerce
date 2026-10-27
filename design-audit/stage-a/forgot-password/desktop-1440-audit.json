@@ -8,7 +8,7 @@
     "hasOverflow": false,
     "diff": 0
   },
-  "smallTapTargetsCount": 30,
+  "smallTapTargetsCount": 29,
   "axeViolations": {
     "serious": 2,
     "critical": 0,
@@ -28,7 +28,7 @@
     ]
   },
   "webVitals": {
-    "fcp": 508
+    "fcp": 748
   },
-  "timestamp": "2026-10-27T16:04:05.942Z"
+  "timestamp": "2026-10-27T17:56:42.692Z"
 }
