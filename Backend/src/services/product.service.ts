@@ -18,6 +18,27 @@ export const createProduct = async (userId: string, roleName: string, body: any)
   // Auto-generate unique slug
   const slug = slugify(name, { lower: true, strict: true }) + "-" + nanoid(6);
 
+  // Extract primary image from variants to also populate product.images
+  const allVariantImages: Array<{ url: string; altText?: string | null; isPrimary: boolean; order: number }> = [];
+  if (variants && Array.isArray(variants)) {
+    for (const v of variants) {
+      if (v.images && Array.isArray(v.images)) {
+        v.images.forEach((img: any, i: number) => {
+          allVariantImages.push({
+            url: img.url,
+            altText: img.altText || null,
+            isPrimary: img.isPrimary !== undefined ? Boolean(img.isPrimary) : i === 0,
+            order: i + 1,
+          });
+        });
+      }
+    }
+  }
+  const primaryImg = allVariantImages.find(img => img.isPrimary) || allVariantImages[0];
+
+  // Initial status defaults to DRAFT unless explicitly requested or submitted
+  const initialStatus = body.status || (body.submitForReview ? "PENDING_REVIEW" : "DRAFT");
+
   const product = await prisma.product.create({
     data: {
       name,
@@ -26,7 +47,19 @@ export const createProduct = async (userId: string, roleName: string, body: any)
       categoryId,
       brandId: brandId || null,
       createdById: userId,
-      status: "DRAFT",
+      status: initialStatus,
+      images: primaryImg
+        ? {
+            create: [
+              {
+                url: primaryImg.url,
+                altText: primaryImg.altText || name,
+                isPrimary: true,
+                order: 1,
+              },
+            ],
+          }
+        : undefined,
       variants: variants
         ? {
             create: variants.map((v: any) => ({
@@ -48,6 +81,7 @@ export const createProduct = async (userId: string, roleName: string, body: any)
         : undefined,
     },
     include: {
+      images: true,
       variants: { include: { images: true } },
       category: { select: { name: true, slug: true } },
       brand: { select: { name: true } },
@@ -155,8 +189,8 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
   const { category, brand, sort, page = "1", limit = "20", ...attrFilters } = query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  // Cache check for public consumer browse queries (sub-5ms response from Redis)
-  const isPublicQuery = !roleName || roleName === "CONSUMER";
+  // Cache check for public catalog browse queries (sub-5ms response from Redis)
+  const isPublicQuery = query.mine !== "true" && query.mine !== true && query.adminView !== "true";
   const cacheKey = isPublicQuery
     ? `cache:catalog:${JSON.stringify(query)}`
     : null;
@@ -172,18 +206,14 @@ export const browseProducts = async (userId: string | undefined, roleName: strin
     }
   }
 
-  // Role-based status filter
+  // Role-based status filter: Public storefront ALWAYS sees strictly APPROVED products
   let statusFilter: any;
   if ((query.mine === "true" || query.mine === true) && userId) {
-    statusFilter = { createdById: userId };
-  } else if (roleName === "ADMIN") {
-    statusFilter = {}; // all statuses
-  } else if (roleName === "SELLER" && userId) {
-    statusFilter = {
-      OR: [{ status: "APPROVED" }, { AND: [{ status: { not: "APPROVED" } }, { createdById: userId }] }],
-    };
+    statusFilter = { createdById: userId }; // Seller explicit "My Products" query
+  } else if (query.adminView === "true" && roleName === "ADMIN") {
+    statusFilter = {}; // Admin internal moderation query
   } else {
-    statusFilter = { status: "APPROVED" }; // public / consumer
+    statusFilter = { status: "APPROVED" }; // Storefront catalog is ALWAYS strictly APPROVED
   }
 
   const where: any = { deletedAt: null, ...statusFilter };

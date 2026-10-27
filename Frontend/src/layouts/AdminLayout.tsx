@@ -35,6 +35,7 @@ export default function AdminLayout() {
 
   const navItems = [
     { to: '/admin/dashboard', icon: FiHome, label: 'Dashboard', end: true },
+    { to: '/admin/orders', icon: FiShoppingBag, label: 'Order Management' },
     { to: '/admin/products', icon: FiBox, label: 'Products Queue' },
     { to: '/admin/sellers', icon: FiUsers, label: 'Manage Sellers' },
     { to: '/admin/categories', icon: FiGrid, label: 'Categories & Taxonomy' },

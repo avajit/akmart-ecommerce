@@ -33,17 +33,22 @@ const SellerOrders = React.lazy(() => import("../pages/seller/Orders"));
 
 // Admin Pages (Lazy Loaded - isolated bundle)
 const AdminDashboard = React.lazy(() => import("../pages/admin/Dashboard"));
+const AdminOrders = React.lazy(() => import("../pages/admin/Orders"));
 const AdminProducts = React.lazy(() => import("../pages/admin/Products"));
 const AdminProductReview = React.lazy(() => import("../pages/admin/ProductReview"));
 const AdminSellers = React.lazy(() => import("../pages/admin/Sellers"));
 const AdminCategories = React.lazy(() => import("../pages/admin/Categories"));
 const AdminBrands = React.lazy(() => import("../pages/admin/Brands"));
 
-// Fallback (Lazy Loaded)
+// Fallback & Legal Pages (Lazy Loaded)
 const NotFound = React.lazy(() => import("../pages/NotFound"));
 const About = React.lazy(() => import("../pages/About"));
 const Contact = React.lazy(() => import("../pages/Contact"));
 const Refund = React.lazy(() => import("../pages/Refund"));
+const Privacy = React.lazy(() => import("../pages/Privacy"));
+const Terms = React.lazy(() => import("../pages/Terms"));
+const Shipping = React.lazy(() => import("../pages/Shipping"));
+const OrderDetail = React.lazy(() => import("../pages/OrderDetail"));
 
 import ConsumerLayout from '../layouts/ConsumerLayout';
 import AdminLayout from '../layouts/AdminLayout';
@@ -70,6 +75,9 @@ function AppRoutes() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/refund" element={<Refund />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/shipping" element={<Shipping />} />
           
           {/* ----- Authentication ----- */}
           <Route path="/login" element={<Login />} />
@@ -83,6 +91,7 @@ function AppRoutes() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/place-order" element={<PlaceOrder />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/orders/:id" element={<OrderDetail />} />
           </Route>
 
           {/* ----- General Authenticated User Account (Wishlist & Profile) ----- */}
@@ -113,6 +122,7 @@ function AppRoutes() {
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/products/:id" element={<AdminProductReview />} />
             <Route path="/admin/sellers" element={<AdminSellers />} />

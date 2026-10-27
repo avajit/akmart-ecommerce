@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { Link, useNavigate } from "react-router-dom";
 import { FiHeart } from "react-icons/fi";
+import { formatImageUrl } from "../utils/imageUrl";
 
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop",
@@ -29,7 +30,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
   price, 
   brand = "AkMart", 
   oldPrice, 
-  discount = "15% OFF",
+  discount,
   variantId
 }) => {
   const { currency, isInWishlist, toggleWishlist } = useContext(ShopContext) as any;
@@ -37,13 +38,19 @@ const ProductItem: React.FC<ProductItemProps> = ({
 
   const isWishlisted = variantId ? isInWishlist(variantId) : false;
 
-  // Use fallback if image is missing or is a placeholder URL
-  const displayImage = (!image || image.includes('placehold.co') || image.includes('400x400'))
+  // Format and resolve image URL, falling back if missing or placeholder
+  const formatted = formatImageUrl(image);
+  const displayImage = (!formatted || formatted.includes('placehold.co') || formatted.includes('400x400'))
     ? FALLBACK_IMAGES[Math.abs(name?.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) || 0) % FALLBACK_IMAGES.length]
-    : image;
+    : formatted;
 
-  const displayPrice = price && Number(price) > 0 ? Number(price) : 2499; // Clean fallback price for demo items
-  const displayOldPrice = oldPrice ? Number(oldPrice) : Math.round(displayPrice * 1.25);
+  const displayPrice = price && Number(price) > 0 ? Number(price) : 0;
+  const displayOldPrice = oldPrice && Number(oldPrice) > displayPrice ? Number(oldPrice) : null;
+  const calculatedDiscount = discount && discount !== "15% OFF"
+    ? discount
+    : (displayOldPrice && displayOldPrice > displayPrice 
+        ? `${Math.round(((displayOldPrice - displayPrice) / displayOldPrice) * 100)}% OFF` 
+        : null);
 
   const [isPending, setIsPending] = useState(false);
 
@@ -75,6 +82,14 @@ const ProductItem: React.FC<ProductItemProps> = ({
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
           src={displayImage}
           alt={name}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          onError={(e) => {
+            const fallback = FALLBACK_IMAGES[Math.abs(name?.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) || 0) % FALLBACK_IMAGES.length];
+            if (e.currentTarget.src !== fallback) {
+              e.currentTarget.src = fallback;
+            }
+          }}
         />
 
         {/* Wishlist Heart Toggle Button (WCAG 2.1 AA Compliant) */}
@@ -98,11 +113,13 @@ const ProductItem: React.FC<ProductItemProps> = ({
         </button>
 
         {/* Discount Badge */}
-        <div className="absolute top-3 left-3 z-10">
-          <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm uppercase tracking-wide">
-            {discount}
-          </span>
-        </div>
+        {calculatedDiscount && (
+          <div className="absolute top-3 left-3 z-10">
+            <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm uppercase tracking-wide">
+              {calculatedDiscount}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Product Details */}
@@ -121,11 +138,13 @@ const ProductItem: React.FC<ProductItemProps> = ({
         {/* Pricing */}
         <div className="flex items-center gap-2 mt-2">
           <p className="text-sm font-bold text-white">
-            {currency}{displayPrice.toLocaleString()}
+            {currency}{displayPrice.toLocaleString('en-IN')}
           </p>
-          <p className="text-xs text-gray-500 line-through">
-            {currency}{displayOldPrice.toLocaleString()}
-          </p>
+          {displayOldPrice && (
+            <p className="text-xs text-gray-500 line-through">
+              {currency}{displayOldPrice.toLocaleString('en-IN')}
+            </p>
+          )}
         </div>
       </div>
     </Link>

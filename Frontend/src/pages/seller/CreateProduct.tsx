@@ -236,7 +236,7 @@ export default function CreateProduct() {
       };
 
       await createProduct(payload);
-      toast.success('Product submitted as draft for admin review!');
+      toast.success('Product submitted for Admin approval! It will be reviewed before appearing on the public store.');
       navigate('/seller/products');
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to create product');

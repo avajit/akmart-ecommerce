@@ -1,9 +1,72 @@
 import { AppError } from "../utils/AppError";
-import { prisma } from "../app";
+import { prisma, redis } from "../app";
 import { validateCoupon } from "./coupon.service";
 
+/**
+ * Multi-Vendor Status Rollup Engine: Computes the consolidated Order.status
+ * based on individual OrderItem fulfillment statuses across multiple merchants.
+ */
+export const calculateRolledUpOrderStatus = (itemStatuses: string[]): "PENDING" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED" => {
+  if (itemStatuses.length === 0) return "PENDING";
+  if (itemStatuses.every((s) => s === "CANCELLED")) return "CANCELLED";
+
+  const activeStatuses = itemStatuses.filter((s) => s !== "CANCELLED");
+  if (activeStatuses.length === 0) return "CANCELLED";
+
+  if (activeStatuses.every((s) => s === "DELIVERED")) return "DELIVERED";
+  if (activeStatuses.some((s) => s === "SHIPPED" || s === "DELIVERED")) return "SHIPPED";
+  if (activeStatuses.some((s) => s === "PENDING")) return "PENDING";
+  if (activeStatuses.every((s) => s === "PROCESSING" || s === "CONFIRMED")) return "CONFIRMED";
+  return "PENDING";
+};
+
+export const rollupOrderStatus = async (orderId: string, txClient?: any) => {
+  const client = txClient || prisma;
+  const items = await client.orderItem.findMany({
+    where: { orderId },
+    select: { status: true },
+  });
+
+  const newStatus = calculateRolledUpOrderStatus(items.map((i: any) => i.status));
+  await client.order.update({
+    where: { id: orderId },
+    data: { status: newStatus },
+  });
+  return newStatus;
+};
+
 export const checkout = async (userId: string, body: any) => {
-  const { shippingAddressId, paymentMethod, couponCode, selectedItemIds } = body;
+  const { shippingAddressId, paymentMethod, couponCode, selectedItemIds, deliveryNotes } = body;
+
+  // 1. Enforce Cash on Delivery only during Public Beta
+  if (paymentMethod && paymentMethod !== "COD") {
+    throw new AppError(
+      "Only Cash on Delivery (COD) is supported during public beta. Digital wallets (eSewa, Khalti) are deferred to post-beta.",
+      400,
+      "UNSUPPORTED_PAYMENT_METHOD"
+    );
+  }
+
+  // 2. Idempotency Gatekeeper: Prevent double-click & race-condition order duplicates
+  const idempotencyKey = body.idempotencyKey || (body as any).idempotency_key;
+  const redisKey = idempotencyKey ? `idempotency:order:${userId}:${idempotencyKey}` : null;
+
+  if (redisKey) {
+    const existingOrderId = await redis.get(redisKey);
+    if (existingOrderId && existingOrderId !== "IN_PROGRESS") {
+      // Idempotently return the previously created order
+      return getOrderById(userId, existingOrderId, "CONSUMER");
+    }
+
+    const acquired = await redis.set(redisKey, "IN_PROGRESS", "EX", 60, "NX");
+    if (!acquired) {
+      throw new AppError(
+        "Order submission is already processing. Please wait a moment.",
+        409,
+        "DUPLICATE_ORDER_SUBMISSION"
+      );
+    }
+  }
 
   const cart = await prisma.cart.findUnique({
     where: { userId },
@@ -144,7 +207,8 @@ export const checkout = async (userId: string, body: any) => {
         totalAmount,
         shippingAddressId,
         paymentMethod: paymentMethod || 'COD',
-        status: 'CONFIRMED', // Assuming COD directly confirms
+        status: 'PENDING',
+        deliveryNotes: deliveryNotes || null,
         items: {
           create: orderItems
         }
@@ -180,6 +244,12 @@ export const checkout = async (userId: string, body: any) => {
 
     return newOrder;
   });
+
+  // Store completed order ID under idempotency key for 24 hours
+  if (redisKey) {
+    await redis.set(redisKey, order.id, "EX", 86400);
+  }
+
   // Dispatch order confirmation email asynchronously
   prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
     .then(user => {
@@ -221,7 +291,7 @@ export const getMyOrders = async (userId: string) => {
   });
 };
 
-export const getOrderById = async (userId: string, orderId: string) => {
+export const getOrderById = async (userId: string, orderId: string, roleName?: string) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -242,11 +312,19 @@ export const getOrderById = async (userId: string, orderId: string) => {
           }
         }
       },
-      shippingAddress: true
+      shippingAddress: true,
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phoneNumber: true,
+        }
+      }
     }
   });
 
-  if (!order || order.userId !== userId) {
+  if (!order || (roleName !== "ADMIN" && order.userId !== userId)) {
     throw new AppError("Order not found", 404, "NOT_FOUND");
   }
 
@@ -337,6 +415,7 @@ export const addAddress = async (userId: string, body: any) => {
       phone: body.phone,
       street: body.street,
       city: body.city,
+      district: body.district || null,
       state: body.state,
       zipCode: body.zipCode,
       isDefault: body.isDefault || count === 0

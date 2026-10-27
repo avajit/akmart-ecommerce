@@ -35,14 +35,16 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* --- MIDDLE SECTION: QUICK LINKS --- */}
           <div>
             <p className='text-xs font-bold tracking-widest text-white uppercase mb-4'>Marketplace</p>
             <ul className='flex flex-col gap-2.5 text-xs sm:text-sm'>
               <li><Link to='/' className='hover:text-orange-400 transition-colors'>Home</Link></li>
               <li><Link to='/collection' className='hover:text-orange-400 transition-colors'>All Collections</Link></li>
               <li><Link to='/about' className='hover:text-orange-400 transition-colors'>About AkMart</Link></li>
+              <li><Link to='/shipping' className='hover:text-orange-400 transition-colors'>Shipping & Delivery</Link></li>
               <li><Link to='/refund' className='hover:text-orange-400 transition-colors'>7-Day Returns Policy</Link></li>
+              <li><Link to='/privacy' className='hover:text-orange-400 transition-colors'>Privacy Policy</Link></li>
+              <li><Link to='/terms' className='hover:text-orange-400 transition-colors'>Terms of Service</Link></li>
               <li><Link to='/contact' className='hover:text-orange-400 transition-colors'>Contact Support</Link></li>
               <li><Link to='/orders' className='hover:text-orange-400 transition-colors'>Order Tracking</Link></li>
               <li><Link to='/seller/onboarding' className='hover:text-orange-400 transition-colors text-orange-400 font-semibold'>Sell on AkMart</Link></li>
@@ -59,7 +61,7 @@ const Footer = () => {
               </li>
               <li className='flex items-center gap-2'>
                 <FiPhone className="text-orange-400 shrink-0" />
-                <span className="font-mono">+977 1-4567890 / 9801234567</span>
+                <span className="font-mono">+977-9801234567 (WhatsApp / Support)</span>
               </li>
               <li className='flex items-center gap-2'>
                 <FiMail className="text-orange-400 shrink-0" />

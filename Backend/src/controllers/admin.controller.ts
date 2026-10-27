@@ -2,6 +2,7 @@ import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import * as adminService from "../services/admin.service";
 import { z } from "zod";
+import { updateOrderStatusSchema, toOrderResponseDTO } from "../dtos/order.dto";
 
 // helper to safely read query params
 const q = (val: unknown): string | undefined => (typeof val === "string" ? val : undefined);
@@ -169,5 +170,49 @@ export const deactivateBrand = async (req: AuthenticatedRequest, res: Response, 
   try {
     await adminService.deactivateBrand(p(req.params.id));
     res.json({ success: true, message: "Brand deactivated" });
+  } catch (err) { next(err); }
+};
+
+// ── Order Management ──────────────────────────────────────────
+
+export const getAllOrders = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const page = qi(req.query.page, 1);
+    const limit = qi(req.query.limit, 20);
+    const status = q(req.query.status);
+    const search = q(req.query.search);
+
+    const result = await adminService.getAllOrders(page, limit, status, search);
+    res.json({
+      success: true,
+      message: "Orders retrieved successfully",
+      data: {
+        ...result,
+        orders: result.orders.map(toOrderResponseDTO),
+      },
+    });
+  } catch (err) { next(err); }
+};
+
+export const getAdminOrderById = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const order = await adminService.getAdminOrderById(p(req.params.id));
+    res.json({
+      success: true,
+      message: "Order details retrieved successfully",
+      data: toOrderResponseDTO(order),
+    });
+  } catch (err) { next(err); }
+};
+
+export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { status } = updateOrderStatusSchema.parse(req.body);
+    const order = await adminService.updateAdminOrderStatus(p(req.params.id), status);
+    res.json({
+      success: true,
+      message: `Order status updated to ${status} successfully`,
+      data: toOrderResponseDTO(order),
+    });
   } catch (err) { next(err); }
 };

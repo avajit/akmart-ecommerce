@@ -26,11 +26,17 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CALLBACK_URL: z.string().url().optional(),
 
+  EMAIL_PROVIDER: z.enum(['smtp', 'resend', 'brevo']).default('smtp'),
+  RESEND_API_KEY: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().default('smtp.ethereal.email'),
   SMTP_PORT: z.string().transform(Number).default(587 as never),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('"AKMart" <noreply@akmart.com>'),
+
+  SENTRY_DSN: z.string().optional(),
+  ENABLE_SENTRY: z.preprocess((val) => val === 'true' || val === true || val === '1', z.boolean()).default(false),
 
   FRONTEND_WEB_URL: z.string().url().default('http://localhost:5173'),
   FRONTEND_MOBILE_URL: z.string().default('com.akmart.app'),

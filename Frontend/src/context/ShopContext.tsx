@@ -91,7 +91,7 @@ interface ShopContextType {
 }
 
 export const ShopContext = createContext<ShopContextType>({
-  currency: "NPR ",
+  currency: "Rs. ",
   delivery_fee: 100,
   freeShippingThreshold: 2500,
   navigate: () => {},
@@ -165,7 +165,7 @@ const saveGuestCartItems = (items: any[]) => {
 };
 
 export const ShopContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const currency = "NPR ";
+  const currency = "Rs. ";
   const FREE_SHIPPING_THRESHOLD = 2500;
   const navigate = useNavigate();
   const queryClient = useQueryClient();

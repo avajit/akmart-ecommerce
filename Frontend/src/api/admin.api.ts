@@ -27,3 +27,12 @@ export const deleteCategoryAttribute = (id: string, attrId: string) => api.delet
 export const createBrand = (data: any) => api.post("/admin/brands", data).then((res: any) => res.data);
 export const updateBrand = (id: string, data: any) => api.patch(`/admin/brands/${id}`, data).then((res: any) => res.data);
 export const deactivateBrand = (id: string) => api.delete(`/admin/brands/${id}`).then((res: any) => res.data);
+
+// Orders
+export const getAdminOrders = (params?: { page?: number; limit?: number; status?: string; search?: string }) =>
+  api.get("/admin/orders", { params }).then((res: any) => res.data);
+export const getAdminOrderById = (id: string) =>
+  api.get(`/admin/orders/${id}`).then((res: any) => res.data);
+export const updateAdminOrderStatus = (id: string, status: string) =>
+  api.patch(`/admin/orders/${id}/status`, { status }).then((res: any) => res.data);
+

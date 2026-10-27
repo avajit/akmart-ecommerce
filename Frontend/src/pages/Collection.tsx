@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const PRICE_BRACKETS = [
   { label: 'All Prices', min: '', max: '' },
@@ -34,6 +35,8 @@ export default function Collection() {
 
   // Read URL Params as Single Source of Truth
   const urlCategory = searchParams.get('category') || '';
+  const categoryTitle = urlCategory ? `${urlCategory.charAt(0).toUpperCase() + urlCategory.slice(1)} Collection` : 'All Collections';
+  useDocumentTitle(categoryTitle);
   const urlBrand = searchParams.get('brand') || '';
   const urlSearch = searchParams.get('search') || '';
   const urlSort = searchParams.get('sort') || 'newest';

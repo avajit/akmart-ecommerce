@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductBySlug, addToCart, getProductReviews, submitReview } from '../api/consumer.api';
 import { ShopContext } from '../context/ShopContext';
 import { useAuthStore } from '../store/authStore';
+import { formatImageUrl } from '../utils/imageUrl';
 import { toast } from 'react-toastify';
 import { 
   FiShoppingBag, 
@@ -26,6 +27,7 @@ import {
   FiChevronRight
 } from 'react-icons/fi';
 import { ImageUploader } from '../components/common/ImageUploader';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function Product() {
   const { slug } = useParams();
@@ -48,6 +50,8 @@ export default function Product() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+
+  useDocumentTitle(product?.name ? `${product.name} | Buy Online` : 'Product Details');
 
   // Verified Customer Reviews via TanStack React Query
   const { data: reviewsResponse, isLoading: reviewsLoading } = useQuery({
@@ -248,10 +252,10 @@ export default function Product() {
   // Compute all available images for this product or current variant
   const productImages = useMemo(() => {
     const variantImgs = (currentVariant?.images || []).filter((img: any) => img?.url);
-    if (variantImgs.length > 0) return variantImgs;
+    if (variantImgs.length > 0) return variantImgs.map((img: any) => ({ ...img, url: formatImageUrl(img.url) }));
     const prodImgs = (product?.images || []).filter((img: any) => img?.url);
-    if (prodImgs.length > 0) return prodImgs;
-    if (product?.primaryImage) return [{ id: 'primary', url: product.primaryImage, isPrimary: true }];
+    if (prodImgs.length > 0) return prodImgs.map((img: any) => ({ ...img, url: formatImageUrl(img.url) }));
+    if (product?.primaryImage) return [{ id: 'primary', url: formatImageUrl(product.primaryImage), isPrimary: true }];
     return [];
   }, [currentVariant?.images, product?.images, product?.primaryImage]);
 
@@ -260,7 +264,8 @@ export default function Product() {
     setActiveImageIndex(0);
   }, [selectedVariantId]);
 
-  const activeImageUrl = productImages[activeImageIndex]?.url || currentVariant?.images?.[0]?.url || product?.primaryImage;
+  const rawActive = productImages[activeImageIndex]?.url || currentVariant?.images?.[0]?.url || product?.primaryImage;
+  const activeImageUrl = formatImageUrl(rawActive);
 
   const handleAddToCart = async (listingId?: string) => {
     if (isMerchantOrAdmin) {
@@ -386,6 +391,7 @@ export default function Product() {
               <img 
                 src={activeImageUrl} 
                 alt={product.name} 
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-center transition-all duration-300" 
               />
             ) : (
@@ -456,6 +462,7 @@ export default function Product() {
                     <img
                       src={img.url}
                       alt={img.altText || `${product.name} photo ${idx + 1}`}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover object-center"
                     />
                   </button>

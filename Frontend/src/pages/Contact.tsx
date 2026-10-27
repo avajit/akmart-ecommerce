@@ -2,19 +2,29 @@ import React, { useState } from 'react';
 import Title from '../components/Title';
 import { FiMapPin, FiPhone, FiMail, FiClock, FiSend, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import api from '../api/client';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [isSent, setIsSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
       return toast.error('Please complete all required fields.');
     }
-    toast.success('Your message was sent to AkMart Customer Support! We will reply within 4 hours.');
-    setIsSent(true);
-    setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    setIsSubmitting(true);
+    try {
+      await api.post('/contact', formData);
+      toast.success('Your message was sent to AkMart Customer Support! We will reply within 4 hours.');
+      setIsSent(true);
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -46,8 +56,8 @@ export default function Contact() {
             </div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">Direct Hotline</h3>
             <p className="text-xs text-gray-300 font-mono mt-2">
-              +977 1-4567890<br />
-              +977 9801234567 (Toll-Free WhatsApp)
+              +977 1-5970000 (Helpline)<br />
+              +977-9801234567 (WhatsApp / Viber Support)
             </p>
           </div>
 
@@ -164,9 +174,10 @@ export default function Contact() {
 
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 py-3.5 rounded-xl transition shadow-lg shadow-orange-500/20 text-xs uppercase tracking-wider active:scale-[0.99]"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-8 py-3.5 rounded-xl transition shadow-lg shadow-orange-500/20 text-xs uppercase tracking-wider active:scale-[0.99]"
               >
-                <FiSend /> Send Message
+                <FiSend /> {isSubmitting ? 'Sending...' : 'Send Message'}
               </button>
             </form>
           </div>

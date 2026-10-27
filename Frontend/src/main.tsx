@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.jsx' // App.jsx will be converted to App.tsx later
+import { initFrontendSentry } from './lib/sentry'
+
+initFrontendSentry();
 
 // Create a client
 const queryClient = new QueryClient({

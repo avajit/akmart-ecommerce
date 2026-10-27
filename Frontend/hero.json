@@ -3,37 +3,37 @@
     {
       "type": "male",
       "title": "Premium Men's Collection",
-      "desc": "Luxury, comfort & style crafted for modern men.",
-      "image": "https://images.unsplash.com/photo-1527010154944-f2241763d806?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8bWVucyUyMGZhc2hpb258ZW58MHx8MHx8fDA%3D",
-      "link": "/products/male"
+      "desc": "Luxury, comfort & style crafted for modern men in Nepal.",
+      "image": "https://images.unsplash.com/photo-1527010154944-f2241763d806?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0",
+      "link": "/collection?category=men"
     },
     {
       "type": "female",
       "title": "Elegant Women's Collection",
-      "desc": "Fashion that defines your personality.",
-      "image": "https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d29tZW4lMjBmYXNoaW9ufGVufDB8fDB8fHww",
-      "link": "/products/female"
+      "desc": "Modern fashion, traditional kurtis & luxury wear defining your grace.",
+      "image": "https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0",
+      "link": "/collection?category=women"
     },
     {
       "type": "boy",
-      "title": "Trendy Boys Collection",
-      "desc": "Smart, stylish and comfortable outfits for boys.",
-      "image": "https://images.unsplash.com/photo-1648111145286-72ce9241b308?q=80&w=1587&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "link": "/products/boy"
+      "title": "Trendy Boys Outfits",
+      "desc": "Smart, durable, and comfortable clothing for boys across Nepal.",
+      "image": "https://images.unsplash.com/photo-1648111145286-72ce9241b308?q=80&w=1587&auto=format&fit=crop&ixlib=rb-4.1.0",
+      "link": "/collection?category=kids"
     },
     {
       "type": "girl",
-      "title": "Pretty Girls Collection",
-      "desc": "Colorful and stylish designs for girls.",
-      "image": "https://images.unsplash.com/photo-1642802767180-57f55e4f7e10?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Z2lybCUyMGZhc2hpb258ZW58MHx8MHx8fDA%3D",
-      "link": "/products/girl"
+      "title": "Vibrant Girls Fashion",
+      "desc": "Colorful, playful, and stylish designs crafted for girls.",
+      "image": "https://images.unsplash.com/photo-1642802767180-57f55e4f7e10?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0",
+      "link": "/collection?category=kids"
     },
     {
       "type": "child",
-      "title": "Kids Wear Collection",
-      "desc": "Soft, safe and comfy clothing for children.",
-      "image": "https://plus.unsplash.com/premium_photo-1723874486879-4059a9aefa3d?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y2hpbGQlMjBmYXNoaW9ufGVufDB8fDB8fHww",
-      "link": "/products/kids"
+      "title": "Kids & Baby Essentials",
+      "desc": "Ultra-soft, pure organic cotton wear and accessories for children.",
+      "image": "https://plus.unsplash.com/premium_photo-1723874486879-4059a9aefa3d?w=1600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0",
+      "link": "/collection?category=kids"
     }
   ]
 }

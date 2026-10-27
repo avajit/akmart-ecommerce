@@ -74,8 +74,37 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
+function rewriteLocalhostImageUrls(data: any): any {
+  if (!data) return data;
+  if (typeof data === 'string') {
+    if (data.includes('localhost:5000/api/v1/files/') || data.includes('127.0.0.1:5000/api/v1/files/') || data.includes('localhost:5000/api/files/')) {
+      const origin = API_URL.replace(/(?:\/api)?(?:\/v1)?\/?$/, '');
+      if (origin && !origin.includes('localhost')) {
+        return data.replace(/^http:\/\/(?:localhost|127\.0\.0\.1):5000/, origin);
+      }
+    }
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map(rewriteLocalhostImageUrls);
+  }
+  if (typeof data === 'object') {
+    const res: any = {};
+    for (const key of Object.keys(data)) {
+      res[key] = rewriteLocalhostImageUrls(data[key]);
+    }
+    return res;
+  }
+  return data;
+}
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) {
+      response.data = rewriteLocalhostImageUrls(response.data);
+    }
+    return response;
+  },
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
 

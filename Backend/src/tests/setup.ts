@@ -38,7 +38,11 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // Clean dynamic tables before every test
+  // Clean dynamic tables before every test in referential order
+  await prismaTest.orderItem.deleteMany();
+  await prismaTest.order.deleteMany();
+  await prismaTest.address.deleteMany();
+  await prismaTest.contactMessage.deleteMany();
   await prismaTest.reviewImage.deleteMany();
   await prismaTest.review.deleteMany();
   await prismaTest.cartItem.deleteMany();

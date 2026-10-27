@@ -5,6 +5,33 @@ import { env } from '../config/env';
 
 export class EmailService {
   private static getTransporter() {
+    // 1. Resend Provider Configuration
+    if (env.EMAIL_PROVIDER === 'resend' || env.RESEND_API_KEY) {
+      return nodemailer.createTransport({
+        host: 'smtp.resend.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: 'resend',
+          pass: env.RESEND_API_KEY || env.SMTP_PASS,
+        },
+      });
+    }
+
+    // 2. Brevo (Sendinblue) Provider Configuration
+    if (env.EMAIL_PROVIDER === 'brevo' || env.BREVO_API_KEY) {
+      return nodemailer.createTransport({
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: env.SMTP_USER || 'apikeys',
+          pass: env.BREVO_API_KEY || env.SMTP_PASS,
+        },
+      });
+    }
+
+    // 3. Standard Custom SMTP Provider
     return nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,

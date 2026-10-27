@@ -204,8 +204,9 @@ export const streamFile = async (req: Request, res: Response, next: NextFunction
     }
 
     if (!rawKey || typeof rawKey !== 'string') {
-      // Fallback extraction from req.path
-      const match = req.path.match(/(?:\/api)?(?:\/v1)?\/(?:files|uploads)\/(.+)/);
+      // Robust fallback extraction from originalUrl / path
+      const urlToMatch = req.originalUrl || req.url || req.path || '';
+      const match = urlToMatch.match(/(?:\/api)?(?:\/v1)?\/(?:files|uploads(?:\/files)?)\/(.+?)(?:\?.*)?$/);
       if (match) {
         rawKey = match[1];
       }
@@ -215,8 +216,8 @@ export const streamFile = async (req: Request, res: Response, next: NextFunction
       throw new StorageNotFoundError('Empty storage key');
     }
 
-    // Normalize: strip leading slashes and decode URI components if encoded
-    const cleanKey = decodeURIComponent(String(rawKey)).replace(/^\/+/, '');
+    // Normalize: strip leading slashes, decode URI components, and strip any query parameters
+    const cleanKey = decodeURIComponent(String(rawKey).split('?')[0]).replace(/^\/+/, '');
     validateStorageKey(cleanKey);
 
     const { stream, contentType, contentLength, etag, lastModified } = await streamObject(cleanKey);

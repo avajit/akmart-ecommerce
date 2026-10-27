@@ -334,12 +334,261 @@ export const deactivateBrand = async (id: string) => {
 // ── Dashboard Stats ───────────────────────────────────────────
 
 export const getDashboardStats = async () => {
-  const [pendingProducts, pendingSellers, totalProducts, totalSellers, totalUsers] = await Promise.all([
+  const [pendingProducts, pendingSellers, totalProducts, totalSellers, totalUsers, totalOrders, pendingOrders, revenueAgg] = await Promise.all([
     prisma.product.count({ where: { status: "PENDING_REVIEW", deletedAt: null } }),
     prisma.sellerProfile.count({ where: { verificationStatus: "PENDING" } }),
     prisma.product.count({ where: { deletedAt: null } }),
     prisma.sellerProfile.count(),
     prisma.user.count({ where: { deletedAt: null } }),
+    prisma.order.count(),
+    prisma.order.count({ where: { status: "PENDING" } }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { status: { not: "CANCELLED" } },
+    }),
   ]);
-  return { pendingProducts, pendingSellers, totalProducts, totalSellers, totalUsers };
+  return { 
+    pendingProducts, 
+    pendingSellers, 
+    totalProducts, 
+    totalSellers, 
+    totalUsers,
+    totalOrders,
+    pendingOrders,
+    totalRevenue: Number(revenueAgg._sum.totalAmount || 0),
+  };
+};
+
+// ── Admin Order Management ────────────────────────────────────
+
+export const getAllOrders = async (
+  page = 1,
+  limit = 20,
+  status?: string,
+  search?: string
+) => {
+  const skip = (page - 1) * limit;
+  const where: any = {};
+
+  if (status && status !== "ALL") {
+    where.status = status;
+  }
+
+  if (search && search.trim()) {
+    const q = search.trim();
+    where.OR = [
+      { id: { contains: q, mode: "insensitive" } },
+      { user: { fullName: { contains: q, mode: "insensitive" } } },
+      { user: { email: { contains: q, mode: "insensitive" } } },
+      { user: { phoneNumber: { contains: q, mode: "insensitive" } } },
+      { shippingAddress: { phone: { contains: q, mode: "insensitive" } } },
+      { shippingAddress: { fullName: { contains: q, mode: "insensitive" } } },
+      { shippingAddress: { city: { contains: q, mode: "insensitive" } } },
+    ];
+  }
+
+  const [orders, total, pendingCount, confirmedCount, shippedCount, deliveredCount, cancelledCount, revenueAgg] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: {
+        user: { select: { id: true, fullName: true, email: true, phoneNumber: true } },
+        shippingAddress: true,
+        items: {
+          include: {
+            sellerListing: {
+              include: {
+                variant: {
+                  include: {
+                    product: { select: { id: true, name: true, slug: true } },
+                    images: { take: 1 },
+                  },
+                },
+                sellerProfile: { select: { shopName: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.order.count({ where }),
+    prisma.order.count({ where: { status: "PENDING" } }),
+    prisma.order.count({ where: { status: "CONFIRMED" } }),
+    prisma.order.count({ where: { status: "SHIPPED" } }),
+    prisma.order.count({ where: { status: "DELIVERED" } }),
+    prisma.order.count({ where: { status: "CANCELLED" } }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { status: { not: "CANCELLED" } },
+    }),
+  ]);
+
+  return {
+    orders,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    metrics: {
+      totalOrders: pendingCount + confirmedCount + shippedCount + deliveredCount + cancelledCount,
+      pending: pendingCount,
+      confirmed: confirmedCount,
+      shipped: shippedCount,
+      delivered: deliveredCount,
+      cancelled: cancelledCount,
+      totalRevenue: Number(revenueAgg._sum.totalAmount || 0),
+    },
+  };
+};
+
+export const getAdminOrderById = async (orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      user: { select: { id: true, fullName: true, email: true, phoneNumber: true } },
+      shippingAddress: true,
+      coupon: { select: { code: true, discountType: true, discountValue: true } },
+      items: {
+        include: {
+          sellerListing: {
+            include: {
+              variant: {
+                include: {
+                  product: { select: { id: true, name: true, slug: true } },
+                  images: { take: 1 },
+                },
+              },
+              sellerProfile: { select: { id: true, shopName: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
+  }
+
+  return order;
+};
+
+export const updateAdminOrderStatus = async (orderId: string, newStatus: any) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
+  }
+
+  const oldStatus = order.status;
+  if (oldStatus === newStatus) {
+    return order;
+  }
+
+  // Strict Forward-Only Order State Machine Validation
+  const VALID_ORDER_TRANSITIONS: Record<string, string[]> = {
+    PENDING: ["CONFIRMED", "CANCELLED"],
+    CONFIRMED: ["SHIPPED", "CANCELLED"],
+    SHIPPED: ["DELIVERED"],
+    DELIVERED: [], // Terminal state: Cannot transition backwards or forwards
+    CANCELLED: [], // Terminal state: Cannot reactivate a cancelled order
+  };
+
+  const allowedNext = VALID_ORDER_TRANSITIONS[oldStatus] || [];
+  if (!allowedNext.includes(newStatus)) {
+    throw new AppError(
+      `Invalid order status transition from ${oldStatus} to ${newStatus}. Permitted transitions from ${oldStatus} are: [${allowedNext.join(", ") || "None (Terminal State)"}].`,
+      400,
+      "INVALID_STATE_TRANSITION"
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Stock restoration if moving to CANCELLED
+    if (newStatus === "CANCELLED" && oldStatus !== "CANCELLED") {
+      for (const item of order.items) {
+        if (item.status !== "CANCELLED") {
+          await tx.sellerListing.update({
+            where: { id: item.sellerListingId },
+            data: { stock: { increment: item.quantity } },
+          });
+
+          await tx.orderItem.update({
+            where: { id: item.id },
+            data: { status: "CANCELLED" },
+          });
+        }
+      }
+    } 
+    // 2. Stock deduction if reviving a CANCELLED order
+    else if (oldStatus === "CANCELLED" && newStatus !== "CANCELLED") {
+      for (const item of order.items) {
+        const listing = await tx.sellerListing.findUnique({
+          where: { id: item.sellerListingId },
+        });
+
+        if (!listing || listing.stock < item.quantity) {
+          throw new AppError(
+            `Cannot reactivate order: Insufficient stock for listing ${item.sellerListingId}`,
+            400,
+            "INSUFFICIENT_STOCK"
+          );
+        }
+
+        await tx.sellerListing.update({
+          where: { id: item.sellerListingId },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        await tx.orderItem.update({
+          where: { id: item.id },
+          data: { status: newStatus === "SHIPPED" ? "SHIPPED" : newStatus === "DELIVERED" ? "DELIVERED" : "PROCESSING" },
+        });
+      }
+    } 
+    // 3. Regular status progress (CONFIRMED -> SHIPPED -> DELIVERED)
+    else {
+      const fulfillmentStatusMap: Record<string, any> = {
+        CONFIRMED: "PROCESSING",
+        SHIPPED: "SHIPPED",
+        DELIVERED: "DELIVERED",
+      };
+
+      if (fulfillmentStatusMap[newStatus]) {
+        await tx.orderItem.updateMany({
+          where: { orderId, status: { not: "CANCELLED" } },
+          data: { status: fulfillmentStatusMap[newStatus] },
+        });
+      }
+    }
+
+    return tx.order.update({
+      where: { id: orderId },
+      data: { status: newStatus },
+      include: {
+        user: { select: { id: true, fullName: true, email: true, phoneNumber: true } },
+        shippingAddress: true,
+        items: {
+          include: {
+            sellerListing: {
+              include: {
+                variant: {
+                  include: {
+                    product: { select: { id: true, name: true, slug: true } },
+                    images: { take: 1 },
+                  },
+                },
+                sellerProfile: { select: { shopName: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+  });
 };

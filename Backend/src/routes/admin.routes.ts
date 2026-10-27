@@ -43,4 +43,9 @@ router.post("/brands", validateRequest(createBrandSchema), adminController.creat
 router.patch("/brands/:id", validateRequest(updateBrandSchema), adminController.updateBrand);
 router.delete("/brands/:id", adminController.deactivateBrand);
 
+// ── Order Management ───────────────────────────────────────────
+router.get("/orders", adminController.getAllOrders);
+router.get("/orders/:id", adminController.getAdminOrderById);
+router.patch("/orders/:id/status", adminController.updateOrderStatus);
+
 export default router;

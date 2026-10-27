@@ -258,7 +258,25 @@ export function resolveStorageUrl(keyOrUrl: string | null | undefined): string |
     return null;
   }
 
-  // Already a full external HTTP(S) URL
+  // If URL references the internal file streaming endpoint, re-resolve dynamically to current BACKEND_URL
+  const fileEndpointMatch = keyOrUrl.match(/(?:\/api)?(?:\/v1)?\/files\/(.+)$/);
+  if (fileEndpointMatch && fileEndpointMatch[1]) {
+    try {
+      return getPublicUrl(fileEndpointMatch[1]);
+    } catch {
+      // If validation fails, proceed to fallback
+    }
+  }
+
+  // If stored with localhost:5000 or 127.0.0.1:5000, rewrite to current BACKEND_URL
+  if (keyOrUrl.includes('localhost:5000') || keyOrUrl.includes('127.0.0.1:5000')) {
+    if (env.BACKEND_URL && env.BACKEND_URL.trim() !== '') {
+      const liveBase = env.BACKEND_URL.replace(/\/$/, '');
+      return keyOrUrl.replace(/^http:\/\/(localhost|127\.0\.0\.1):5000/, liveBase);
+    }
+  }
+
+  // External HTTP(S) URL (e.g. Google avatar, external CDN)
   if (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://')) {
     return keyOrUrl;
   }

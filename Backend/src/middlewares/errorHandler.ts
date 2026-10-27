@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { Prisma } from '@prisma/client';
+import { ZodError } from 'zod';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
@@ -21,6 +22,16 @@ export const errorHandler = (
     message = err.message;
     errorCode = err.errorCode;
     errors = err.errors;
+  } 
+  // 1b. Handle Zod validation errors
+  else if (err instanceof ZodError) {
+    statusCode = 400;
+    message = err.issues.map(i => i.message).join('; ');
+    errorCode = 'VALIDATION_ERROR';
+    errors = err.issues.map(i => ({
+      field: i.path.join('.'),
+      message: i.message,
+    }));
   } 
   // 1b. Handle CORS policy rejections cleanly with HTTP 403 Forbidden
   else if (err.message && err.message.includes('CORS policy')) {

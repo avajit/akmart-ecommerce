@@ -481,7 +481,7 @@ export default function Cart() {
                           {/* Price & Price-Change Alerts */}
                           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                             <p className="text-white font-extrabold text-sm sm:text-base">
-                              {currency}{price.toLocaleString()}
+                              {currency}{price.toLocaleString('en-IN')}
                             </p>
 
                             {isPriceChanged && (
@@ -492,9 +492,9 @@ export default function Cart() {
                               }`}>
                                 {priceDrop ? <FiTrendingDown className="w-3.5 h-3.5 shrink-0" /> : <FiAlertTriangle className="w-3 h-3 shrink-0" />}
                                 {priceDrop ? (
-                                  <span>Price dropped to {currency}{livePrice.toLocaleString()}</span>
+                                  <span>Price dropped to {currency}{livePrice.toLocaleString('en-IN')}</span>
                                 ) : (
-                                  <span>Price updated to {currency}{livePrice.toLocaleString()}</span>
+                                  <span>Price updated to {currency}{livePrice.toLocaleString('en-IN')}</span>
                                 )}
                               </span>
                             )}
@@ -562,7 +562,7 @@ export default function Cart() {
                         <div className="text-right min-w-[70px] sm:min-w-[85px]">
                           <p className="text-[10px] text-gray-400 sm:hidden">Total</p>
                           <p className="text-sm sm:text-base font-extrabold text-white">
-                            {currency}{(price * item.quantity).toLocaleString()}
+                            {currency}{(price * item.quantity).toLocaleString('en-IN')}
                           </p>
                         </div>
 
@@ -609,7 +609,7 @@ export default function Cart() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-gray-400">
                 <span>Subtotal ({selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''})</span>
-                <span className="text-white font-medium">{currency}{selectedSubtotal.toLocaleString()}</span>
+                <span className="text-white font-medium">{currency}{selectedSubtotal.toLocaleString('en-IN')}</span>
               </div>
 
               <div className="flex justify-between text-gray-400 items-center">
@@ -622,7 +622,7 @@ export default function Cart() {
                     FREE
                   </span>
                 ) : (
-                  <span className="text-white font-medium">{currency}{selectedShippingFee.toLocaleString()}</span>
+                  <span className="text-white font-medium">{currency}{selectedShippingFee.toLocaleString('en-IN')}</span>
                 )}
               </div>
 
@@ -632,7 +632,7 @@ export default function Cart() {
                     <FiTag size={13} /> Coupon ({appliedCoupon.code})
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold">-{currency}{selectedDiscountAmount.toLocaleString()}</span>
+                    <span className="font-extrabold">-{currency}{selectedDiscountAmount.toLocaleString('en-IN')}</span>
                     <button 
                       type="button"
                       onClick={removeCoupon} 
@@ -652,7 +652,7 @@ export default function Cart() {
                   <span className="text-[10px] text-gray-400">Includes all taxes & delivery fees</span>
                 </div>
                 <span className="text-2xl font-extrabold text-orange-400">
-                  {currency}{selectedFinalPayable.toLocaleString()}
+                  {currency}{selectedFinalPayable.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -742,7 +742,7 @@ export default function Cart() {
             Total ({selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''})
           </span>
           <span className="text-lg font-black text-orange-400">
-            {currency}{selectedFinalPayable.toLocaleString()}
+            {currency}{selectedFinalPayable.toLocaleString('en-IN')}
           </span>
         </div>
         <button

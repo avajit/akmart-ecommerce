@@ -398,6 +398,7 @@ model Address {
   phone     String
   street    String
   city      String
+  district  String?
   state     String
   zipCode   String
   isDefault Boolean  @default(false)
@@ -449,8 +450,9 @@ model Order {
   totalAmount       Decimal     @db.Decimal(10, 2)
   shippingAddressId String
   shippingAddress   Address     @relation(fields: [shippingAddressId], references: [id])
-  status            OrderStatus @default(PENDING) // PENDING means pending confirmation/payment
+  status            OrderStatus @default(PENDING) // PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
   paymentMethod     String      @default("COD")   // "COD", "ESEWA", "KHALTI"
+  deliveryNotes     String?
   items             OrderItem[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
@@ -463,6 +465,8 @@ model Order {
 enum OrderStatus {
   PENDING
   CONFIRMED
+  SHIPPED
+  DELIVERED
   CANCELLED
 }
 
@@ -490,5 +494,20 @@ enum FulfillmentStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
 }
 

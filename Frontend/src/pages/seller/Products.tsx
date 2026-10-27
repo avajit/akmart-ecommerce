@@ -82,7 +82,7 @@ export default function Products() {
             <div key={p.id} className="bg-[#141414] border border-gray-800/80 rounded-2xl p-4 space-y-3 shadow-lg">
               <div className="flex items-start gap-3.5">
                 {p.primaryImage ? (
-                  <img src={p.primaryImage} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-800 shrink-0" />
+                  <img src={p.primaryImage} alt="" referrerPolicy="no-referrer" className="w-16 h-16 rounded-xl object-cover border border-gray-800 shrink-0" />
                 ) : (
                   <div className="w-16 h-16 rounded-xl bg-black border border-gray-800 flex items-center justify-center text-gray-600 text-xs shrink-0">
                     <FiBox className="w-6 h-6 text-gray-600" />
@@ -172,7 +172,7 @@ export default function Products() {
                     <td className="p-4">
                       <div className="flex items-center space-x-3">
                         {p.primaryImage ? (
-                          <img src={p.primaryImage} alt="" className="w-12 h-12 rounded-xl object-cover border border-gray-800" />
+                          <img src={p.primaryImage} alt="" referrerPolicy="no-referrer" className="w-12 h-12 rounded-xl object-cover border border-gray-800" />
                         ) : (
                           <div className="w-12 h-12 rounded-xl bg-black border border-gray-800 flex items-center justify-center text-gray-600 text-xs">Img</div>
                         )}

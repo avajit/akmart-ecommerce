@@ -15,44 +15,52 @@ import {
   FiArrowRight, 
   FiAlertTriangle,
   FiShield,
-  FiCreditCard,
-  FiSmartphone,
   FiDollarSign,
-  FiEdit2,
-  FiBriefcase,
   FiTag,
   FiX,
   FiCheck,
-  FiClock,
-  FiRefreshCw,
-  FiExternalLink
+  FiFileText,
+  FiInfo
 } from 'react-icons/fi';
 
-const NEPAL_PROVINCES = [
-  "Bagmati Province",
-  "Gandaki Province",
-  "Koshi Province",
-  "Lumbini Province",
-  "Madhesh Province",
-  "Karnali Province",
-  "Sudurpashchim Province",
-];
+export const NEPAL_PROVINCES_DISTRICTS: Record<string, string[]> = {
+  "Bagmati Province": [
+    "Kathmandu", "Lalitpur", "Bhaktapur", "Chitwan", "Dhading", "Dolakha", 
+    "Kavrepalanchok", "Makwanpur (Hetauda)", "Nuwakot", "Ramechhap", "Rasuwa", 
+    "Sindhuli", "Sindhupalchok"
+  ],
+  "Gandaki Province": [
+    "Kaski (Pokhara)", "Baglung", "Gorkha", "Lamjung", "Manang", "Mustang", 
+    "Myagdi", "Nawalpur", "Parbat", "Syangja", "Tanahun"
+  ],
+  "Koshi Province": [
+    "Morang (Biratnagar)", "Sunsari (Dharan/Itahari)", "Jhapa (Birtamode)", "Bhojpur", 
+    "Dhankuta", "Ilam", "Khotang", "Okhaldhunga", "Panchthar", "Sankhuwasabha", 
+    "Solukhumbu", "Taplejung", "Terhathum", "Udayapur"
+  ],
+  "Lumbini Province": [
+    "Rupandehi (Butwal/Bhairahawa)", "Banke (Nepalgunj)", "Bardiya", "Dang", 
+    "Arghakhanchi", "Gulmi", "Kapilvastu", "Palpa", "Parasi", "Pyuthan", 
+    "Rolpa", "Rukum East"
+  ],
+  "Madhesh Province": [
+    "Dhanusha (Janakpur)", "Parsa (Birgunj)", "Bara", "Mahottari", "Rautahat", 
+    "Saptari", "Sarlahi", "Siraha"
+  ],
+  "Karnali Province": [
+    "Surkhet", "Dailekh", "Dolpa", "Humla", "Jajarkot", "Jumla", 
+    "Kalikot", "Mugu", "Rukum West", "Salyan"
+  ],
+  "Sudurpashchim Province": [
+    "Kailali (Dhangadhi)", "Kanchanpur (Mahendranagar)", "Achham", "Baitadi", 
+    "Bajhang", "Bajura", "Dadeldhura", "Darchula", "Doti"
+  ],
+};
 
 const POPULAR_NEPAL_CITIES = [
-  "Kathmandu",
-  "Lalitpur",
-  "Bhaktapur",
-  "Pokhara",
-  "Biratnagar",
-  "Bharatpur (Chitwan)",
-  "Butwal",
-  "Dharan",
-  "Nepalgunj",
-  "Dhangadhi",
-  "Hetauda",
-  "Birtamode",
-  "Itahari",
-  "Janakpur",
+  "Kathmandu", "Lalitpur", "Bhaktapur", "Pokhara", "Biratnagar", 
+  "Bharatpur (Chitwan)", "Butwal", "Dharan", "Nepalgunj", "Dhangadhi", 
+  "Hetauda", "Birtamode", "Itahari", "Janakpur", "Birgunj"
 ];
 
 export default function Checkout() {
@@ -61,8 +69,6 @@ export default function Checkout() {
   const selectedItemIds: string[] | undefined = location.state?.selectedItemIds;
   const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuthStore();
-  const role = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
-  const isMerchantOrAdmin = role === 'ADMIN';
 
   const { 
     currency, 
@@ -73,15 +79,26 @@ export default function Checkout() {
     removeCoupon,
     clearCartLocally,
     refreshCart,
-  } = (useContext(ShopContext) as any) || { currency: 'NPR ', freeShippingThreshold: 2500 };
+  } = (useContext(ShopContext) as any) || { currency: 'Rs. ', freeShippingThreshold: 2500 };
 
   const [couponCodeInput, setCouponCodeInput] = useState('');
-  const handleApplyCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!couponCodeInput.trim() || !applyCoupon) return;
-    const ok = await applyCoupon(couponCodeInput);
-    if (ok) setCouponCodeInput('');
-  };
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'ESEWA' | 'KHALTI'>('COD');
+  const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+  const [idempotencyKey] = useState(() => 'akm_ord_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now());
+
+  const [newAddress, setNewAddress] = useState({
+    fullName: user?.fullName || '',
+    phone: (user as any)?.phoneNumber || '',
+    street: '',
+    city: 'Kathmandu',
+    customCity: '',
+    district: 'Kathmandu',
+    state: 'Bagmati Province',
+    zipCode: '44600',
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -89,79 +106,70 @@ export default function Checkout() {
     }
   }, [isAuthenticated, navigate]);
 
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'ESEWA' | 'KHALTI'>('COD');
-  const [showAddAddress, setShowAddAddress] = useState(false);
-  const [phoneError, setPhoneError] = useState('');
+  // Handle province change and auto-update district
+  const handleProvinceChange = (province: string) => {
+    const districts = NEPAL_PROVINCES_DISTRICTS[province] || [];
+    setNewAddress(prev => ({
+      ...prev,
+      state: province,
+      district: districts[0] || '',
+    }));
+  };
 
-  // Online Payment Gateway Simulation State (eSewa & Khalti)
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'DETAILS' | 'PROCESSING' | 'SUCCESS'>('DETAILS');
-  const [onlineTab, setOnlineTab] = useState<'WALLET' | 'QR'>('WALLET');
-  const [walletPhone, setWalletPhone] = useState('');
-  const [walletMpin, setWalletMpin] = useState('');
-  const [qrCountdown, setQrCountdown] = useState(300);
-  const [simulatedTxnId, setSimulatedTxnId] = useState('');
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCodeInput.trim() || !applyCoupon) return;
+    const ok = await applyCoupon(couponCodeInput);
+    if (ok) setCouponCodeInput('');
+  };
 
-  const [newAddress, setNewAddress] = useState({
-    fullName: '',
-    phone: '',
-    street: '',
-    city: 'Kathmandu',
-    customCity: '',
-    state: 'Bagmati Province',
-    zipCode: '44600',
-  });
-
-  const { data: cartRes, isLoading: cartLoading } = useQuery({
+  // 1. Fetch Cart Data
+  const { data: cartData, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: getCart,
-    enabled: isAuthenticated && !isMerchantOrAdmin,
+    enabled: isAuthenticated,
   });
 
-  const { data: addrRes, refetch: refetchAddr } = useQuery({
-    queryKey: ['addresses'],
-    queryFn: getAddresses,
-    enabled: isAuthenticated && !isMerchantOrAdmin,
-  });
+  const cart = cartData?.data || cartData;
 
-  const cart = (cartRes as any)?.data;
-  const addresses = (addrRes as any)?.data || [];
-
-  // Support selective checkout: filter items if specific items were selected from Cart
+  // Filter items for selective checkout
   const checkoutItems = useMemo(() => {
     if (!cart?.items) return [];
-    if (selectedItemIds && Array.isArray(selectedItemIds) && selectedItemIds.length > 0) {
-      return cart.items.filter((it: any) => selectedItemIds.includes(it.id));
-    }
-    return cart.items;
-  }, [cart?.items, selectedItemIds]);
+    if (!selectedItemIds || selectedItemIds.length === 0) return cart.items;
+    return cart.items.filter((item: any) => selectedItemIds.includes(item.id));
+  }, [cart, selectedItemIds]);
 
+  // 2. Fetch User Addresses
+  const { data: addressData, refetch: refetchAddr } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: getAddresses,
+    enabled: isAuthenticated,
+  });
+
+  const addresses = addressData?.data || [];
+
+  // Set default address upon loading
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
-      const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
-      setSelectedAddressId(defaultAddr.id);
+      const def = addresses.find((a: any) => a.isDefault) || addresses[0];
+      setSelectedAddressId(def.id);
     }
   }, [addresses, selectedAddressId]);
 
-  // Dynamic QR Code Countdown Timer
-  useEffect(() => {
-    let timer: any;
-    if (showPaymentModal && onlineTab === 'QR' && qrCountdown > 0 && paymentStep === 'DETAILS') {
-      timer = setInterval(() => {
-        setQrCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [showPaymentModal, onlineTab, qrCountdown, paymentStep]);
+  // Financial Calculations
+  const subtotal = useMemo(() => {
+    if (!checkoutItems) return 0;
+    return checkoutItems.reduce((acc: number, item: any) => {
+      const p = Number(item.priceAtAddTime || item.sellerListing?.price || 0);
+      return acc + p * item.quantity;
+    }, 0);
+  }, [checkoutItems]);
 
-  const formatCountdown = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const deliveryFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 100;
+  const finalDiscount = Math.min(discountAmount, subtotal);
+  const total = Math.max(0, subtotal + deliveryFee - finalDiscount);
 
-  // Check if any item in checkout is out of stock or exceeds stock
+  // Check if any item in checkout is out of stock
   const hasOutOfStockItems = useMemo(() => {
     if (!checkoutItems || checkoutItems.length === 0) return false;
     return checkoutItems.some((item: any) => {
@@ -172,17 +180,19 @@ export default function Checkout() {
     });
   }, [checkoutItems]);
 
+  // Add Address Mutation
   const addAddrMutation = useMutation({
     mutationFn: (data: any) => addAddress(data),
     onSuccess: (res: any) => {
-      toast.success("Delivery address saved!");
+      toast.success("Delivery address saved successfully!");
       setShowAddAddress(false);
       setNewAddress({
-        fullName: '',
+        fullName: user?.fullName || '',
         phone: '',
         street: '',
         city: 'Kathmandu',
         customCity: '',
+        district: 'Kathmandu',
         state: 'Bagmati Province',
         zipCode: '44600',
       });
@@ -190,132 +200,92 @@ export default function Checkout() {
       setSelectedAddressId(res.data?.id);
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to add address");
+      toast.error(err.response?.data?.message || err.message || "Failed to add address");
     }
   });
 
+  // Checkout Mutation
   const checkoutMutation = useMutation({
     mutationFn: (data: any) => checkout(data),
     onSuccess: (res: any) => {
-      toast.success("Order placed successfully!");
+      const createdOrder = res?.data || res;
+      toast.success("Order placed successfully! Thank you for shopping with AKMart.");
       if (removeCoupon) removeCoupon();
       if (clearCartLocally) clearCartLocally(selectedItemIds);
       if (refreshCart) refreshCart();
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
-      const createdOrder = res?.data || res;
-      navigate('/place-order', { state: { order: createdOrder } });
+
+      // Navigate to dedicated, permanent order confirmation route
+      if (createdOrder?.id) {
+        navigate(`/orders/${createdOrder.id}`, { state: { order: createdOrder } });
+      } else {
+        navigate('/orders');
+      }
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.response?.data?.error?.message || err.message || "Failed to place order. Please review your cart.");
+      toast.error(err.response?.data?.message || err.message || "Failed to place order. Please review your cart.");
     }
   });
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Validate Nepali mobile number format (e.g. 98XXXXXXXX or 97XXXXXXXX, 10 digits)
     const cleanedPhone = newAddress.phone.replace(/[\s-]/g, '');
-    const nepaliPhoneRegex = /^(?:\+?977)?(?:98\d{8}|97\d{8}|01\d{7})$/;
+    const nepaliPhoneRegex = /^(?:\+?977)?(?:98\d{8}|97\d{8}|96\d{8})$/;
 
     if (!nepaliPhoneRegex.test(cleanedPhone)) {
-      setPhoneError("Please enter a valid Nepali contact number (e.g. 9801234567)");
+      setPhoneError("Please enter a valid 10-digit Nepal mobile number starting with 96, 97, or 98");
       return;
     }
     setPhoneError('');
 
+    const formattedPhone = cleanedPhone.startsWith('+977')
+      ? cleanedPhone.slice(4)
+      : cleanedPhone.startsWith('977')
+      ? cleanedPhone.slice(3)
+      : cleanedPhone;
+
     const resolvedCity = newAddress.city === 'Other' ? newAddress.customCity : newAddress.city;
+
+    if (!newAddress.fullName.trim() || newAddress.fullName.trim().length < 2) {
+      toast.error("Please enter a valid full name (minimum 2 characters)");
+      return;
+    }
+
+    if (!newAddress.street.trim() || newAddress.street.trim().length < 3) {
+      toast.error("Please enter your street address, tole, or landmark");
+      return;
+    }
 
     addAddrMutation.mutate({
       fullName: newAddress.fullName.trim(),
-      phone: cleanedPhone,
+      phone: formattedPhone,
       street: newAddress.street.trim(),
       city: resolvedCity.trim() || 'Kathmandu',
+      district: newAddress.district,
       state: newAddress.state,
       zipCode: newAddress.zipCode.trim() || '44600',
     });
   };
 
   const handlePlaceOrder = () => {
+    if (checkoutMutation.isPending) return;
+
     if (hasOutOfStockItems) {
-      return toast.error("Some items in your cart are currently out of stock. Please remove them from your cart to proceed.");
+      return toast.error("Some items in your cart are currently out of stock. Please adjust your cart to proceed.");
     }
     if (!selectedAddressId) {
       return toast.error("Please select or add a delivery address first.");
     }
 
-    // Intercept online payment channels to launch authentic Gateway dialog
-    if (paymentMethod === 'ESEWA' || paymentMethod === 'KHALTI') {
-      const selectedAddr = addresses.find((a: any) => a.id === selectedAddressId);
-      setWalletPhone(selectedAddr?.phone || (user as any)?.phone || '9801234567');
-      setWalletMpin('');
-      setQrCountdown(300);
-      setPaymentStep('DETAILS');
-      setShowPaymentModal(true);
-      return;
-    }
-
-    // Cash on Delivery (COD) directly submits order
     checkoutMutation.mutate({
       shippingAddressId: selectedAddressId,
       paymentMethod: 'COD',
       couponCode: appliedCoupon?.code,
       selectedItemIds: selectedItemIds && selectedItemIds.length > 0 ? selectedItemIds : undefined,
+      deliveryNotes: deliveryNotes.trim() || undefined,
+      idempotencyKey,
     });
-  };
-
-  // Authorizes online payment via simulated gateway API
-  const handleConfirmOnlinePayment = () => {
-    if (onlineTab === 'WALLET') {
-      if (!walletPhone.trim()) {
-        return toast.error(`Please enter your ${paymentMethod === 'ESEWA' ? 'eSewa' : 'Khalti'} mobile number or ID.`);
-      }
-      if (walletMpin.length < 4) {
-        return toast.error("Please enter your 4-digit MPIN for security verification.");
-      }
-    }
-
-    setPaymentStep('PROCESSING');
-    const txnPrefix = paymentMethod === 'ESEWA' ? 'TXN-ESEWA' : 'TXN-KHALTI';
-    const generatedTxnId = `${txnPrefix}-${Math.floor(10000000 + Math.random() * 90000000)}`;
-    setSimulatedTxnId(generatedTxnId);
-
-    // Realistic authorization handshake delay
-    setTimeout(() => {
-      checkoutMutation.mutate(
-        {
-          shippingAddressId: selectedAddressId!,
-          paymentMethod,
-          couponCode: appliedCoupon?.code,
-          selectedItemIds: selectedItemIds && selectedItemIds.length > 0 ? selectedItemIds : undefined,
-        },
-        {
-          onSuccess: (res: any) => {
-            setPaymentStep('SUCCESS');
-            toast.success(`${paymentMethod === 'ESEWA' ? 'eSewa' : 'Khalti'} payment authorized!`);
-            if (removeCoupon) removeCoupon();
-            if (clearCartLocally) clearCartLocally(selectedItemIds);
-            if (refreshCart) refreshCart();
-            queryClient.invalidateQueries({ queryKey: ['cart'] });
-            queryClient.invalidateQueries({ queryKey: ['my-orders'] });
-            const createdOrder = res?.data || res;
-            setTimeout(() => {
-              setShowPaymentModal(false);
-              navigate('/place-order', {
-                state: {
-                  order: createdOrder,
-                  transactionId: generatedTxnId,
-                  paymentChannel: paymentMethod,
-                },
-              });
-            }, 900);
-          },
-          onError: (err: any) => {
-            setPaymentStep('DETAILS');
-            toast.error(err.response?.data?.message || "Payment authorization failed. Please try again.");
-          },
-        }
-      );
-    }, 1200);
   };
 
   if (cartLoading) {
@@ -329,304 +299,257 @@ export default function Checkout() {
 
   if (!cart || !checkoutItems || checkoutItems.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto py-24 px-4 text-center font-poppins">
-        <div className="w-16 h-16 bg-[#141414] rounded-2xl border border-gray-800 flex items-center justify-center mx-auto mb-4 text-orange-400">
-          <FiTruck className="w-8 h-8" />
+      <div className="max-w-6xl mx-auto py-20 px-4 text-center font-poppins">
+        <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
+          <FiTruck size={28} />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">No Items Selected for Checkout</h2>
+        <h2 className="text-xl font-bold text-white mb-2">No Items Selected for Checkout</h2>
         <p className="text-gray-400 text-sm max-w-sm mx-auto mb-6">
-          Please select at least one item from your cart to proceed with order placement.
+          Your cart is currently empty or you haven't selected any items to buy.
         </p>
         <button
-          onClick={() => navigate('/cart')}
-          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-7 py-3 rounded-xl transition shadow-lg shadow-orange-500/20 text-xs uppercase tracking-wider"
+          onClick={() => navigate('/collection')}
+          className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition"
         >
-          Return to Cart <FiArrowRight />
+          Explore Catalog
         </button>
       </div>
     );
   }
-
-  if (isMerchantOrAdmin) {
-    return (
-      <div className="max-w-xl mx-auto py-24 px-4 text-center font-poppins">
-        <div className="w-16 h-16 bg-orange-500/10 rounded-2xl border border-orange-500/20 flex items-center justify-center mx-auto mb-5 text-orange-400">
-          <FiBriefcase className="w-8 h-8" />
-        </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Merchant Account Detected</h2>
-        <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
-          You are signed in with a <strong>{role}</strong> account. Ordering and checkout are reserved for consumer accounts.
-        </p>
-        <button
-          onClick={() => navigate(role === 'SELLER' ? '/seller/dashboard' : '/admin/dashboard')}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
-        >
-          Go to {role === 'SELLER' ? 'Seller' : 'Admin'} Dashboard &rarr;
-        </button>
-      </div>
-    );
-  }
-
-  const subtotal = checkoutItems.reduce(
-    (sum: number, item: any) => sum + (Number(item.priceAtAddTime || item.sellerListing?.price || 0) * item.quantity),
-    0
-  );
-  // Free delivery based on dynamic threshold (default NPR 2,500)
-  const deliveryFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 100;
-  const finalDiscount = appliedCoupon ? (discountAmount || appliedCoupon.discountAmount || 0) : 0;
-  const total = Math.max(0, subtotal + deliveryFee - finalDiscount);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-28 md:pb-12 font-poppins text-white min-h-screen">
-      {/* Page Header */}
-      <div className="mb-8 pb-6 border-b border-gray-800 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight uppercase flex items-center gap-3">
-            <span>Checkout</span>
-            <span className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-full font-bold">
-              Nepal Delivery
-            </span>
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1">Review your destination, payment channel, and order items</p>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
-          <FiShield className="text-green-400" />
-          <span>SSL Encrypted Checkout</span>
-        </div>
+    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-poppins">
+      {/* ── Page Header ── */}
+      <div className="mb-8 border-b border-gray-800 pb-5">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
+          <span>Checkout</span>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+            <FiShield /> 256-Bit Encrypted
+          </span>
+        </h1>
+        <p className="text-gray-400 text-xs sm:text-sm mt-1">
+          Review your Nepal delivery address, select Cash on Delivery, and confirm your order.
+        </p>
       </div>
 
-      {/* Out of Stock Alert Banner */}
-      {hasOutOfStockItems && (
-        <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-start gap-3">
-          <FiAlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-400" />
-          <div className="text-xs">
-            <p className="font-bold">Inventory Alert</p>
-            <p className="text-gray-300 mt-0.5">
-              One or more items in your cart have run out of stock or exceed current merchant inventory. Please return to your{' '}
-              <button onClick={() => navigate('/cart')} className="underline text-orange-400 font-bold">Cart</button>{' '}
-              to adjust quantities before confirming order.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column: Delivery Address & Payment Method */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* ── 1. Delivery Address (Nepal Localized) ── */}
-          <section className="bg-[#141414] border border-gray-800/80 rounded-3xl p-6 shadow-xl">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Address, Payment, Delivery Notes */}
+        <div className="lg:col-span-7 space-y-8">
+          
+          {/* ── 1. Delivery Address Section ── */}
+          <section className="bg-[#121212] border border-gray-800/80 rounded-3xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-bold text-white flex items-center gap-3">
                 <span className="w-7 h-7 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs font-bold">
                   1
                 </span>
-                <span>Delivery Address (नेपाल)</span>
+                <span>Delivery Address / डेलिभरी ठेगाना</span>
               </h2>
-              {!showAddAddress && addresses.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAddAddress(true)}
-                  className="text-xs font-bold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition"
-                >
-                  <FiPlus /> Add New Address
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowAddAddress(!showAddAddress)}
+                className="text-xs font-bold text-orange-400 hover:text-orange-300 flex items-center gap-1.5 transition"
+              >
+                {showAddAddress ? <><FiX /> Cancel</> : <><FiPlus /> Add New Address</>}
+              </button>
             </div>
 
-            {/* Existing Address Cards */}
-            {addresses.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                {addresses.map((addr: any) => {
-                  const isSelected = selectedAddressId === addr.id;
-                  return (
+            {/* Address Selection List */}
+            {!showAddAddress && (
+              <div className="space-y-3">
+                {addresses.length === 0 ? (
+                  <div className="p-6 border border-dashed border-gray-800 rounded-2xl text-center space-y-3 bg-black/30">
+                    <FiMapPin className="w-8 h-8 mx-auto text-gray-500" />
+                    <p className="text-xs text-gray-400">You haven't saved any delivery address yet.</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddAddress(true)}
+                      className="px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600 transition"
+                    >
+                      Add Nepal Address
+                    </button>
+                  </div>
+                ) : (
+                  addresses.map((addr: any) => (
                     <div
                       key={addr.id}
                       onClick={() => setSelectedAddressId(addr.id)}
-                      className={`p-4 rounded-2xl border cursor-pointer transition-all relative ${
-                        isSelected
-                          ? 'border-orange-500 bg-orange-500/10 ring-1 ring-orange-500 shadow-md shadow-orange-500/10'
-                          : 'border-gray-800 bg-[#1A1A1A] hover:border-gray-700'
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                        selectedAddressId === addr.id
+                          ? 'border-orange-500 bg-orange-500/10 ring-1 ring-orange-500'
+                          : 'border-gray-800 bg-[#161616] hover:border-gray-700'
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <FiMapPin className={isSelected ? 'text-orange-500' : 'text-gray-400'} size={15} />
-                          <h3 className="font-bold text-white text-sm">{addr.fullName}</h3>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-white">{addr.fullName}</span>
+                            {addr.isDefault && (
+                              <span className="text-[10px] font-semibold bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400">{addr.street}, {addr.city}</p>
+                          <p className="text-xs text-gray-400">
+                            District: <strong className="text-gray-200">{addr.district || 'Nepal'}</strong> | {addr.state} ({addr.zipCode})
+                          </p>
+                          <p className="text-xs text-orange-400/90 font-mono mt-1">Phone: {addr.phone}</p>
                         </div>
-                        {isSelected && <FiCheckCircle className="text-orange-500 w-4 h-4 flex-shrink-0" />}
-                      </div>
-                      <p className="text-xs text-gray-400 font-mono mt-1"><FiSmartphone className="inline text-orange-400 mr-1" /> {addr.phone}</p>
-                      <p className="text-xs text-gray-300 mt-2 leading-relaxed">
-                        {addr.street}, {addr.city}
-                      </p>
-                      <div className="mt-2 pt-2 border-t border-gray-800/80 flex items-center justify-between text-[11px] text-gray-400">
-                        <span className="text-orange-400 font-semibold">{addr.state}</span>
-                        <span>Postal: {addr.zipCode}</span>
+                        {selectedAddressId === addr.id && (
+                          <FiCheckCircle className="text-orange-500 w-5 h-5 shrink-0" />
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  ))
+                )}
               </div>
             )}
 
-            {/* Add Address Form Modal / Inline */}
-            {(addresses.length === 0 || showAddAddress) && (
-              <form onSubmit={handleAddressSubmit} className="space-y-4 border-t border-gray-800 pt-5 mt-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <FiMapPin className="text-orange-500" />
-                    <span>{addresses.length === 0 ? "Add Delivery Destination" : "Add New Nepali Address"}</span>
-                  </h3>
-                  {addresses.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddAddress(false)}
-                      className="text-xs text-gray-400 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
+            {/* Add Address Form with Nepal 77 Districts */}
+            {showAddAddress && (
+              <form onSubmit={handleAddressSubmit} className="p-5 border border-gray-800 rounded-2xl bg-black/40 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-orange-400">
+                  New Delivery Address (Nepal)
+                </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Full Name */}
-                  <div>
-                    <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                      Recipient Full Name *
-                    </label>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-300">Recipient Full Name *</label>
                     <input
+                      type="text"
                       required
-                      placeholder="e.g. Aarav Sharma"
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 transition"
+                      placeholder="e.g. Ramesh Shrestha"
                       value={newAddress.fullName}
                       onChange={(e) => setNewAddress({ ...newAddress, fullName: e.target.value })}
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
                     />
                   </div>
 
                   {/* Phone Number */}
-                  <div>
-                    <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                      Contact Phone (Nepal) *
-                    </label>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-300">Nepal Mobile Number *</label>
                     <input
-                      required
                       type="tel"
-                      placeholder="e.g. 9801234567"
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 font-mono transition"
+                      required
+                      placeholder="98XXXXXXXX / 97XXXXXXXX"
                       value={newAddress.phone}
                       onChange={(e) => {
                         setNewAddress({ ...newAddress, phone: e.target.value });
-                        setPhoneError('');
+                        if (phoneError) setPhoneError('');
                       }}
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 font-mono"
                     />
-                    {phoneError && <p className="text-[10px] text-red-400 mt-1">{phoneError}</p>}
+                    {phoneError && <p className="text-[11px] text-rose-400">{phoneError}</p>}
                   </div>
 
-                  {/* Province Selector (1 to 7) */}
-                  <div>
-                    <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                      Province / प्रदेश *
-                    </label>
+                  {/* Province Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-300">Province *</label>
                     <select
                       value={newAddress.state}
-                      onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 transition cursor-pointer"
+                      onChange={(e) => handleProvinceChange(e.target.value)}
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
                     >
-                      {NEPAL_PROVINCES.map((prov) => (
-                        <option key={prov} value={prov}>
-                          {prov}
-                        </option>
+                      {Object.keys(NEPAL_PROVINCES_DISTRICTS).map((p) => (
+                        <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* City Selector */}
-                  <div>
-                    <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                      City / District *
-                    </label>
+                  {/* Dynamic District Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-300">District (77 Districts) *</label>
+                    <select
+                      value={newAddress.district}
+                      onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                    >
+                      {(NEPAL_PROVINCES_DISTRICTS[newAddress.state] || []).map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* City Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-300">City / Municipality *</label>
                     <select
                       value={newAddress.city}
                       onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 transition cursor-pointer"
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
                     >
-                      {POPULAR_NEPAL_CITIES.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
+                      {POPULAR_NEPAL_CITIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
                       ))}
-                      <option value="Other">Other City / Municipality...</option>
+                      <option value="Other">Other Municipality</option>
                     </select>
                   </div>
 
-                  {/* Custom City Input if Other chosen */}
+                  {/* Custom City if Other */}
                   {newAddress.city === 'Other' && (
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                        Specify Municipality / City Name *
-                      </label>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-gray-300">Specify Municipality *</label>
                       <input
+                        type="text"
                         required
-                        placeholder="e.g. Panauti, Kavre"
-                        className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 transition"
+                        placeholder="Enter your town / municipality"
                         value={newAddress.customCity}
                         onChange={(e) => setNewAddress({ ...newAddress, customCity: e.target.value })}
+                        className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500"
                       />
                     </div>
                   )}
 
-                  {/* Street / Landmark / Ward */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                      Street, Tole, Landmark & Ward No. *
-                    </label>
+                  {/* Postal / Zip Code */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-gray-300">Postal / Zip Code</label>
                     <input
-                      required
-                      placeholder="e.g. Ward 4, Near Bhatbhateni Supermarket, New Baneshwor"
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 transition"
-                      value={newAddress.street}
-                      onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Postal Code */}
-                  <div>
-                    <label className="block text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">
-                      Postal Code (Optional)
-                    </label>
-                    <input
+                      type="text"
                       placeholder="e.g. 44600"
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 font-mono transition"
                       value={newAddress.zipCode}
                       onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value })}
+                      className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500 font-mono"
                     />
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                {/* Street / Landmark Address */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-gray-300">Street, Tole, Landmark & House No *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. New Baneshwor, near Standard Chartered Bank, House #14"
+                    value={newAddress.street}
+                    onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                    className="w-full bg-[#181818] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddAddress(false)}
+                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-semibold transition"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
                     disabled={addAddrMutation.isPending}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-7 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg shadow-orange-500/20 active:scale-[0.99]"
+                    className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition disabled:opacity-50"
                   >
                     {addAddrMutation.isPending ? "Saving..." : "Save Delivery Address"}
                   </button>
-                  {addresses.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddAddress(false)}
-                      className="text-gray-400 hover:text-white px-5 py-3 text-xs font-semibold"
-                    >
-                      Cancel
-                    </button>
-                  )}
                 </div>
               </form>
             )}
           </section>
 
-          {/* ── 2. Payment Method (Branded Nepali Payment Channels) ── */}
-          <section className="bg-[#141414] border border-gray-800/80 rounded-3xl p-6 shadow-xl">
+          {/* ── 2. Payment Channel Section (COD as Primary) ── */}
+          <section className="bg-[#121212] border border-gray-800/80 rounded-3xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-bold text-white flex items-center gap-3">
                 <span className="w-7 h-7 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs font-bold">
@@ -636,19 +559,15 @@ export default function Checkout() {
               </h2>
               <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
                 <FiShield className="text-emerald-400" />
-                <span>Zero Transaction Fees</span>
+                <span>Zero Hidden Fees</span>
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-3.5">
-              {/* Option 1: Cash on Delivery (COD) */}
+            <div className="space-y-3.5">
+              {/* Option 1: Cash on Delivery (COD) - PRIMARY & DEFAULT */}
               <div
                 onClick={() => setPaymentMethod('COD')}
-                className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'COD'
-                    ? 'border-orange-500 bg-orange-500/10 ring-1 ring-orange-500 shadow-md shadow-orange-500/10'
-                    : 'border-gray-800 bg-[#1A1A1A] hover:border-gray-700'
-                }`}
+                className="p-5 rounded-2xl border-2 border-orange-500 bg-orange-500/10 ring-1 ring-orange-500 cursor-pointer transition shadow-md shadow-orange-500/10"
               >
                 <div className="flex items-start gap-3.5">
                   <input
@@ -665,138 +584,74 @@ export default function Checkout() {
                         <FiDollarSign />
                       </div>
                       <p className="font-bold text-white text-sm">Cash on Delivery (COD)</p>
-                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        Recommended
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                      Pay securely in cash or via <strong>Fonepay QR</strong> at your doorstep upon parcel arrival.
-                    </p>
-
-                    {paymentMethod === 'COD' && (
-                      <div className="mt-3 pt-3 border-t border-orange-500/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-300">
-                        <div className="flex items-center gap-1.5 text-gray-300">
-                          <FiCheck className="text-orange-400 shrink-0" />
-                          <span>No advance payment needed</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-gray-300">
-                          <FiCheck className="text-orange-400 shrink-0" />
-                          <span>Inspect parcel before payment</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Option 2: eSewa Mobile Wallet */}
-              <div
-                onClick={() => setPaymentMethod('ESEWA')}
-                className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'ESEWA'
-                    ? 'border-[#60BB46] bg-[#60BB46]/10 ring-1 ring-[#60BB46] shadow-md shadow-[#60BB46]/10'
-                    : 'border-gray-800 bg-[#1A1A1A] hover:border-gray-700'
-                }`}
-              >
-                <div className="flex items-start gap-3.5">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="ESEWA"
-                    checked={paymentMethod === 'ESEWA'}
-                    onChange={() => setPaymentMethod('ESEWA')}
-                    className="mt-1 text-[#60BB46] focus:ring-[#60BB46] bg-black border-gray-700 cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-[#60BB46] text-white flex items-center justify-center font-black text-xs shadow-md shadow-[#60BB46]/30">
-                        e
-                      </span>
-                      <p className="font-bold text-white text-sm">eSewa Mobile Wallet</p>
                       <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        Instant Wallet
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-300 bg-gray-800 px-2 py-0.5 rounded-full">
-                        0% Fee
+                        Default & Recommended
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                      Instant authorization via eSewa account ID or dynamic Scan & Pay QR. 100% automated confirmation.
+                    <p className="text-xs text-gray-300 mt-2 leading-relaxed">
+                      Pay in cash (NPR) upon delivery at your doorstep across Nepal. Please keep exact change ready for the delivery partner.
                     </p>
 
-                    {paymentMethod === 'ESEWA' && (
-                      <div className="mt-3 pt-3 border-t border-[#60BB46]/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-300">
-                        <div className="flex items-center gap-1.5 text-gray-300">
-                          <FiCheck className="text-emerald-400 shrink-0" />
-                          <span>Direct eSewa ID or QR scan</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-gray-300">
-                          <FiCheck className="text-emerald-400 shrink-0" />
-                          <span>Instant automated dispatch</span>
-                        </div>
+                    <div className="mt-3 pt-3 border-t border-orange-500/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-300">
+                      <div className="flex items-center gap-1.5">
+                        <FiCheck className="text-orange-400 shrink-0" />
+                        <span>No advance online payment required</span>
                       </div>
-                    )}
+                      <div className="flex items-center gap-1.5">
+                        <FiCheck className="text-orange-400 shrink-0" />
+                        <span>Inspect parcel upon arrival</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Option 3: Khalti Digital Wallet */}
-              <div
-                onClick={() => setPaymentMethod('KHALTI')}
-                className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all ${
-                  paymentMethod === 'KHALTI'
-                    ? 'border-[#5C2D91] bg-[#5C2D91]/10 ring-1 ring-[#5C2D91] shadow-md shadow-[#5C2D91]/10'
-                    : 'border-gray-800 bg-[#1A1A1A] hover:border-gray-700'
-                }`}
-              >
-                <div className="flex items-start gap-3.5">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="KHALTI"
-                    checked={paymentMethod === 'KHALTI'}
-                    onChange={() => setPaymentMethod('KHALTI')}
-                    className="mt-1 text-[#5C2D91] focus:ring-[#5C2D91] bg-black border-gray-700 cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-[#5C2D91] text-white flex items-center justify-center font-black text-xs shadow-md shadow-[#5C2D91]/30">
-                        K
-                      </span>
-                      <p className="font-bold text-white text-sm">Khalti Digital Wallet / mBanking</p>
-                      <span className="text-[10px] font-bold text-purple-300 bg-purple-500/15 border border-purple-500/25 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        50+ Banks & SCT
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-300 bg-gray-800 px-2 py-0.5 rounded-full">
-                        Instant Clearance
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                      Pay via Khalti balance, ConnectIPS, or 50+ Nepali commercial banks (Nabil, Global IME, NIC Asia, etc.).
-                    </p>
-
-                    {paymentMethod === 'KHALTI' && (
-                      <div className="mt-3 pt-3 border-t border-[#5C2D91]/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-gray-300">
-                        <div className="flex items-center gap-1.5 text-gray-300">
-                          <FiCheck className="text-purple-400 shrink-0" />
-                          <span>50+ Nepali Banks & SCT cards</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-gray-300">
-                          <FiCheck className="text-purple-400 shrink-0" />
-                          <span>Earn Khalti loyalty points</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              {/* Digital Wallets Info Note */}
+              <div className="p-4 rounded-2xl border border-gray-800 bg-[#161616] text-xs space-y-2 text-gray-400">
+                <div className="flex items-center gap-2 text-gray-300 font-semibold">
+                  <FiInfo className="text-orange-400" />
+                  <span>Digital Wallets (eSewa & Khalti)</span>
+                  <span className="text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                    Merchant API Verification in Progress
+                  </span>
                 </div>
+                <p className="text-[11px] leading-relaxed text-gray-400">
+                  Direct online eSewa ePay and Khalti merchant payment gateways are pending merchant KYC approval for public release. Cash on Delivery is 100% active and supported across all 77 districts.
+                </p>
               </div>
+            </div>
+          </section>
+
+          {/* ── 3. Delivery Notes / Instructions ── */}
+          <section className="bg-[#121212] border border-gray-800/80 rounded-3xl p-6 shadow-xl space-y-3">
+            <h2 className="text-base font-bold text-white flex items-center gap-3">
+              <span className="w-7 h-7 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs font-bold">
+                3
+              </span>
+              <span>Delivery Instructions / डेलिभरी निर्देशन (Optional)</span>
+            </h2>
+            <p className="text-xs text-gray-400">
+              Add any specific landmarks, apartment/floor details, or calling instructions for the delivery driver:
+            </p>
+            <div className="relative">
+              <textarea
+                value={deliveryNotes}
+                onChange={(e) => setDeliveryNotes(e.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder="e.g. Near Big Mart / ring bell on 2nd floor / please call before arriving"
+                className="w-full bg-[#161616] border border-gray-800 rounded-2xl p-3.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition resize-none"
+              />
+              <span className="absolute right-3 bottom-3 text-[10px] text-gray-500 font-mono">
+                {deliveryNotes.length}/500
+              </span>
             </div>
           </section>
         </div>
 
-        {/* Right Column: Order Summary & Place Order */}
-        <div className="space-y-6">
-          <section className="bg-[#141414] border border-gray-800/80 rounded-3xl p-6 sticky top-24 shadow-2xl">
+        {/* Right Column: Order Summary & Action */}
+        <div className="lg:col-span-5 space-y-6">
+          <section className="bg-[#121212] border border-gray-800/80 rounded-3xl p-6 sticky top-24 shadow-2xl">
             <h2 className="text-base font-bold text-white mb-5 tracking-tight uppercase flex items-center justify-between">
               <span>Order Summary</span>
               <span className="text-xs text-gray-400 font-normal">{checkoutItems.length} Item(s)</span>
@@ -821,8 +676,8 @@ export default function Checkout() {
                         <span className="text-[10px] text-gray-600 flex items-center justify-center h-full">No Img</span>
                       )}
                       {isOutOfStock && (
-                        <div className="absolute inset-0 bg-red-950/80 flex items-center justify-center">
-                          <span className="text-[9px] text-red-300 font-bold">OOS</span>
+                        <div className="absolute inset-0 bg-rose-950/80 flex items-center justify-center">
+                          <span className="text-[9px] text-rose-300 font-bold">OOS</span>
                         </div>
                       )}
                     </div>
@@ -830,9 +685,11 @@ export default function Checkout() {
                       <h4 className="text-xs font-bold text-white truncate">{productName}</h4>
                       <p className="text-[11px] text-gray-400 truncate">{variantName} &bull; Qty: {item.quantity}</p>
                       <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-xs font-bold text-white">{currency}{(price * item.quantity).toLocaleString()}</span>
+                        <span className="text-xs font-bold text-white font-mono">
+                          Rs. {(price * item.quantity).toLocaleString('en-IN')}
+                        </span>
                         {isOutOfStock && (
-                          <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
                             Out of Stock
                           </span>
                         )}
@@ -847,20 +704,20 @@ export default function Checkout() {
             <div className="space-y-2.5 text-xs mb-5">
               <div className="flex justify-between text-gray-400">
                 <span>Subtotal ({checkoutItems.length} items)</span>
-                <span className="text-white font-medium">{currency}{subtotal.toLocaleString()}</span>
+                <span className="text-white font-mono font-medium">Rs. {subtotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-gray-400">
                 <span className="flex items-center gap-1">
                   <span>Standard Delivery (Nepal)</span>
                   {deliveryFee === 0 && <span className="text-emerald-400 font-bold text-[10px]">(FREE)</span>}
                 </span>
-                <span className="text-white font-medium">
+                <span className="text-white font-mono font-medium">
                   {deliveryFee === 0 ? (
                     <span className="text-emerald-400 font-extrabold uppercase text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                       FREE
                     </span>
                   ) : (
-                    `${currency}${deliveryFee.toLocaleString()}`
+                    `Rs. ${deliveryFee.toLocaleString('en-IN')}`
                   )}
                 </span>
               </div>
@@ -871,7 +728,7 @@ export default function Checkout() {
                     <FiTag size={13} /> Coupon ({appliedCoupon.code})
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold">-{currency}{finalDiscount.toLocaleString()}</span>
+                    <span className="font-extrabold font-mono">-Rs. {finalDiscount.toLocaleString('en-IN')}</span>
                     <button 
                       type="button"
                       onClick={removeCoupon} 
@@ -904,355 +761,50 @@ export default function Checkout() {
 
               {subtotal < freeShippingThreshold && (
                 <p className="text-[10px] text-orange-400/90 bg-orange-500/10 p-2 rounded-lg border border-orange-500/20">
-                  Tip: Add {currency}{(freeShippingThreshold - subtotal).toLocaleString()} more to qualify for <strong>FREE Delivery</strong> across Nepal!
+                  Tip: Add Rs. {(freeShippingThreshold - subtotal).toLocaleString('en-IN')} more to qualify for <strong>FREE Delivery</strong> across Nepal!
                 </p>
               )}
+
               <div className="border-t border-gray-800 pt-3 flex justify-between items-baseline">
                 <span className="text-sm font-bold text-white uppercase tracking-wider">Total Payable</span>
-                <span className="text-2xl font-black text-orange-400">{currency}{total.toLocaleString()}</span>
+                <span className="text-2xl font-black text-orange-400 font-mono">
+                  Rs. {total.toLocaleString('en-IN')}
+                </span>
               </div>
             </div>
 
-            {/* Dynamic Place Order CTA Button */}
+            {/* Place Order CTA Button */}
             <button
               id="checkout-place-order-btn"
               onClick={handlePlaceOrder}
               disabled={checkoutMutation.isPending || !selectedAddressId || hasOutOfStockItems}
-              className={`w-full font-extrabold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 uppercase tracking-wider text-xs active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none ${
-                paymentMethod === 'ESEWA'
-                  ? 'bg-[#60BB46] hover:bg-[#52a43b] text-white shadow-[#60BB46]/25'
-                  : paymentMethod === 'KHALTI'
-                  ? 'bg-[#5C2D91] hover:bg-[#4d257b] text-white shadow-[#5C2D91]/25'
-                  : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20'
-              }`}
+              className="w-full font-extrabold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 uppercase tracking-wider text-xs active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20"
             >
               {checkoutMutation.isPending ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Processing Authorization...</span>
+                  <span>Confirming Order...</span>
                 </div>
               ) : hasOutOfStockItems ? (
                 <span>Resolve Out of Stock Items</span>
               ) : !selectedAddressId ? (
                 <span>Select Delivery Address</span>
-              ) : paymentMethod === 'ESEWA' ? (
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-white text-[#60BB46] flex items-center justify-center font-black text-[11px]">
-                    e
-                  </span>
-                  <span>Pay via eSewa &bull; {currency}{total.toLocaleString()}</span>
-                  <FiArrowRight />
-                </div>
-              ) : paymentMethod === 'KHALTI' ? (
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-white text-[#5C2D91] flex items-center justify-center font-black text-[11px]">
-                    K
-                  </span>
-                  <span>Pay via Khalti &bull; {currency}{total.toLocaleString()}</span>
-                  <FiArrowRight />
-                </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <FiLock />
-                  <span>Place Order (COD) &bull; {currency}{total.toLocaleString()}</span>
+                  <span>Confirm Order (COD) &bull; Rs. {total.toLocaleString('en-IN')}</span>
                 </div>
               )}
             </button>
 
             <div className="flex items-center justify-center gap-4 text-[11px] text-gray-400 mt-4 pt-3 border-t border-gray-800/80">
-              <span className="flex items-center gap-1"><FiTruck className="text-orange-500" /> Nepal Doorstep</span>
+              <span className="flex items-center gap-1"><FiTruck className="text-orange-500" /> Nepal Doorstep Delivery</span>
               <span>&bull;</span>
-              <span className="flex items-center gap-1"><FiShield className="text-green-500" /> Buyer Protection</span>
+              <span className="flex items-center gap-1"><FiShield className="text-emerald-500" /> 7-Day Returns</span>
             </div>
           </section>
         </div>
       </div>
-
-      {/* ── 3. High-Fidelity Online Payment Gateway Modal (eSewa & Khalti) ── */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#141414] border border-gray-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden relative animate-fadeIn">
-            
-            {/* Modal Header */}
-            <div
-              className={`p-5 border-b flex items-center justify-between ${
-                paymentMethod === 'ESEWA'
-                  ? 'bg-gradient-to-r from-[#60BB46]/20 via-[#182914] to-[#141414] border-[#60BB46]/30'
-                  : 'bg-gradient-to-r from-[#5C2D91]/20 via-[#231533] to-[#141414] border-[#5C2D91]/30'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${
-                    paymentMethod === 'ESEWA' ? 'bg-[#60BB46] shadow-[#60BB46]/30' : 'bg-[#5C2D91] shadow-[#5C2D91]/30'
-                  }`}
-                >
-                  {paymentMethod === 'ESEWA' ? 'e' : 'K'}
-                </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-white font-bold text-sm tracking-tight">
-                      {paymentMethod === 'ESEWA' ? 'eSewa ePay Gateway' : 'Khalti Checkout v2.1'}
-                    </h3>
-                    <span
-                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${
-                        paymentMethod === 'ESEWA'
-                          ? 'bg-[#60BB46]/20 text-emerald-400 border-[#60BB46]/30'
-                          : 'bg-[#5C2D91]/20 text-purple-300 border-[#5C2D91]/30'
-                      }`}
-                    >
-                      Sandbox
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-gray-400">
-                    {paymentMethod === 'ESEWA'
-                      ? "Nepal's First Digital Wallet"
-                      : 'Digital Wallet & Instant Banking'}
-                  </p>
-                </div>
-              </div>
-
-              {paymentStep === 'DETAILS' && (
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-gray-400 hover:text-white flex items-center justify-center transition"
-                  title="Close Modal"
-                >
-                  <FiX size={16} />
-                </button>
-              )}
-            </div>
-
-            {/* Merchant Snapshot Strip */}
-            <div className="px-5 py-3 bg-[#181818] border-b border-gray-800/80 flex items-center justify-between text-xs">
-              <div>
-                <span className="text-gray-400 text-[10px] uppercase font-semibold block">Merchant</span>
-                <span className="text-white font-bold">AKMart Nepal Official</span>
-              </div>
-              <div className="text-right">
-                <span className="text-gray-400 text-[10px] uppercase font-semibold block">Amount Due</span>
-                <span
-                  className={`text-base font-black ${
-                    paymentMethod === 'ESEWA' ? 'text-emerald-400' : 'text-purple-400'
-                  }`}
-                >
-                  {currency}{total.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Processing State */}
-            {paymentStep === 'PROCESSING' && (
-              <div className="p-10 text-center space-y-4">
-                <div
-                  className={`w-14 h-14 border-4 rounded-full border-t-transparent animate-spin mx-auto ${
-                    paymentMethod === 'ESEWA' ? 'border-[#60BB46]' : 'border-[#5C2D91]'
-                  }`}
-                />
-                <h4 className="text-white font-bold text-base">Authorizing Payment...</h4>
-                <p className="text-gray-400 text-xs max-w-xs mx-auto leading-relaxed">
-                  Connecting to {paymentMethod === 'ESEWA' ? 'eSewa Secure Switch' : 'Khalti Payment Engine'}. Please do not refresh or navigate away.
-                </p>
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 font-mono">
-                  <FiLock className="text-emerald-400" />
-                  <span>NCHL 256-bit Handshake Verified</span>
-                </div>
-              </div>
-            )}
-
-            {/* Success State */}
-            {paymentStep === 'SUCCESS' && (
-              <div className="p-10 text-center space-y-3">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
-                  <FiCheck className="w-8 h-8" />
-                </div>
-                <h4 className="text-white font-bold text-base">Payment Authorized!</h4>
-                <p className="text-xs text-gray-400">
-                  Transaction reference: <span className="text-emerald-400 font-mono font-bold">{simulatedTxnId}</span>
-                </p>
-                <p className="text-[11px] text-gray-400">Redirecting to order confirmation receipt...</p>
-              </div>
-            )}
-
-            {/* Details State: Tabs & Form */}
-            {paymentStep === 'DETAILS' && (
-              <div className="p-5 space-y-4">
-                {/* Method Tabs: Wallet Login vs Dynamic QR */}
-                <div className="grid grid-cols-2 gap-1 bg-[#1A1A1A] p-1 rounded-xl border border-gray-800 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setOnlineTab('WALLET')}
-                    className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
-                      onlineTab === 'WALLET'
-                        ? 'bg-[#242424] text-white shadow-sm'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    <FiSmartphone size={14} />
-                    <span>Wallet Login</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOnlineTab('QR')}
-                    className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
-                      onlineTab === 'QR'
-                        ? 'bg-[#242424] text-white shadow-sm'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    <FiCreditCard size={14} />
-                    <span>Scan & Pay QR</span>
-                  </button>
-                </div>
-
-                {/* Tab Content: Wallet Login */}
-                {onlineTab === 'WALLET' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-[11px] text-gray-400 uppercase font-semibold mb-1">
-                        {paymentMethod === 'ESEWA' ? 'eSewa ID / Mobile Number' : 'Khalti ID / Mobile Number'}
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-3 text-xs text-gray-400 font-mono">+977</span>
-                        <input
-                          type="tel"
-                          value={walletPhone}
-                          onChange={(e) => setWalletPhone(e.target.value)}
-                          placeholder="98XXXXXXXX"
-                          className="w-full bg-black border border-gray-800 rounded-xl pl-14 pr-3 py-2.5 text-xs text-white font-mono outline-none focus:border-orange-500 transition"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] text-gray-400 uppercase font-semibold mb-1">
-                        4-Digit Security MPIN
-                      </label>
-                      <input
-                        type="password"
-                        maxLength={6}
-                        value={walletMpin}
-                        onChange={(e) => setWalletMpin(e.target.value)}
-                        placeholder="••••"
-                        className="w-full bg-black border border-gray-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono tracking-widest outline-none focus:border-orange-500 transition text-center"
-                      />
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-[11px] text-orange-300">
-                      <strong>Sandbox Demo:</strong> Enter any 4-digit MPIN (e.g. <code>1234</code>) to simulate successful clearance.
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab Content: Scan & Pay QR */}
-                {onlineTab === 'QR' && (
-                  <div className="text-center space-y-3">
-                    <div className="p-4 bg-white rounded-2xl inline-block shadow-md">
-                      {/* SVG Vector QR Code */}
-                      <svg className="w-36 h-36 mx-auto" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="120" height="120" rx="8" fill="white" />
-                        {/* Finder Patterns */}
-                        <rect x="10" y="10" width="30" height="30" rx="4" fill="black" />
-                        <rect x="15" y="15" width="20" height="20" rx="2" fill="white" />
-                        <rect x="19" y="19" width="12" height="12" rx="2" fill="black" />
-
-                        <rect x="80" y="10" width="30" height="30" rx="4" fill="black" />
-                        <rect x="85" y="15" width="20" height="20" rx="2" fill="white" />
-                        <rect x="89" y="19" width="12" height="12" rx="2" fill="black" />
-
-                        <rect x="10" y="80" width="30" height="30" rx="4" fill="black" />
-                        <rect x="15" y="85" width="20" height="20" rx="2" fill="white" />
-                        <rect x="19" y="89" width="12" height="12" rx="2" fill="black" />
-
-                        {/* QR Matrix Details */}
-                        <rect x="46" y="12" width="6" height="6" fill="black" />
-                        <rect x="58" y="12" width="6" height="6" fill="black" />
-                        <rect x="68" y="12" width="6" height="6" fill="black" />
-                        <rect x="46" y="24" width="6" height="6" fill="black" />
-                        <rect x="68" y="24" width="6" height="6" fill="black" />
-                        <rect x="46" y="34" width="6" height="6" fill="black" />
-                        <rect x="58" y="34" width="6" height="6" fill="black" />
-                        <rect x="12" y="46" width="6" height="6" fill="black" />
-                        <rect x="24" y="46" width="6" height="6" fill="black" />
-                        <rect x="34" y="46" width="6" height="6" fill="black" />
-                        <rect x="12" y="68" width="6" height="6" fill="black" />
-                        <rect x="34" y="68" width="6" height="6" fill="black" />
-                        <rect x="80" y="46" width="6" height="6" fill="black" />
-                        <rect x="102" y="46" width="6" height="6" fill="black" />
-                        <rect x="92" y="58" width="6" height="6" fill="black" />
-                        <rect x="80" y="68" width="6" height="6" fill="black" />
-                        <rect x="102" y="68" width="6" height="6" fill="black" />
-                        <rect x="46" y="80" width="6" height="6" fill="black" />
-                        <rect x="68" y="80" width="6" height="6" fill="black" />
-                        <rect x="58" y="92" width="6" height="6" fill="black" />
-                        <rect x="46" y="102" width="6" height="6" fill="black" />
-                        <rect x="68" y="102" width="6" height="6" fill="black" />
-
-                        {/* Center Branded Logo Circle */}
-                        <circle cx="60" cy="60" r="14" fill={paymentMethod === 'ESEWA' ? '#60BB46' : '#5C2D91'} />
-                        <circle cx="60" cy="60" r="12" fill={paymentMethod === 'ESEWA' ? '#60BB46' : '#5C2D91'} stroke="white" strokeWidth="2" />
-                        <text x="60" y="65" textAnchor="middle" fill="white" fontSize="12" fontWeight="900" fontFamily="sans-serif">
-                          {paymentMethod === 'ESEWA' ? 'e' : 'K'}
-                        </text>
-                      </svg>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2 text-xs">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span className="text-gray-300 font-medium">Awaiting QR scan from app</span>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2 text-[11px] text-gray-400">
-                      <FiClock className="text-orange-400" />
-                      <span>Expires in: <strong className="font-mono text-white">{formatCountdown(qrCountdown)}</strong></span>
-                      {qrCountdown === 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setQrCountdown(300)}
-                          className="text-orange-400 hover:underline flex items-center gap-1 font-bold ml-1"
-                        >
-                          <FiRefreshCw size={11} /> Refresh
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Primary Action Button */}
-                <div className="space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleConfirmOnlinePayment}
-                    className={`w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2 ${
-                      paymentMethod === 'ESEWA'
-                        ? 'bg-[#60BB46] hover:bg-[#52a43b] shadow-[#60BB46]/25'
-                        : 'bg-[#5C2D91] hover:bg-[#4d257b] shadow-[#5C2D91]/25'
-                    }`}
-                  >
-                    <span>Simulate Successful Payment (Test Mode)</span>
-                    <FiArrowRight />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPaymentModal(false)}
-                    className="w-full py-2.5 text-xs text-gray-400 hover:text-white transition font-semibold"
-                  >
-                    Cancel & Return to Checkout
-                  </button>
-                </div>
-
-                <div className="pt-2 border-t border-gray-800/80 flex items-center justify-center gap-1.5 text-[10px] text-gray-400">
-                  <FiShield className="text-emerald-400" />
-                  <span>256-bit SSL Encrypted • Nepal Clearing House Limited (NCHL)</span>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }

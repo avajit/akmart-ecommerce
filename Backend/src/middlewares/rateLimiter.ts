@@ -135,3 +135,31 @@ export const uploadLimiter = rateLimit({
     },
   },
 });
+
+// Checkout Rate Limiter: Protects checkout & order placement from rapid replay or spam
+export const checkoutLimiter = rateLimit({
+  store: new RedisStore({
+    // @ts-expect-error — rate-limit-redis sendCommand types don't match ioredis.call signature
+    sendCommand: (...args: string[]) => redisClient.call(...args),
+    prefix: 'rl:checkout:',
+  }),
+  windowMs: 5 * 60 * 1000, // 5 minute window
+  max: env.NODE_ENV === 'development' ? 100 : 15, // Up to 15 checkouts per 5 mins
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: false,
+  keyGenerator: (req) => {
+    return (req as any).user?.userId || req.ip || '127.0.0.1';
+  },
+  skip: () => env.NODE_ENV === 'test',
+  message: {
+    success: false,
+    message: 'Too many checkout attempts in a short period. Please wait a few minutes before trying again.',
+    error: {
+      code: 429,
+      errorCode: 'CHECKOUT_RATE_LIMIT_EXCEEDED',
+      message: 'Too many checkout attempts in a short period. Please wait a few minutes before trying again.',
+    },
+  },
+});
+

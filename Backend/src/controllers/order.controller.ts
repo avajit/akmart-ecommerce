@@ -5,7 +5,8 @@ import { checkoutSchema, addAddressSchema, toOrderResponseDTO, toAddressResponse
 
 export const checkout = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const dto = checkoutSchema.parse(req.body);
+    const idempotencyKey = (req.headers['idempotency-key'] as string) || req.body.idempotencyKey;
+    const dto = checkoutSchema.parse({ ...req.body, ...(idempotencyKey ? { idempotencyKey } : {}) });
     const order = await orderService.checkout(req.user!.userId, dto);
     res.status(201).json({ success: true, message: "Order placed successfully", data: toOrderResponseDTO(order) });
   } catch (err) { next(err); }
@@ -21,7 +22,7 @@ export const getMyOrders = async (req: AuthenticatedRequest, res: Response, next
 export const getOrderById = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const orderId = req.params.id as string;
-    const order = await orderService.getOrderById(req.user!.userId, orderId);
+    const order = await orderService.getOrderById(req.user!.userId, orderId, req.user?.roleName);
     res.json({ success: true, message: "Order retrieved successfully", data: toOrderResponseDTO(order) });
   } catch (err) { next(err); }
 };

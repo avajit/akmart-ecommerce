@@ -1,6 +1,7 @@
 import { AppError } from "../utils/AppError";
 import { CreateSellerProfileDto, UpdateSellerProfileDto, CreateSellerListingDto, UpdateSellerListingDto } from "../dtos/seller.dto";
 import { prisma, redis } from "../app";
+import { resolveStorageUrl } from "../lib/storage";
 
 // ── SellerProfile ─────────────────────────────────────────────
 
@@ -200,7 +201,7 @@ export const updateSellerOrderStatus = async (userId: string, orderItemId: strin
     });
   }
 
-  return prisma.orderItem.update({
+  const updatedItem = await prisma.orderItem.update({
     where: { id: orderItemId },
     data: { status },
     include: {
@@ -218,6 +219,12 @@ export const updateSellerOrderStatus = async (userId: string, orderItemId: strin
       },
     },
   });
+
+  // Roll up item statuses into Order.status
+  const { rollupOrderStatus } = await import("./order.service");
+  await rollupOrderStatus(orderItem.orderId);
+
+  return updatedItem;
 };
 
 // ── Seller Products (strictly products created by this seller) ───
@@ -239,8 +246,22 @@ export const getSellerProducts = async (userId: string) => {
     orderBy: { createdAt: "desc" },
   });
 
-  return products.map((p) => ({
-    ...p,
-    primaryImage: p.images?.[0]?.url || p.variants?.[0]?.images?.[0]?.url || null,
-  }));
+  return products.map((p) => {
+    const rawPrimary = p.images?.[0]?.url || p.variants?.[0]?.images?.[0]?.url || null;
+    return {
+      ...p,
+      primaryImage: resolveStorageUrl(rawPrimary) || rawPrimary,
+      images: (p.images || []).map((img) => ({
+        ...img,
+        url: resolveStorageUrl(img.url) || img.url,
+      })),
+      variants: (p.variants || []).map((v) => ({
+        ...v,
+        images: (v.images || []).map((img) => ({
+          ...img,
+          url: resolveStorageUrl(img.url) || img.url,
+        })),
+      })),
+    };
+  });
 };

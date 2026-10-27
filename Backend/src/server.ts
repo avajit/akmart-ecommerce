@@ -1,5 +1,8 @@
 import { server } from './app';
 import { env } from './config/env';
+import { initBackendSentry } from './lib/sentry';
+
+initBackendSentry();
 
 const PORT = Number(env.PORT) || 5000;
 

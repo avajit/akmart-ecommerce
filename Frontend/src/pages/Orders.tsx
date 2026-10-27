@@ -240,7 +240,7 @@ export default function Orders() {
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Total Amount</p>
                     <p className="text-white font-extrabold mt-0.5">
-                      {currency}{Number(order.totalAmount).toLocaleString()}
+                      {currency}{Number(order.totalAmount).toLocaleString('en-IN')}
                     </p>
                     {order.couponCode && (
                       <span className="text-[10px] text-emerald-400 font-medium block">
@@ -259,7 +259,9 @@ export default function Orders() {
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                   <div className="text-right">
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Reference ID</p>
-                    <p className="text-gray-400 font-mono text-xs mt-0.5">#{order.id.slice(0, 8)}</p>
+                    <Link to={`/orders/${order.id}`} className="text-orange-400 hover:text-orange-300 underline font-mono text-xs mt-0.5 block transition">
+                      #{order.id.slice(0, 8)}
+                    </Link>
                   </div>
 
                   {/* Cancel Button with in-place verification */}
@@ -339,7 +341,7 @@ export default function Orders() {
                             {variantName} &bull; Sold by <span className="text-gray-300 font-medium">{shopName}</span>
                           </p>
                           <p className="text-xs text-white font-semibold mt-1">
-                            Qty: {item.quantity} &times; {currency}{itemPrice.toLocaleString()}
+                            Qty: {item.quantity} &times; {currency}{itemPrice.toLocaleString('en-IN')}
                           </p>
                         </div>
                       </div>

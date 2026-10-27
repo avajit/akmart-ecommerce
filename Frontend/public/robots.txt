@@ -1,0 +1,23 @@
+# Robots.txt for AKMart Nepal
+User-agent: *
+Allow: /
+Allow: /collection
+Allow: /product/
+Allow: /about
+Allow: /contact
+Allow: /shipping
+Allow: /refund
+Allow: /privacy
+Allow: /terms
+
+# Disallow authenticated customer and administration walls from search crawler indexing
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /profile/
+Disallow: /orders/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://akmart-ecommerce.vercel.app/sitemap.xml

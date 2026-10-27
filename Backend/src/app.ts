@@ -63,7 +63,11 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
-// 4. Rate Limiting (Global DDoS protection via Redis)
+// 4. Input Sanitization (XSS and tag injection prevention)
+import { sanitizeInputs } from './middlewares/sanitize';
+app.use(sanitizeInputs);
+
+// 5. Rate Limiting (Global DDoS protection via Redis)
 app.use(globalLimiter);
 
 // --- ROUTES ---
@@ -106,6 +110,8 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/coupons', couponRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/uploads', uploadRoutes);
+import contactRoutes from './routes/contact.routes';
+app.use('/api/v1/contact', contactRoutes);
 
 // Dedicated File Streaming Endpoints
 app.get('/api/v1/files/{*key}', streamFile);
