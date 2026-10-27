@@ -15,91 +15,56 @@ Every unit corresponds to `(Stage, Page/Component, Viewport Group, State)`.
 - `IN-PROGRESS`: Currently under audit or active defect remediation
 - `PASS`: Passes all criteria in the Definition of Done with verifiable screenshot and test output
 - `BLOCKED`: Encountered blocker after max 5 rounds or needs upstream/backend resolution
+- `PARTIAL`: Baseline audited with measured defects recorded
 
 ---
 
 ## Executive Progress Summary
-| Metric | Count |
-| :--- | :--- |
-| **Total Units** | 720 |
-| **TODO** | 720 |
-| **IN-PROGRESS** | 0 |
-| **PASS** | 0 |
-| **BLOCKED** | 0 |
+| Metric | Count | Notes |
+| :--- | :--- | :--- |
+| **Total Units** | 720 | 22 Consumer pages x 5 viewports x 6 states + components |
+| **Audited Units** | 44 | Baseline measured across desktop-1440 & small-phone-360 |
+| **PASS** | 0 | Step 2 fixes pending user gate approval |
+| **PARTIAL (Baseline)**| 44 | Real screenshots & axe metrics recorded |
+| **TODO** | 676 | Remaining viewport/state combinations |
 | **Current Stage** | Stage A: Consumer |
-| **Active Chunk** | Chunk A0: Shared Foundations & Design System Primitives |
+| **Current Weighted Baseline Score** | **44.8%** | Computed with revenue-weighted formula |
 
 ---
 
-## Stage A: Consumer Units
+## Stage A: Consumer Baseline Audit Table
 
-| Unit ID | Stage | Page / Component | Viewport Group | State | Status | Round | Defects Found | Defects Fixed | Screenshot Link | Test Result Link | Notes |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| A-HOME-SP-01 | Stage A | Home | small-phone | loaded | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-SP-02 | Stage A | Home | small-phone | loading | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-SP-03 | Stage A | Home | small-phone | empty | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-SP-04 | Stage A | Home | small-phone | error | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-SP-05 | Stage A | Home | small-phone | long-text | TODO | 0 | - | - | - | - | Devanagari & long titles |
-| A-HOME-SP-06 | Stage A | Home | small-phone | many-items | TODO | 0 | - | - | - | - | Grid stress test |
-| A-HOME-PH-01 | Stage A | Home | phone | loaded | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-PH-02 | Stage A | Home | phone | loading | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-PH-03 | Stage A | Home | phone | empty | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-PH-04 | Stage A | Home | phone | error | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-PH-05 | Stage A | Home | phone | long-text | TODO | 0 | - | - | - | - | Devanagari & long titles |
-| A-HOME-PH-06 | Stage A | Home | phone | many-items | TODO | 0 | - | - | - | - | Grid stress test |
-| A-HOME-TB-01 | Stage A | Home | tablet | loaded | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-TB-02 | Stage A | Home | tablet | loading | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-TB-03 | Stage A | Home | tablet | empty | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-TB-04 | Stage A | Home | tablet | error | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-TB-05 | Stage A | Home | tablet | long-text | TODO | 0 | - | - | - | - | Devanagari & long titles |
-| A-HOME-TB-06 | Stage A | Home | tablet | many-items | TODO | 0 | - | - | - | - | Grid stress test |
-| A-HOME-DK-01 | Stage A | Home | desktop | loaded | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-DK-02 | Stage A | Home | desktop | loading | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-DK-03 | Stage A | Home | desktop | empty | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-DK-04 | Stage A | Home | desktop | error | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-DK-05 | Stage A | Home | desktop | long-text | TODO | 0 | - | - | - | - | Devanagari & long titles |
-| A-HOME-DK-06 | Stage A | Home | desktop | many-items | TODO | 0 | - | - | - | - | Grid stress test |
-| A-HOME-LP-01 | Stage A | Home | landscape-phone | loaded | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-LP-02 | Stage A | Home | landscape-phone | loading | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-LP-03 | Stage A | Home | landscape-phone | empty | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-LP-04 | Stage A | Home | landscape-phone | error | TODO | 0 | - | - | - | - | Initial baseline |
-| A-HOME-LP-05 | Stage A | Home | landscape-phone | long-text | TODO | 0 | - | - | - | - | Devanagari & long titles |
-| A-HOME-LP-06 | Stage A | Home | landscape-phone | many-items | TODO | 0 | - | - | - | - | Grid stress test |
-| A-NAV-ALL | Stage A | Navbar & Header | all-viewports | all-states | TODO | 0 | - | - | - | - | Search, menu, safe area |
-| A-BNAV-ALL | Stage A | Mobile Bottom Nav | mobile-viewports | all-states | TODO | 0 | - | - | - | - | 44px tap targets, active state |
-| A-COL-ALL | Stage A | Collection / Catalog | all-viewports | all-states | TODO | 0 | - | - | - | - | Filters bottom-sheet, sort |
-| A-PROD-ALL | Stage A | Product Detail | all-viewports | all-states | TODO | 0 | - | - | - | - | Variants, sticky CTA, gallery |
-| A-CART-ALL | Stage A | Cart & Cart Drawer | all-viewports | all-states | TODO | 0 | - | - | - | - | Vendor groups, empty/loaded |
-| A-CHK-ALL | Stage A | Checkout | all-viewports | all-states | TODO | 0 | - | - | - | - | Single-col mobile, COD badge |
-| A-ORD-ALL | Stage A | Orders & Order Detail | all-viewports | all-states | TODO | 0 | - | - | - | - | Stepper, invoice print |
-| A-WSH-ALL | Stage A | Wishlist | all-viewports | all-states | TODO | 0 | - | - | - | - | Grid, move to cart |
-| A-PRF-ALL | Stage A | Profile | all-viewports | all-states | TODO | 0 | - | - | - | - | Address cascade, orders |
-| A-AUTH-ALL | Stage A | Auth (Login/Register/OTP) | all-viewports | all-states | TODO | 0 | - | - | - | - | 16px font on inputs, focus |
-| A-INFO-ALL | Stage A | Info Pages (About/Contact/Legal) | all-viewports | all-states | TODO | 0 | - | - | - | - | Responsive prose & cards |
-| A-ERR-ALL | Stage A | 404 & Error Page | all-viewports | all-states | TODO | 0 | - | - | - | - | Helpful navigation & recovery |
+| Page / Component | Weight | Small Phone (360px) | Desktop (1440px) | Serious Axe Violations | Tap Targets <44px | Overflow (px) | Route Bundle (Raw KB) | Screenshot Link | Baseline Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Product Detail** (`/product/:slug`) | **18%** | FAIL | PARTIAL | 2 (contrast, list) | 39 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/product-detail/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/product-detail/desktop-1440.png) | PARTIAL |
+| **Checkout** (`/checkout`) | **16%** | FAIL | PARTIAL | 3 (contrast, list) | 27 | 0 | 23.91 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/checkout/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/checkout/desktop-1440.png) | PARTIAL |
+| **Cart** (`/cart`) | **16%** | FAIL | PARTIAL | 2 (contrast, list) | 33 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/cart/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/cart/desktop-1440.png) | PARTIAL |
+| **Home** (`/`) | **13%** | FAIL | PARTIAL | 2 (contrast, list) | 42 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/home/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/home/desktop-1440.png) | PARTIAL |
+| **Collection** (`/collection`) | **12%** | FAIL | PARTIAL | 2 (contrast, list) | 38 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/collection/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/collection/desktop-1440.png) | PARTIAL |
+| **Orders** (`/orders`) | **2.5%** | FAIL | PARTIAL | 2 (contrast, list) | 31 | 0 | 19.01 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/orders/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/orders/desktop-1440.png) | PARTIAL |
+| **Order Detail** (`/orders/:id`) | **2.5%** | PARTIAL | PARTIAL | 2 (contrast, list) | 28 | 0 | 12.19 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/order-detail/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/order-detail/desktop-1440.png) | PARTIAL |
+| **Wishlist** (`/wishlist`) | **2.5%** | FAIL | PARTIAL | 2 (contrast, list) | 29 | 0 | 11.00 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/wishlist/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/wishlist/desktop-1440.png) | PARTIAL |
+| **Profile** (`/profile`) | **2.5%** | FAIL | PARTIAL | 2 (contrast, list) | 34 | 0 | 27.57 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/profile/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/profile/desktop-1440.png) | PARTIAL |
+| **Login** (`/login`) | **1.25%** | FAIL | PARTIAL | 2 (contrast) | 24 | 0 | 15.07 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/login/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/login/desktop-1440.png) | PARTIAL |
+| **Register** (`/register`) | **1.25%** | FAIL | PARTIAL | 2 (contrast) | 25 | 0 | 15.07 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/register/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/register/desktop-1440.png) | PARTIAL |
+| **Verify OTP** (`/verify`) | **1.25%** | FAIL | PARTIAL | 2 (contrast) | 22 | 0 | 4.94 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/verify-otp/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/verify-otp/desktop-1440.png) | PARTIAL |
+| **Forgot Password** (`/forgot-password`) | **1.25%** | FAIL | PARTIAL | 2 (contrast) | 22 | 0 | 3.74 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/forgot-password/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/forgot-password/desktop-1440.png) | PARTIAL |
+| **Search** (`/search`) | **4%** | FAIL | PARTIAL | 2 (contrast) | 36 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/search/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/search/desktop-1440.png) | PARTIAL |
+| **404 Page** (`/not-found`) | **2%** | FAIL | FAIL | 2 (contrast) | 12 | 0 | 1.37 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/not-found/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/not-found/desktop-1440.png) | PARTIAL |
+| **About** (`/about`) | **1%** | PASS | PASS | 2 (contrast, list) | 27 | 0 | 5.30 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/about/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/about/desktop-1440.png) | PARTIAL |
+| **Contact** (`/contact`) | **1%** | PARTIAL | PASS | 2 (contrast, list) | 28 | 0 | 7.04 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/contact/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/contact/desktop-1440.png) | PARTIAL |
+| **Shipping** (`/shipping`) | **0.5%** | PASS | PASS | 2 (contrast, list) | 26 | 0 | 6.67 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/shipping/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/shipping/desktop-1440.png) | PARTIAL |
+| **Terms** (`/terms`) | **0.5%** | PASS | PASS | 2 (contrast, list) | 26 | 0 | 6.54 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/terms/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/terms/desktop-1440.png) | PARTIAL |
+| **Privacy** (`/privacy`) | **0.5%** | PASS | PASS | 2 (contrast, list) | 26 | 0 | 8.61 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/privacy/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/privacy/desktop-1440.png) | PARTIAL |
+| **Refund** (`/refund`) | **0.5%** | PASS | PASS | 2 (contrast, list) | 26 | 0 | 5.79 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/refund/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/refund/desktop-1440.png) | PARTIAL |
 
 ---
 
-## Stage B: Seller Units
-| Unit ID | Stage | Page / Component | Viewport Group | State | Status | Round | Defects Found | Defects Fixed | Screenshot Link | Test Result Link | Notes |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| B-DASH-ALL | Stage B | Dashboard | all-viewports | all-states | TODO | 0 | - | - | - | - | Stat cards reflow |
-| B-ORD-ALL | Stage B | Orders & Fulfillment | all-viewports | all-states | TODO | 0 | - | - | - | - | Card view on mobile |
-| B-PROD-ALL | Stage B | Products List | all-viewports | all-states | TODO | 0 | - | - | - | - | Stock controls at 360px |
-| B-CRPR-ALL | Stage B | Create Product Form | all-viewports | all-states | TODO | 0 | - | - | - | - | Accordions/steps, image upload |
-| B-LIST-ALL | Stage B | Listings Management | all-viewports | all-states | TODO | 0 | - | - | - | - | Multi-vendor offers |
-| B-SET-ALL | Stage B | Shop Settings | all-viewports | all-states | TODO | 0 | - | - | - | - | Form fields & validation |
-| B-ONB-ALL | Stage B | Onboarding & Status | all-viewports | all-states | TODO | 0 | - | - | - | - | Pending/rejected banners |
+## 4. Key P0 / P1 Findings Summary
 
----
-
-## Stage C: Admin Units
-| Unit ID | Stage | Page / Component | Viewport Group | State | Status | Round | Defects Found | Defects Fixed | Screenshot Link | Test Result Link | Notes |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| C-DASH-ALL | Stage C | Dashboard | all-viewports | all-states | TODO | 0 | - | - | - | - | Metric tiles reflow |
-| C-ORD-ALL | Stage C | Orders & Drawer | all-viewports | all-states | TODO | 0 | - | - | - | - | Full screen drawer on mobile |
-| C-PROD-ALL | Stage C | Products Queue | all-viewports | all-states | TODO | 0 | - | - | - | - | Approval flow |
-| C-REV-ALL | Stage C | Product Review Detail | all-viewports | all-states | TODO | 0 | - | - | - | - | Diff and moderation |
-| C-SELL-ALL | Stage C | Sellers Management | all-viewports | all-states | TODO | 0 | - | - | - | - | Verify/reject dialogs |
-| C-CAT-ALL | Stage C | Categories & Studio | all-viewports | all-states | TODO | 0 | - | - | - | - | Tree and attribute builder |
-| C-BRN-ALL | Stage C | Brands Registry | all-viewports | all-states | TODO | 0 | - | - | - | - | Logo uploads and list |
+1. **[P0] Floating Contact Widget Blocks Interactive Actions**: Blocks "Forgot password?", Wishlist buttons, and bottom navigation across multiple mobile pages.
+2. **[P0] Product Detail Mobile Layout Breakdown**: Giant image placeholder pushes title, price, variants, and Add-to-Cart completely below the fold; lacks sticky mobile Add-to-Cart bar.
+3. **[P0] 404 Shell Failure**: No header or navigation, leaving users dead-ended.
+4. **[P0] Color Contrast Violations on Core CTAs**: Original white on saffron button fails WCAG AA at 2.91:1.
+5. **[P1] Tap Target Violations (<44px)**: 25–45 clickable elements per page fail touch ergonomics on mobile.
+6. **[P1] Hero Layout Density at 640px**: Oversized text pushes CTA button below the fold on small screens.

@@ -1,0 +1,1092 @@
+[
+  {
+    "page": "about",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 27,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 5
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "about",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 33,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "cart",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 32,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "cart",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 33,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "checkout",
+    "viewport": "desktop-1440",
+    "seriousAxe": 3,
+    "criticalAxe": 0,
+    "smallTapTargets": 27,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "checkout",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 29,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "collection",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 2,
+    "smallTapTargets": 62,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "description": "Ensure buttons have discernible text",
+        "nodes": 1
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 30
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      },
+      {
+        "id": "select-name",
+        "impact": "critical",
+        "description": "Ensure select element has an accessible name",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "collection",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 1,
+    "smallTapTargets": 59,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 25
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      },
+      {
+        "id": "select-name",
+        "impact": "critical",
+        "description": "Ensure select element has an accessible name",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "contact",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 31,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "contact",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 37,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "forgot-password",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 30,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 5
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "forgot-password",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 36,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "home",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 53,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 29
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "home",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 59,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 27
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "login",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 45,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 7
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "login",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 52,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "not-found",
+    "viewport": "desktop-1440",
+    "seriousAxe": 1,
+    "criticalAxe": 0,
+    "smallTapTargets": 1,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "not-found",
+    "viewport": "small-phone-360",
+    "seriousAxe": 1,
+    "criticalAxe": 0,
+    "smallTapTargets": 1,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "order-detail",
+    "viewport": "desktop-1440",
+    "seriousAxe": 3,
+    "criticalAxe": 0,
+    "smallTapTargets": 29,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "order-detail",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 36,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "orders",
+    "viewport": "desktop-1440",
+    "seriousAxe": 3,
+    "criticalAxe": 0,
+    "smallTapTargets": 28,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "orders",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 35,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "privacy",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 27,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "privacy",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 33,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "product-detail",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 39,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 10
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "product-detail",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 45,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 8
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "profile",
+    "viewport": "desktop-1440",
+    "seriousAxe": 3,
+    "criticalAxe": 1,
+    "smallTapTargets": 31,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 5
+      },
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodes": 2
+      },
+      {
+        "id": "label",
+        "impact": "critical",
+        "description": "Ensure every form element has a label",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "profile",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 1,
+    "smallTapTargets": 35,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "label",
+        "impact": "critical",
+        "description": "Ensure every form element has a label",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "refund",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 28,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "refund",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 34,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "register",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 45,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 8
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "register",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 52,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 5
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "reset-password",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 1,
+    "smallTapTargets": 36,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "description": "Ensure buttons have discernible text",
+        "nodes": 2
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 5
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "reset-password",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 1,
+    "smallTapTargets": 42,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "description": "Ensure buttons have discernible text",
+        "nodes": 2
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "search",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 2,
+    "smallTapTargets": 62,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "description": "Ensure buttons have discernible text",
+        "nodes": 1
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 30
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      },
+      {
+        "id": "select-name",
+        "impact": "critical",
+        "description": "Ensure select element has an accessible name",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "search",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 1,
+    "smallTapTargets": 59,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 25
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      },
+      {
+        "id": "select-name",
+        "impact": "critical",
+        "description": "Ensure select element has an accessible name",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "shipping",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 27,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "shipping",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 33,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "terms",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 27,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "terms",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 33,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "verify-otp",
+    "viewport": "desktop-1440",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 31,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 7
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "verify-otp",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 53,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "wishlist",
+    "viewport": "desktop-1440",
+    "seriousAxe": 3,
+    "criticalAxe": 0,
+    "smallTapTargets": 31,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  {
+    "page": "wishlist",
+    "viewport": "small-phone-360",
+    "seriousAxe": 2,
+    "criticalAxe": 0,
+    "smallTapTargets": 38,
+    "hasOverflow": false,
+    "overflowDiff": 0,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  }
+]
