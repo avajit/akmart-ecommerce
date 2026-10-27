@@ -3,8 +3,6 @@ import {
   parseSearchIntent,
   getSearchTokenVariations,
   TYPO_DICTIONARY,
-  ECOMMERCE_SYNONYMS,
-  PACKAGING_MODIFIERS,
 } from '../../lib/search/searchParser';
 
 describe('E-Commerce Search Intent & Semantic Parser Unit Tests', () => {

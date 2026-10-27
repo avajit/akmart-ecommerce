@@ -1,13 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { performance } from 'perf_hooks';
 import {
   parseSearchIntent,
   getSearchTokenVariations,
   TYPO_DICTIONARY,
-  KNOWN_BRANDS,
-  KNOWN_COLORS,
-  KNOWN_SIZES,
-  KNOWN_MATERIALS,
-  KNOWN_FEATURES,
 } from '../../lib/search/searchParser';
 
 describe('Enterprise E-Commerce Search Benchmark & Taxonomy Test Suite', () => {
@@ -606,6 +602,8 @@ describe('Enterprise E-Commerce Search Benchmark & Taxonomy Test Suite', () => {
       // Average latency should be < 0.1ms per query (< 100ms total for 1,000 queries)
       expect(durationMs).toBeLessThan(150);
     });
+  });
+
   // ── 16. Dynamic Vocabulary & Word Boundary Isolation ───────────────────────
   describe('16. Dynamic Vocabulary & Word Boundary Isolation', () => {
     it('should cleanly parse "underpant" without triggering price filters', () => {
