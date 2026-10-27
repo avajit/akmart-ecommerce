@@ -29,7 +29,8 @@ async function main() {
 
   // 2. USERS (Security Gatekeeper)
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('SECURITY VIOLATION: Seeding default accounts with known passwords in NODE_ENV=production is strictly forbidden. Create production accounts via verified onboarding.');
+    console.log('🔒 Production mode detected: Core system roles verified. Skipping demo/test user seeding.');
+    return;
   }
 
   const adminUser = await prisma.user.upsert({
