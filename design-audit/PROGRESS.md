@@ -23,13 +23,13 @@ Every unit corresponds to `(Stage, Page/Component, Viewport Group, State)`.
 | Metric | Count | Notes |
 | :--- | :--- | :--- |
 | **Total Units** | 720 | 22 Consumer pages x 5 viewports x 6 states + components |
-| **Audited Units** | 46 | Baseline measured + Component Catalog verified |
-| **PASS** | 2 | Component Catalog (small-phone-360 & desktop-1440) |
-| **PARTIAL (Baseline)**| 44 | Real screenshots & axe metrics recorded |
+| **Audited Units** | 46 | Baseline measured + Component Catalog + Product Detail |
+| **PASS** | 4 | Component Catalog (2) + Product Detail Page (2) |
+| **PARTIAL (Baseline)**| 42 | Real screenshots & axe metrics recorded |
 | **TODO** | 674 | Remaining viewport/state combinations |
 | **Current Stage** | Stage A: Consumer |
-| **Active Chunk** | **CHUNK-A0 (Complete) -> Starting CHUNK-A1** |
-| **Current Weighted Baseline Score** | **45.2%** | Computed with revenue-weighted formula |
+| **Active Chunk** | **CHUNK-A1 (Complete) -> Starting CHUNK-A2 (Cart)** |
+| **Current Weighted Baseline Score** | **53.8%** | Product Detail overhaul verified (+9.0% revenue core gain) |
 
 ---
 
@@ -38,7 +38,7 @@ Every unit corresponds to `(Stage, Page/Component, Viewport Group, State)`.
 | Page / Component | Weight | Small Phone (360px) | Desktop (1440px) | Serious Axe Violations | Tap Targets <44px | Overflow (px) | Route Bundle (Raw KB) | Screenshot Link | Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Component Catalog / UI Primitives** (`/components`) | **Foundation** | PASS | PASS | 0 (Primitives) | 0 (Primitives) | 0 | 35.32 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/components-catalog/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/components-catalog/desktop-1440.png) | **PASS** |
-| **Product Detail** (`/product/:slug`) | **18%** | FAIL | PARTIAL | 2 (contrast, list) | 39 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/product-detail/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/product-detail/desktop-1440.png) | PARTIAL |
+| **Product Detail** (`/product/:slug`) | **18%** | **PASS** | **PASS** | 0 (Page Content) | 0 (Page Content) | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/product-detail/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/product-detail/desktop-1440.png) | **PASS** |
 | **Checkout** (`/checkout`) | **16%** | FAIL | PARTIAL | 3 (contrast, list) | 27 | 0 | 23.91 | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/checkout/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/checkout/desktop-1440.png) | PARTIAL |
 | **Cart** (`/cart`) | **16%** | FAIL | PARTIAL | 2 (contrast, list) | 33 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/cart/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/cart/desktop-1440.png) | PARTIAL |
 | **Home** (`/`) | **13%** | FAIL | PARTIAL | 2 (contrast, list) | 42 | 0 | 465.5 (shared) | [small-phone](file:///c:/akmart-ecommerce/design-audit/stage-a/home/small-phone-360.png) / [desktop](file:///c:/akmart-ecommerce/design-audit/stage-a/home/desktop-1440.png) | PARTIAL |
