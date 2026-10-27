@@ -135,7 +135,9 @@ jobs:
         run: npx prisma generate
 
       - name: Run Prisma migrations
-        run: npx prisma migrate deploy
+        run: |
+          npx prisma migrate deploy
+          npx prisma db push --skip-generate
 
       - name: Run tests with coverage
         run: npm run test:coverage
