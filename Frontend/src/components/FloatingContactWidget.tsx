@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   RiWhatsappFill, 
   RiMessage3Fill, 
@@ -10,13 +11,20 @@ import { FiX, FiCheck } from 'react-icons/fi';
 export default function FloatingContactWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
+  const location = useLocation();
+
+  // Suppress floating widget on focused auth & checkout flows to prevent blocking CTAs and form links
+  const suppressedRoutes = ['/login', '/register', '/verify', '/forgot-password', '/reset-password', '/checkout'];
+  if (suppressedRoutes.includes(location.pathname)) {
+    return null;
+  }
 
   const SUPPORT_PHONE = "9779801234567";
   const WHATSAPP_URL = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent("Namaste AKMart Nepal! I have an inquiry regarding a product / order.")}`;
   const VIBER_URL = `viber://chat?number=%2B${SUPPORT_PHONE}`;
 
   return (
-    <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-40 font-poppins print:hidden">
+    <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-8 right-3 md:right-8 z-30 font-poppins print:hidden">
       
       {/* ── Expandable Chat Options Menu ── */}
       {isOpen && (

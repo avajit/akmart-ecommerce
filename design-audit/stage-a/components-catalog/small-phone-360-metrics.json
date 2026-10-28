@@ -1,0 +1,93 @@
+{
+  "timestamp": "2026-10-27T16:52:21.449Z",
+  "viewport": "small-phone-360",
+  "overflowMetrics": {
+    "clientWidth": 360,
+    "scrollWidth": 360,
+    "overflowPx": 0
+  },
+  "tapTargetMetrics": {
+    "totalInteractive": 115,
+    "smallTargetsCount": 41,
+    "smallTargetsList": [
+      {
+        "tag": "a",
+        "label": "Skip to main content",
+        "width": 32,
+        "height": 16
+      },
+      {
+        "tag": "a",
+        "label": "AkMart Nepal Hub Home",
+        "width": 89,
+        "height": 32
+      },
+      {
+        "tag": "button",
+        "label": "Close menu",
+        "width": 28,
+        "height": 28
+      },
+      {
+        "tag": "a",
+        "label": "Home",
+        "width": 235,
+        "height": 36
+      },
+      {
+        "tag": "a",
+        "label": "All Collections",
+        "width": 235,
+        "height": 36
+      },
+      {
+        "tag": "a",
+        "label": "Electronics",
+        "width": 89,
+        "height": 16
+      },
+      {
+        "tag": "button",
+        "label": "Toggle Electronics subcategories",
+        "width": 22,
+        "height": 22
+      },
+      {
+        "tag": "a",
+        "label": "Home & Living",
+        "width": 109,
+        "height": 16
+      },
+      {
+        "tag": "button",
+        "label": "Toggle Home & Living subcategories",
+        "width": 22,
+        "height": 22
+      },
+      {
+        "tag": "a",
+        "label": "Kids",
+        "width": 49,
+        "height": 16
+      }
+    ]
+  },
+  "axeSummary": {
+    "violationsCount": 2,
+    "criticalOrSeriousCount": 2,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  }
+}

@@ -67,7 +67,7 @@ const InputField: React.FC<InputFieldProps> = ({
           onTouchStart={() => setIsReadOnly(false)}
           aria-invalid={Boolean(error)}
           aria-describedby={errorId}
-          className={`w-full py-2.5 px-3.5 rounded-xl outline-none transition-all duration-200 text-sm shadow-sm ${
+          className={`w-full py-2.5 px-3.5 rounded-xl outline-none transition-all duration-200 text-base sm:text-sm shadow-sm ${
             startIcon ? 'pl-10' : ''
           } ${endAction ? 'pr-10' : ''} ${
             dark

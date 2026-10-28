@@ -49,6 +49,8 @@ const Privacy = React.lazy(() => import("../pages/Privacy"));
 const Terms = React.lazy(() => import("../pages/Terms"));
 const Shipping = React.lazy(() => import("../pages/Shipping"));
 const OrderDetail = React.lazy(() => import("../pages/OrderDetail"));
+const StyleTile = React.lazy(() => import("../pages/StyleTile"));
+const ComponentCatalog = React.lazy(() => import("../pages/ComponentCatalog"));
 
 import ConsumerLayout from '../layouts/ConsumerLayout';
 import AdminLayout from '../layouts/AdminLayout';
@@ -78,6 +80,8 @@ function AppRoutes() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/shipping" element={<Shipping />} />
+          <Route path="/style-tile" element={<StyleTile />} />
+          <Route path="/components" element={<ComponentCatalog />} />
           
           {/* ----- Authentication ----- */}
           <Route path="/login" element={<Login />} />
@@ -131,8 +135,10 @@ function AppRoutes() {
           </Route>
         </Route>
 
-        {/* ----- 404 ----- */}
-        <Route path="*" element={<NotFound />} />
+        {/* ----- 404 with Consumer Layout Shell ----- */}
+        <Route element={<ConsumerLayout />}>
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Routes>
     </Suspense>
   );

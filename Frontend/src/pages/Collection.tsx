@@ -67,11 +67,35 @@ export default function Collection() {
     setCustomMax(urlMaxPrice);
   }, [urlMinPrice, urlMaxPrice]);
 
-  // Load Categories & Brands
+  // Load Categories & Brands with deduplication
   useEffect(() => {
     getCategoryTree()
       .then((res: any) => {
-        const tree = res.data || [];
+        const rawTree = res.data || [];
+        const uniqueCatMap = new Map<string, any>();
+        rawTree.forEach((cat: any) => {
+          const key = (cat.name || cat.slug || '').toLowerCase().trim();
+          if (!key) return;
+          if (!uniqueCatMap.has(key)) {
+            uniqueCatMap.set(key, { ...cat, children: [] });
+          }
+          const existingCat = uniqueCatMap.get(key);
+          const childMap = new Map<string, any>();
+          (existingCat.children || []).forEach((c: any) => {
+            childMap.set((c.name || '').toLowerCase().trim(), c);
+          });
+          (cat.children || []).forEach((c: any) => {
+            const cName = (c.name || '').toLowerCase().trim();
+            if (!cName) return;
+            const existingChild = childMap.get(cName);
+            const isMoreSpecific = c.slug?.startsWith(`${cat.slug}-`) || (c.slug && c.slug.includes('-'));
+            if (!existingChild || isMoreSpecific) {
+              childMap.set(cName, c);
+            }
+          });
+          existingCat.children = Array.from(childMap.values());
+        });
+        const tree = Array.from(uniqueCatMap.values());
         setCategoryTree(tree);
 
         // Auto-expand parents if selected
@@ -89,6 +113,21 @@ export default function Collection() {
       .then((res: any) => setBrands(res.data || []))
       .catch(() => {});
   }, []);
+
+  // Ensure active category parent remains expanded when URL changes
+  useEffect(() => {
+    if (urlCategory && categoryTree.length > 0) {
+      setExpandedCategories(prev => {
+        const next = { ...prev };
+        categoryTree.forEach((root: any) => {
+          if (root.slug === urlCategory || root.children?.some((c: any) => c.slug === urlCategory)) {
+            next[root.id] = true;
+          }
+        });
+        return next;
+      });
+    }
+  }, [urlCategory, categoryTree]);
 
   // Fetch dynamic category attributes when active category changes (Amazon/Flipkart style)
   useEffect(() => {
@@ -195,12 +234,12 @@ export default function Collection() {
 
   // Handlers
   const handleCategorySelect = (catSlug: string) => {
-    // When changing category, clear child category-specific attributes from URL
-    const next = new URLSearchParams();
-    if (catSlug) next.set('category', catSlug);
-    if (urlSort !== 'newest') next.set('sort', urlSort);
-    if (urlInStock) next.set('inStock', 'true');
-    setSearchParams(next);
+    // If clicking already selected category or empty string, toggle it off; otherwise switch category while preserving sort & stock
+    if (urlCategory === catSlug || !catSlug) {
+      updateParams({ category: null });
+    } else {
+      updateParams({ category: catSlug });
+    }
   };
 
   const handleBrandSelect = (brandSlug: string) => {
@@ -208,7 +247,12 @@ export default function Collection() {
   };
 
   const handlePriceBracket = (bracket: { min: string; max: string }) => {
-    updateParams({ minPrice: bracket.min || null, maxPrice: bracket.max || null });
+    // Toggle off if clicking the active bracket
+    if (urlMinPrice === (bracket.min || '') && urlMaxPrice === (bracket.max || '')) {
+      updateParams({ minPrice: null, maxPrice: null });
+    } else {
+      updateParams({ minPrice: bracket.min || null, maxPrice: bracket.max || null });
+    }
   };
 
   const applyCustomPrice = (e: React.FormEvent) => {
@@ -916,18 +960,45 @@ export default function Collection() {
                 >
                   All Categories
                 </button>
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                  {categoryTree.map((cat: any) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategorySelect(cat.slug)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${
-                        urlCategory === cat.slug ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-[#1A1A1A]'
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
+                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                  {categoryTree.map((cat: any) => {
+                    const isSelected = urlCategory === cat.slug;
+                    const hasChildren = cat.children && cat.children.length > 0;
+                    return (
+                      <div key={cat.id} className="space-y-1">
+                        <button
+                          onClick={() => handleCategorySelect(cat.slug)}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between ${
+                            isSelected ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-[#1A1A1A]'
+                          }`}
+                        >
+                          <span>{cat.name}</span>
+                          {isSelected && <FiCheck size={14} />}
+                        </button>
+                        {hasChildren && (
+                          <div className="pl-4 space-y-1 border-l-2 border-orange-500/20 ml-2">
+                            {cat.children.map((sub: any) => {
+                              const isSubSelected = urlCategory === sub.slug;
+                              return (
+                                <button
+                                  key={sub.id}
+                                  onClick={() => handleCategorySelect(sub.slug)}
+                                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition flex items-center justify-between ${
+                                    isSubSelected
+                                      ? 'bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30'
+                                      : 'text-gray-400 hover:text-white'
+                                  }`}
+                                >
+                                  <span>{sub.name}</span>
+                                  {isSubSelected && <FiCheck size={12} />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

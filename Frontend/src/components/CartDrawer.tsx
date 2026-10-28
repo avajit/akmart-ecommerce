@@ -13,6 +13,7 @@ import {
   FiLock,
   FiPackage
 } from 'react-icons/fi';
+import { QuantityStepper, Price, Badge } from './ui';
 
 export default function CartDrawer() {
   const { isAuthenticated } = useAuthStore();
@@ -224,21 +225,16 @@ export default function CartDrawer() {
                       {productName}
                     </Link>
 
-                    {/* Variant Specification Badge */}
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
-                      <span className="inline-block px-2 py-0.5 rounded-md bg-[#1E1E1E] border border-gray-800 text-[10.5px] text-gray-300 font-medium">
-                        {variantName}
-                      </span>
+                      <Badge variant="neutral" size="sm">{variantName}</Badge>
                     </div>
 
                     {/* Unit Price & Total */}
-                    <div className="mt-1.5 flex items-baseline gap-2">
-                      <span className="text-xs font-bold text-orange-400">
-                        {currency}{price.toLocaleString()}
-                      </span>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <Price amount={price * item.quantity} size="sm" highlight showDiscountBadge={false} />
                       {item.quantity > 1 && (
-                        <span className="text-[10.5px] text-gray-500 font-mono">
-                          (Total: {currency}{(price * item.quantity).toLocaleString()})
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          ({item.quantity} × {currency}{price.toLocaleString()})
                         </span>
                       )}
                     </div>
@@ -256,28 +252,15 @@ export default function CartDrawer() {
                       <FiTrash2 size={15} />
                     </button>
 
-                    <div className="flex items-center bg-[#1A1A1A] border border-gray-800 rounded-xl overflow-hidden shadow-inner">
-                      <button
-                        type="button"
-                        onClick={() => updateCartItemQty(item.id, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-orange-500 font-bold text-sm transition active:scale-90"
-                        aria-label="Decrease quantity"
-                      >
-                        -
-                      </button>
-                      <span className="text-white px-2.5 font-bold text-xs min-w-[24px] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => updateCartItemQty(item.id, item.quantity + 1)}
-                        disabled={isMaxReached}
-                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-orange-500 disabled:opacity-30 disabled:pointer-events-none font-bold text-sm transition active:scale-90"
-                        aria-label="Increase quantity"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <QuantityStepper
+                      value={item.quantity}
+                      min={1}
+                      max={maxStock}
+                      size="sm"
+                      disabled={isMaxReached}
+                      onChange={(newQty) => updateCartItemQty(item.id, newQty)}
+                      ariaLabel={`Quantity for ${productName}`}
+                    />
                   </div>
                 </div>
               );

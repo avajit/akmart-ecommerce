@@ -1,0 +1,40 @@
+{
+  "page": "checkout",
+  "path": "/checkout",
+  "viewport": "desktop-1440",
+  "overflow": {
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "hasOverflow": false,
+    "diff": 0
+  },
+  "smallTapTargetsCount": 26,
+  "axeViolations": {
+    "serious": 3,
+    "critical": 0,
+    "details": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 3
+      },
+      {
+        "id": "label-content-name-mismatch",
+        "impact": "serious",
+        "description": "Ensure that elements labelled through their content must have their visible text as part of their accessible name",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  "webVitals": {
+    "fcp": 884
+  },
+  "timestamp": "2026-10-27T17:56:25.336Z"
+}

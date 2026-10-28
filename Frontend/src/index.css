@@ -2,17 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #0D0D0D;
-  color: #ffffff;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: #0B0E14;
+    color: #F9FAFB;
+    min-height: 100dvh;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Accessible Focus Indicator (WCAG 2.2 AA) */
+  :focus-visible {
+    outline: 2px solid #F97316;
+    outline-offset: 2px;
+  }
+
+  /* Form controls input font minimum to prevent iOS Safari auto-zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
-/* Override browser default autofill styling (defeats pale white/blue background) */
+/* Safe Area Inset Helpers */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Respect Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Override browser default autofill styling */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 100px #1A1A1A inset !important;
+  -webkit-box-shadow: 0 0 0 100px #141923 inset !important;
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
@@ -20,7 +65,7 @@ input:-webkit-autofill:active {
 
 /* --- Premium AKMart Toast Styling --- */
 .Toastify__toast {
-  background: #141722 !important;
+  background: #141923 !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 14px !important;
   box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.5) !important;
@@ -33,31 +78,31 @@ input:-webkit-autofill:active {
 }
 
 .Toastify__toast--success {
-  border-left: 4px solid #f97316 !important;
+  border-left: 4px solid #10B981 !important;
 }
 
 .Toastify__toast--error {
-  border-left: 4px solid #ef4444 !important;
+  border-left: 4px solid #EF4444 !important;
 }
 
 .Toastify__toast--info {
-  border-left: 4px solid #3b82f6 !important;
+  border-left: 4px solid #3B82F6 !important;
 }
 
 .Toastify__toast--warning {
-  border-left: 4px solid #f59e0b !important;
+  border-left: 4px solid #F59E0B !important;
 }
 
 .Toastify__progress-bar--success {
-  background: #f97316 !important;
+  background: #10B981 !important;
 }
 
 .Toastify__progress-bar--error {
-  background: #ef4444 !important;
+  background: #EF4444 !important;
 }
 
 .Toastify__progress-bar--info {
-  background: #3b82f6 !important;
+  background: #3B82F6 !important;
 }
 
 .Toastify__close-button {

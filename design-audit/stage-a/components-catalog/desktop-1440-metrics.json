@@ -1,0 +1,93 @@
+{
+  "timestamp": "2026-10-27T16:52:20.988Z",
+  "viewport": "desktop-1440",
+  "overflowMetrics": {
+    "clientWidth": 1440,
+    "scrollWidth": 1440,
+    "overflowPx": 0
+  },
+  "tapTargetMetrics": {
+    "totalInteractive": 115,
+    "smallTargetsCount": 29,
+    "smallTargetsList": [
+      {
+        "tag": "a",
+        "label": "Skip to main content",
+        "width": 32,
+        "height": 16
+      },
+      {
+        "tag": "a",
+        "label": "AkMart Nepal Hub Home",
+        "width": 209,
+        "height": 36
+      },
+      {
+        "tag": "input",
+        "label": "unlabeled",
+        "width": 460,
+        "height": 40
+      },
+      {
+        "tag": "button",
+        "label": "Search",
+        "width": 110,
+        "height": 40
+      },
+      {
+        "tag": "a",
+        "label": "Become a Seller",
+        "width": 149,
+        "height": 34
+      },
+      {
+        "tag": "a",
+        "label": "Sign In",
+        "width": 80,
+        "height": 36
+      },
+      {
+        "tag": "a",
+        "label": "All Products",
+        "width": 118,
+        "height": 30
+      },
+      {
+        "tag": "a",
+        "label": "Electronics",
+        "width": 136,
+        "height": 30
+      },
+      {
+        "tag": "a",
+        "label": "Home & Living",
+        "width": 157,
+        "height": 30
+      },
+      {
+        "tag": "a",
+        "label": "Kids",
+        "width": 94,
+        "height": 30
+      }
+    ]
+  },
+  "axeSummary": {
+    "violationsCount": 2,
+    "criticalOrSeriousCount": 2,
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 6
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "page": "reset-password",
+  "path": "/reset-password",
+  "viewport": "small-phone-360",
+  "overflow": {
+    "scrollWidth": 360,
+    "clientWidth": 360,
+    "hasOverflow": false,
+    "diff": 0
+  },
+  "smallTapTargetsCount": 37,
+  "axeViolations": {
+    "serious": 2,
+    "critical": 1,
+    "details": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "description": "Ensure buttons have discernible text",
+        "nodes": 2
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 2
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  "webVitals": {
+    "fcp": 820
+  },
+  "timestamp": "2026-10-27T17:54:53.974Z"
+}

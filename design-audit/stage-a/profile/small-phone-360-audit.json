@@ -1,0 +1,40 @@
+{
+  "page": "profile",
+  "path": "/profile",
+  "viewport": "small-phone-360",
+  "overflow": {
+    "scrollWidth": 360,
+    "clientWidth": 360,
+    "hasOverflow": false,
+    "diff": 0
+  },
+  "smallTapTargetsCount": 34,
+  "axeViolations": {
+    "serious": 2,
+    "critical": 1,
+    "details": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 4
+      },
+      {
+        "id": "label",
+        "impact": "critical",
+        "description": "Ensure every form element has a label",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      }
+    ]
+  },
+  "webVitals": {
+    "fcp": 792
+  },
+  "timestamp": "2026-10-27T17:54:43.556Z"
+}

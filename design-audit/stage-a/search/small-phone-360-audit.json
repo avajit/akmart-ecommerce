@@ -1,0 +1,40 @@
+{
+  "page": "search",
+  "path": "/search",
+  "viewport": "small-phone-360",
+  "overflow": {
+    "scrollWidth": 360,
+    "clientWidth": 360,
+    "hasOverflow": false,
+    "diff": 0
+  },
+  "smallTapTargetsCount": 35,
+  "axeViolations": {
+    "serious": 2,
+    "critical": 1,
+    "details": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "nodes": 1
+      },
+      {
+        "id": "list",
+        "impact": "serious",
+        "description": "Ensure that lists are structured correctly",
+        "nodes": 1
+      },
+      {
+        "id": "select-name",
+        "impact": "critical",
+        "description": "Ensure select element has an accessible name",
+        "nodes": 1
+      }
+    ]
+  },
+  "webVitals": {
+    "fcp": 900
+  },
+  "timestamp": "2026-10-27T17:54:58.093Z"
+}
