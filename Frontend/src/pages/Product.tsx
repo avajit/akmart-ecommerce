@@ -25,7 +25,8 @@ import {
   FiChevronRight,
   FiShare2,
   FiRotateCcw,
-  FiZap
+  FiZap,
+  FiBox
 } from 'react-icons/fi';
 import { ImageUploader } from '../components/common/ImageUploader';
 import useDocumentTitle from '../hooks/useDocumentTitle';
