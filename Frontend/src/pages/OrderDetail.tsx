@@ -26,6 +26,10 @@ export default function OrderDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
   const [copied, setCopied] = useState(false);
 
   // Fetch order from API (or initialize from location.state if present)

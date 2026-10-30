@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProductBySlug, addToCart, getProductReviews, submitReview } from '../api/consumer.api';
+import { getProductBySlug, addToCart, getProductReviews } from '../api/consumer.api';
 import { ShopContext } from '../context/ShopContext';
 import { useAuthStore } from '../store/authStore';
 import { formatImageUrl } from '../utils/imageUrl';
@@ -29,6 +29,7 @@ import {
   FiBox
 } from 'react-icons/fi';
 import { ImageUploader } from '../components/common/ImageUploader';
+import ProductReviewsSection from '../components/ProductReviewsSection';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import {
   Container,
@@ -183,6 +184,11 @@ export default function Product() {
   useEffect(() => {
     if (slug) {
       setLoading(true);
+      window.scrollTo(0, 0);
+      setSelectedVariantId('');
+      setSelectedAttributes({});
+      setActiveImageIndex(0);
+      setQuantity(1);
       getProductBySlug(slug)
         .then((res: any) => {
           const prod = res.data;
@@ -565,7 +571,7 @@ export default function Product() {
                   href="#reviews-section"
                   className="inline-flex items-center gap-2 text-xs text-foreground-secondary hover:text-brand-saffron transition-colors rounded py-1"
                 >
-                  <Rating rating={Number(averageRating) || 5} reviewCount={totalRatingsCount} size="sm" />
+                  <Rating rating={Number(averageRating) || 0} reviewCount={totalRatingsCount} size="sm" />
                   <span className="underline underline-offset-2">
                     {totalRatingsCount > 0 ? `Read reviews` : `Write first review`}
                   </span>
@@ -841,207 +847,8 @@ export default function Product() {
           </Card>
         </section>
 
-        {/* ── Customer Ratings & Reviews Section ── */}
-        <section id="reviews-section" className="pt-10 border-t border-border-subtle space-y-6" aria-labelledby="reviews-heading">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-saffron mb-1">
-                <FiCheckCircle /> Verified Shopper Feedback
-              </div>
-              <h2 id="reviews-heading" className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground-primary">
-                Customer Ratings & Reviews
-              </h2>
-              <p className="text-xs sm:text-sm text-foreground-secondary mt-0.5">
-                Authentic reviews from verified purchasers across Nepal.
-              </p>
-            </div>
-
-            <Button
-              variant="saffron"
-              size="md"
-              onClick={handleOpenReviewModal}
-              iconLeft={<FiEdit3 />}
-              className="self-start sm:self-auto"
-            >
-              Write a Review
-            </Button>
-          </div>
-
-          {/* Loading Skeletons */}
-          {reviewsLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Skeleton variant="card" />
-              <div className="md:col-span-2">
-                <Skeleton variant="card" />
-              </div>
-            </div>
-          )}
-
-          {/* Empty State when 0 Reviews Exist */}
-          {!reviewsLoading && mappedReviews.length === 0 && (
-            <Card padding="lg" className="text-center py-10">
-              <div className="w-14 h-14 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-center text-brand-saffron mx-auto mb-3">
-                <FiMessageSquare className="text-2xl" />
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-foreground-primary">No Customer Reviews Yet</h3>
-              <p className="text-xs sm:text-sm text-foreground-secondary max-w-sm mx-auto mt-1 mb-5">
-                Be the first to share your experience with this product and guide other shoppers across Nepal!
-              </p>
-              <Button variant="primary" onClick={handleOpenReviewModal} iconLeft={<FiEdit3 />}>
-                Write the First Review
-              </Button>
-            </Card>
-          )}
-
-          {/* Ratings Summary Card & Progress Bars */}
-          {!reviewsLoading && mappedReviews.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Big Score Card */}
-                <Card padding="md" className="flex flex-col justify-center items-center text-center">
-                  <div className="text-5xl font-extrabold text-foreground-primary flex items-center gap-2">
-                    {averageRating || '5.0'} <span className="text-amber-400 text-3xl">★</span>
-                  </div>
-                  <div className="my-2">
-                    <Rating rating={Number(averageRating) || 5} size="md" showScore={false} />
-                  </div>
-                  <p className="text-xs text-foreground-secondary">
-                    Based on {totalRatingsCount} verified {totalRatingsCount === 1 ? 'review' : 'reviews'}
-                  </p>
-                  {recommendedPercent !== null && (
-                    <Badge variant="success" size="sm" className="mt-3">
-                      {recommendedPercent}% of customers recommend this
-                    </Badge>
-                  )}
-                </Card>
-
-                {/* Star Progress Bars */}
-                <Card padding="md" className="md:col-span-2 space-y-2.5 justify-center flex flex-col">
-                  {breakdown.map((item) => (
-                    <div key={item.stars} className="flex items-center gap-3 text-xs">
-                      <span className="w-8 font-semibold text-foreground-primary text-right">{item.stars}</span>
-                      <div className="flex-1 h-2.5 bg-surface-subtle rounded-full overflow-hidden border border-border-subtle">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${item.color}`}
-                          style={{ width: `${item.pct}%` }}
-                        />
-                      </div>
-                      <span className="w-12 text-foreground-secondary text-right font-mono text-[11px]">
-                        {item.pct}% ({item.count})
-                      </span>
-                    </div>
-                  ))}
-                </Card>
-              </div>
-
-              {/* Review Filter Pills (Min 44px Tap Height) */}
-              <div className="flex items-center gap-2 pt-2 flex-wrap">
-                <Button
-                  variant={reviewFilter === 'ALL' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setReviewFilter('ALL')}
-                >
-                  All Reviews ({mappedReviews.length})
-                </Button>
-                <Button
-                  variant={reviewFilter === '5' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setReviewFilter('5')}
-                >
-                  5 Stars ({breakdown.find(b => b.rating === 5)?.count || 0})
-                </Button>
-                <Button
-                  variant={reviewFilter === '4' ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => setReviewFilter('4')}
-                >
-                  4 Stars ({breakdown.find(b => b.rating === 4)?.count || 0})
-                </Button>
-              </div>
-
-              {/* Reviews List */}
-              <div className="space-y-4">
-                {mappedReviews
-                  .filter((r) => reviewFilter === 'ALL' || r.rating === Number(reviewFilter))
-                  .map((rev) => (
-                    <Card key={rev.id} padding="md" className="space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-surface-elevated text-brand-saffron font-bold text-xs flex items-center justify-center uppercase border border-border-subtle shrink-0">
-                            {rev.author.slice(0, 2)}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-foreground-primary text-sm">{rev.author}</span>
-                              {rev.isVerified && (
-                                <Badge variant="success" size="sm">Verified Buyer</Badge>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-foreground-secondary">
-                              {rev.city} • {rev.date}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Rating rating={rev.rating} size="sm" />
-                      </div>
-
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground-primary mb-1">{rev.title}</h4>
-                        <p className="text-xs sm:text-sm text-foreground-secondary leading-relaxed">{rev.comment}</p>
-                      </div>
-
-                      {/* Customer Photo Attachments */}
-                      {rev.images && rev.images.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {rev.images.map((img: any, idx: number) => (
-                            <a
-                              key={img.id || idx}
-                              href={img.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label={`View full customer review photo ${idx + 1}`}
-                              className="block"
-                            >
-                              <img
-                                src={img.url}
-                                alt={`Customer Review Photo ${idx + 1}`}
-                                className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-border-subtle hover:border-brand-saffron transition-colors"
-                              />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs flex-wrap gap-2">
-                        <span className="text-[11px] text-foreground-secondary font-mono">
-                          Verified Model: <strong className="text-foreground-primary">{rev.variantName}</strong>
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!helpfulClicked[rev.id]) {
-                              setHelpfulClicked({ ...helpfulClicked, [rev.id]: true });
-                              toast.success('Thank you for your feedback!');
-                            }
-                          }}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-saffron ${
-                            helpfulClicked[rev.id]
-                              ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/30'
-                              : 'bg-surface-subtle hover:bg-surface-elevated text-foreground-secondary hover:text-foreground-primary border border-border-subtle'
-                          }`}
-                        >
-                          <FiThumbsUp className="text-xs" />
-                          Helpful ({rev.helpfulCount + (helpfulClicked[rev.id] ? 1 : 0)})
-                        </button>
-                      </div>
-                    </Card>
-                  ))}
-              </div>
-            </>
-          )}
-        </section>
+        {/* ── Customer Ratings & Reviews Section (Modularized) ── */}
+        <ProductReviewsSection product={product} />
       </Container>
 
       {/* ── Sticky Mobile Bottom Action Bar (Mobile Phone Conversion Engine) ── */}
@@ -1073,127 +880,6 @@ export default function Product() {
             >
               Buy Now
             </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Write Review Modal (Accessible Dialog & 16px Font Form) ── */}
-      {showReviewModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="review-dialog-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
-        >
-          <div className="bg-surface-card border border-border-subtle rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative space-y-5">
-            <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-brand-saffron/15 text-brand-saffron flex items-center justify-center">
-                  <FiEdit3 className="text-lg" />
-                </div>
-                <div>
-                  <h3 id="review-dialog-title" className="text-lg font-bold text-foreground-primary">
-                    Write a Verified Review
-                  </h3>
-                  <p className="text-xs text-foreground-secondary truncate max-w-xs">{product.name}</p>
-                </div>
-              </div>
-              <IconButton
-                aria-label="Close review dialog"
-                variant="ghost"
-                onClick={() => setShowReviewModal(false)}
-              >
-                <FiX className="text-xl" />
-              </IconButton>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!newReview.title.trim() || !newReview.comment.trim()) {
-                  return toast.error('Please complete both review headline and comments');
-                }
-                submitReviewMutation.mutate({
-                  rating: newReview.rating,
-                  title: newReview.title.trim(),
-                  body: newReview.comment.trim(),
-                  imageKeys: attachedReviewKey ? [attachedReviewKey] : undefined,
-                });
-              }}
-              className="space-y-4"
-            >
-              {/* Star Rating Select */}
-              <div>
-                <label className="block text-xs font-semibold text-foreground-secondary uppercase tracking-wider mb-2">
-                  Overall Rating *
-                </label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      aria-label={`${star} of 5 stars`}
-                      onClick={() => setNewReview({ ...newReview, rating: star })}
-                      className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center transition active:scale-95 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-saffron"
-                    >
-                      <FiStar
-                        className={`text-2xl ${
-                          star <= newReview.rating
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-slate-600 hover:text-slate-400'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-xs font-bold text-foreground-primary ml-2">{newReview.rating} of 5 Stars</span>
-                </div>
-              </div>
-
-              <Input
-                label="Headline / Title"
-                required
-                placeholder="e.g. Excellent build quality, fast delivery in Kathmandu!"
-                value={newReview.title}
-                onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
-              />
-
-              <Textarea
-                label="Detailed Review"
-                required
-                rows={4}
-                placeholder="Share details about performance, packaging, authenticity, and delivery..."
-                value={newReview.comment}
-                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-              />
-
-              {/* Customer Photo Attachment */}
-              <div>
-                <ImageUploader
-                  purpose="review-photo"
-                  label="Attach Customer Photo (Optional)"
-                  maxSizeMB={5}
-                  onUploaded={(res) => setAttachedReviewKey(res.key)}
-                  onCleared={() => setAttachedReviewKey(null)}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowReviewModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isLoading={submitReviewMutation.isPending}
-                  loadingText="Publishing..."
-                >
-                  Publish Review
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       )}

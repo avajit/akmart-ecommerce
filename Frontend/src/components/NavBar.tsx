@@ -408,21 +408,29 @@ export default function Navbar() {
 
           {/* Become a Seller / Merchant / Admin Center Buttons */}
           {role === 'SELLER' ? (
-            <Link 
-              to="/seller/dashboard" 
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm"
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/seller/dashboard';
+              }}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer"
             >
               <FiBriefcase className="w-3.5 h-3.5" />
               <span>Merchant Center</span>
-            </Link>
+            </button>
           ) : role === 'ADMIN' ? (
-            <Link 
-              to="/admin/dashboard" 
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm"
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/admin/dashboard';
+              }}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer"
             >
               <FiShield className="w-3.5 h-3.5" />
               <span>Admin Center</span>
-            </Link>
+            </button>
           ) : (
             <Link 
               to={isAuthenticated ? "/seller/onboarding" : "/login?redirect=/seller/onboarding"}

@@ -126,13 +126,17 @@ export default function SellerLayout() {
             ))}
 
             <div className="pt-4 mt-4 border-t border-gray-800/80 px-2">
-              <Link
-                to="/"
-                className="flex items-center gap-2.5 text-xs font-semibold text-gray-400 hover:text-orange-400 py-2.5 px-3 rounded-xl hover:bg-gray-900 transition"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/';
+                }}
+                className="flex items-center gap-2.5 text-xs font-semibold text-gray-400 hover:text-orange-400 py-2.5 px-3 rounded-xl hover:bg-gray-900 transition w-full text-left cursor-pointer min-h-[44px]"
               >
                 <FiShoppingBag className="w-4 h-4 text-orange-400" />
                 <span>Customer Storefront →</span>
-              </Link>
+              </button>
             </div>
           </nav>
         </div>
@@ -187,13 +191,17 @@ export default function SellerLayout() {
           ))}
 
           <div className="pt-6 mt-6 border-t border-gray-800/80 px-2">
-            <Link
-              to="/"
-              className="flex items-center gap-2.5 text-xs font-semibold text-gray-400 hover:text-orange-400 py-2.5 px-3 rounded-xl hover:bg-gray-900 transition min-h-[44px]"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/';
+              }}
+              className="flex items-center gap-2.5 text-xs font-semibold text-gray-400 hover:text-orange-400 py-2.5 px-3 rounded-xl hover:bg-gray-900 transition w-full text-left cursor-pointer min-h-[44px]"
             >
               <FiShoppingBag className="w-4 h-4 text-orange-400" />
               <span>Customer Storefront →</span>
-            </Link>
+            </button>
           </div>
         </nav>
 

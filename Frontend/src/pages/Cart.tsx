@@ -205,12 +205,16 @@ export default function Cart() {
         <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
           You are signed in with a <strong>{role}</strong> account. Shopping cart and customer checkout are reserved for consumer accounts.
         </p>
-        <Link
-          to={role === 'SELLER' ? '/seller/dashboard' : '/admin/dashboard'}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-orange-500/20 active:scale-95"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = role === 'SELLER' ? '/seller/dashboard' : '/admin/dashboard';
+          }}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-orange-500/20 active:scale-95 cursor-pointer"
         >
           Go to {role === 'SELLER' ? 'Seller' : 'Admin'} Dashboard &rarr;
-        </Link>
+        </button>
       </div>
     );
   }
@@ -240,13 +244,17 @@ export default function Cart() {
           Looks like you haven't added anything to your cart yet. Explore Nepal's lowest price guaranteed catalog with fast nationwide delivery!
         </p>
 
-        <Link
-          to="/collection"
-          className="inline-flex items-center gap-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-8 py-4 rounded-xl transition shadow-xl shadow-orange-500/25 text-xs sm:text-sm uppercase tracking-wider active:scale-95 mb-14"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/collection');
+          }}
+          className="inline-flex items-center gap-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-8 py-4 rounded-xl transition shadow-xl shadow-orange-500/25 text-xs sm:text-sm uppercase tracking-wider active:scale-95 mb-14 cursor-pointer"
         >
           <span>Start Shopping Now</span>
           <FiArrowRight size={16} />
-        </Link>
+        </button>
 
         {/* Quick Category Discovery Pills */}
         <div className="border-t border-gray-800/80 pt-10">
@@ -259,13 +267,17 @@ export default function Cart() {
               { label: "Kids & Toys", slug: "kids" },
               { label: "Home & Living", slug: "home" },
             ].map((cat) => (
-              <Link
+              <button
                 key={cat.slug}
-                to={`/collection?category=${cat.slug}`}
-                className="px-4 py-2 rounded-xl bg-[#141414] hover:bg-[#1C1C1C] border border-gray-800 text-xs text-gray-300 hover:text-orange-400 transition-colors font-medium shadow-sm"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/collection?category=${cat.slug}`);
+                }}
+                className="px-4 py-2 rounded-xl bg-[#141414] hover:bg-[#1C1C1C] border border-gray-800 text-xs text-gray-300 hover:text-orange-400 transition-colors font-medium shadow-sm cursor-pointer"
               >
                 {cat.label} &rarr;
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -313,13 +325,17 @@ export default function Cart() {
             Grouped across <span className="text-white font-medium">{vendorGroups.length}</span> seller package(s) with guaranteed dispatch timelines
           </p>
         </div>
-        <Link 
-          to="/collection" 
-          className="inline-flex items-center gap-2 text-xs font-semibold text-brand-saffron hover:text-orange-300 transition-colors self-start sm:self-center px-3 py-2 rounded-xl bg-surface-card border border-border-subtle hover:border-border-strong min-h-[44px]"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/collection');
+          }}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-brand-saffron hover:text-orange-300 transition-colors self-start sm:self-center px-3 py-2 rounded-xl bg-surface-card border border-border-subtle hover:border-border-strong min-h-[44px] cursor-pointer"
         >
           <FiArrowLeft size={14} />
           <span>Continue Shopping</span>
-        </Link>
+        </button>
       </div>
 
       {/* ── Free Shipping Progress Bar (Calculated dynamically on selected items) ── */}

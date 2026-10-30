@@ -257,4 +257,51 @@ describe('Storage Integration Flow: presign -> upload -> save key -> read URL ->
     expect(getReviewsRes.body.data.reviews[0].images).toHaveLength(1);
     expect(getReviewsRes.body.data.reviews[0].images[0].url).toContain(reviewKey);
   });
+
+  it('Step 5: Customer Multiple Review Photo Attachments (up to 3 images) integration test', async () => {
+    const reviewKey1 = `reviews/${testUserId}/photo-1.jpeg`;
+    const reviewKey2 = `reviews/${testUserId}/photo-2.jpeg`;
+    const reviewKey3 = `reviews/${testUserId}/photo-3.jpeg`;
+
+    vi.spyOn(s3Client, 'send').mockResolvedValue({
+      $metadata: { httpStatusCode: 200 },
+    } as any);
+
+    const category = await prisma.category.create({
+      data: { name: 'MultiPhoto Electronics', slug: `multi-elec-${Date.now()}` },
+    });
+    const product = await prisma.product.create({
+      data: {
+        name: 'Multi Photo Test Device',
+        slug: `multi-device-${Date.now()}`,
+        description: 'Test product for multiple review photos',
+        categoryId: category.id,
+        createdById: testUserId,
+        status: 'APPROVED',
+      },
+    });
+
+    const reviewRes = await request(app)
+      .post(`/api/v1/products/${product.id}/reviews`)
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        rating: 4,
+        title: 'Great item with multiple pictures!',
+        body: 'Here are three different angles of the product.',
+        imageKeys: [reviewKey1, reviewKey2, reviewKey3],
+      });
+
+    expect(reviewRes.status).toBe(201);
+    expect(reviewRes.body.data.images).toHaveLength(3);
+    expect(reviewRes.body.data.images.map((img: any) => img.key)).toEqual([
+      reviewKey1,
+      reviewKey2,
+      reviewKey3,
+    ]);
+
+    const dbImages = await prisma.reviewImage.findMany({
+      where: { reviewId: reviewRes.body.data.id },
+    });
+    expect(dbImages).toHaveLength(3);
+  });
 });

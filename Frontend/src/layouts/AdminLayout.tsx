@@ -63,13 +63,17 @@ export default function AdminLayout() {
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/30 uppercase tracking-wider">
             Admin
           </span>
-          <Link
-            to="/"
-            className="p-2 text-gray-400 hover:text-orange-400 hover:bg-gray-800/80 rounded-xl transition"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/';
+            }}
+            className="p-2 text-gray-400 hover:text-orange-400 hover:bg-gray-800/80 rounded-xl transition cursor-pointer"
             title="Customer Storefront"
           >
             <FiShoppingBag className="w-4 h-4" />
-          </Link>
+          </button>
         </div>
       </header>
 

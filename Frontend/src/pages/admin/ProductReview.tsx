@@ -12,6 +12,7 @@ export default function ProductReview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     getAllProductsAdmin({ status: 'ALL' }).then((res: any) => {
       const p = res.data?.products?.find((p: any) => p.id === id);
       setProduct(p);

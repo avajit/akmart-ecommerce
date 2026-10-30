@@ -240,6 +240,7 @@ export default function Collection() {
     } else {
       updateParams({ category: catSlug });
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBrandSelect = (brandSlug: string) => {
