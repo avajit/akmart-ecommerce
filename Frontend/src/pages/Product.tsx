@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProductBySlug, addToCart, getProductReviews } from '../api/consumer.api';
+import { getProductBySlug, addToCart, getProductReviews, submitReview } from '../api/consumer.api';
 import { ShopContext } from '../context/ShopContext';
 import { useAuthStore } from '../store/authStore';
 import { formatImageUrl } from '../utils/imageUrl';
