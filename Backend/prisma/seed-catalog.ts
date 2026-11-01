@@ -1134,7 +1134,9 @@ export async function seedEnterpriseCatalog() {
   await prisma.orderItem.deleteMany({});
   await prisma.order.deleteMany({});
   await prisma.cartItem.deleteMany({});
+  await prisma.cart.deleteMany({});
   await prisma.wishlistItem.deleteMany({});
+  await prisma.wishlist.deleteMany({});
   await prisma.reviewImage.deleteMany({});
   await prisma.review.deleteMany({});
   await prisma.sellerListing.deleteMany({});
@@ -1198,15 +1200,41 @@ export async function seedEnterpriseCatalog() {
 
   console.log(`✅ All 7 Departments & 20 Subcategories structured.\n`);
 
-  // 5. Upsert 35 Verified Nepali Sellers
+  // 5. Upsert 39 Verified Nepali Sellers
   console.log(`🏪 Provisioning ${SELLERS.length} specialized marketplace merchants across Nepal...`);
   const passwordHash = await bcrypt.hash('Seller@123', 10);
   const sellerProfileMap: Record<string, { id: string; userId: string; shopName: string; city: string; specialties: string[] }> = {};
 
-  await prisma.sellerProfile.deleteMany({});
-  await prisma.user.deleteMany({
-    where: { roleId: sellerRole.id },
+  const sellerEmails = SELLERS.map(s => s.email);
+  const sellerPhones = SELLERS.map((_, s) => `9802${String(100001 + s)}`);
+
+  // Find all existing users associated with demo sellers, seller emails, or seller phones
+  const existingUsers = await prisma.user.findMany({
+    where: {
+      OR: [
+        { roleId: sellerRole.id },
+        { email: { in: sellerEmails } },
+        { phoneNumber: { in: sellerPhones } },
+      ],
+    },
+    select: { id: true },
   });
+
+  const userIdsToClean = existingUsers.map(u => u.id);
+
+  if (userIdsToClean.length > 0) {
+    // Delete all dependent child records in proper FK cascade order
+    await prisma.cartItem.deleteMany({ where: { cart: { userId: { in: userIdsToClean } } } });
+    await prisma.cart.deleteMany({ where: { userId: { in: userIdsToClean } } });
+    await prisma.wishlistItem.deleteMany({ where: { wishlist: { userId: { in: userIdsToClean } } } });
+    await prisma.wishlist.deleteMany({ where: { userId: { in: userIdsToClean } } });
+    await prisma.address.deleteMany({ where: { userId: { in: userIdsToClean } } });
+    await prisma.refreshToken.deleteMany({ where: { userId: { in: userIdsToClean } } });
+    await prisma.reviewImage.deleteMany({ where: { review: { userId: { in: userIdsToClean } } } });
+    await prisma.review.deleteMany({ where: { userId: { in: userIdsToClean } } });
+    await prisma.sellerProfile.deleteMany({ where: { userId: { in: userIdsToClean } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIdsToClean } } });
+  }
 
   for (let s = 0; s < SELLERS.length; s++) {
     const def = SELLERS[s];
