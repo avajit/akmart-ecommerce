@@ -2,6 +2,7 @@ import { PrismaClient, FilterType } from '@prisma/client';
 import slugify from 'slugify';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcryptjs';
+import { seedEnterpriseCatalog } from './seed-catalog';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,15 @@ async function main() {
     create: { name: 'CONSUMER', description: 'Standard user who can buy products', isSystem: true },
   });
 
-  // 2. USERS (Security Gatekeeper)
+  // 2. Auto-Provision Enterprise Marketplace Catalog if empty or reset requested
+  const productCount = await prisma.product.count();
+  if (productCount === 0 || process.env.RESET_CATALOG === 'true') {
+    console.log(`📦 Database product count is ${productCount}. Auto-provisioning enterprise marketplace catalog...`);
+    await seedEnterpriseCatalog();
+    return;
+  }
+
+  // 3. USERS (Security Gatekeeper)
   if (process.env.NODE_ENV === 'production') {
     console.log('🔒 Production mode detected: Core system roles verified. Skipping demo/test user seeding.');
     return;
