@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { browseProducts, getCategoryTree, getBrands, getCategoryFilters } from '../api/consumer.api';
+import { FALLBACK_CATEGORIES } from '../constants/categories';
 import { ShopContext } from '../context/ShopContext';
 import ProductItem from '../components/ProductItem';
 import { 
@@ -47,7 +48,7 @@ export default function Collection() {
 
   // Local state
   const [products, setProducts] = useState<any[]>([]);
-  const [categoryTree, setCategoryTree] = useState<any[]>([]);
+  const [categoryTree, setCategoryTree] = useState<any[]>(FALLBACK_CATEGORIES);
   const [dynamicAttributeConfigs, setDynamicAttributeConfigs] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

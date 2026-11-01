@@ -3,7 +3,7 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: akmart_user
-      POSTGRES_PASSWORD: change_me
+      POSTGRES_PASSWORD: akmart_password
       POSTGRES_DB: akmart_db
     ports:
       - "5433:5432"

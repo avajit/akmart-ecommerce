@@ -12,6 +12,7 @@ import { useAuthStore } from "../store/authStore";
 import { useLogout } from "../hooks/useAuth";
 import { getCategoryTree, browseProducts } from "../api/consumer.api";
 import { parseSearchIntent, getSearchTokenVariations } from "../utils/searchParser";
+import { FALLBACK_CATEGORIES } from "../constants/categories";
 
 // Modern vector icon for Home & Living (interior / furniture) so shoppers never confuse it with Website Homepage
 const HomeLivingIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
@@ -55,7 +56,8 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categories, setCategories] = useState<any[]>([]);
+  // Initialize with reliable fallback categories so header navigation and mega menus always render
+  const [categories, setCategories] = useState<any[]>(FALLBACK_CATEGORIES);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [matchingCategories, setMatchingCategories] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);

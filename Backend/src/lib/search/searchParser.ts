@@ -143,6 +143,12 @@ export const KNOWN_BRANDS: Record<string, string> = {
   prada: 'prada',
   rayban: 'ray-ban',
   'ray-ban': 'ray-ban',
+  jbl: 'jbl',
+  bose: 'bose',
+  philips: 'philips',
+  ikea: 'ikea',
+  lakme: 'lakme',
+  lego: 'lego',
 };
 
 // ── 3. Product Attributes: Colors, Sizes, Materials & Features ───────────────

@@ -12,6 +12,9 @@
     "test": "vitest run --exclude dist",
     "test:coverage": "vitest run --exclude dist --coverage",
     "test:watch": "vitest",
+    "seed:catalog": "tsx prisma/seed-catalog.ts",
+    "catalog:reset": "tsx prisma/seed-catalog.ts",
+    "catalog:verify": "tsx prisma/verify-catalog.ts",
     "postinstall": "prisma generate || exit 0"
   },
   "prisma": {

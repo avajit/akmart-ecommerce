@@ -5,12 +5,7 @@ import { FiHeart, FiShoppingCart } from "react-icons/fi";
 import { formatImageUrl } from "../utils/imageUrl";
 import { Price, Badge } from "./ui";
 
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=600&auto=format&fit=crop",
-];
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop";
 
 export interface ProductItemProps {
   slug: string;
@@ -42,7 +37,7 @@ export const ProductItem: React.FC<ProductItemProps> = ({
   // Format and resolve image URL, falling back if missing or placeholder
   const formatted = formatImageUrl(image);
   const displayImage = (!formatted || formatted.includes('placehold.co') || formatted.includes('400x400'))
-    ? FALLBACK_IMAGES[Math.abs(name?.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) || 0) % FALLBACK_IMAGES.length]
+    ? FALLBACK_IMAGE
     : formatted;
 
   const displayPrice = price && Number(price) > 0 ? Number(price) : 0;
@@ -86,9 +81,8 @@ export const ProductItem: React.FC<ProductItemProps> = ({
           referrerPolicy="no-referrer"
           loading="lazy"
           onError={(e) => {
-            const fallback = FALLBACK_IMAGES[Math.abs(name?.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) || 0) % FALLBACK_IMAGES.length];
-            if (e.currentTarget.src !== fallback) {
-              e.currentTarget.src = fallback;
+            if (e.currentTarget.src !== FALLBACK_IMAGE) {
+              e.currentTarget.src = FALLBACK_IMAGE;
             }
           }}
         />

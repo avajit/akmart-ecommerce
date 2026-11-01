@@ -1,7 +1,7 @@
 import { PrismaClient, FilterType } from '@prisma/client';
 import slugify from 'slugify';
 import { nanoid } from 'nanoid';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
