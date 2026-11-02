@@ -97,6 +97,11 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Lightweight Ping Endpoint (Instant response, 0 DB/Redis queries)
+app.get(['/ping', '/api/v1/ping'], (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: Date.now() });
+});
+
 // Register API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/sessions', sessionRoutes);

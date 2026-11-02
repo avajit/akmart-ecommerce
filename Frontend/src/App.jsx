@@ -6,12 +6,14 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import FloatingContactWidget from "./components/FloatingContactWidget";
+import ServerWakeupNotice from "./components/ServerWakeupNotice";
 
 function App() {
   return (
     <ErrorBoundary>
       <div className="w-full min-h-screen bg-black text-gray-200 flex flex-col">
         <ScrollToTop />
+        <ServerWakeupNotice />
         <ToastContainer
           position="top-right"
           autoClose={3500}

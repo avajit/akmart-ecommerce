@@ -38,6 +38,7 @@ export const getAccessToken = () => {
 const apiClient = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  timeout: 70000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -50,6 +51,7 @@ interface FailedQueueItem {
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _coldStartRetryCount?: number;
 }
 
 apiClient.interceptors.request.use(
@@ -107,6 +109,25 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
+    if (!originalRequest) return Promise.reject(normalizeError(error));
+
+    // Cold-start auto-retry for Render free-tier spin-up (502, 503, 504, or Network Error)
+    const isColdStartStatus =
+      !error.response ||
+      error.response.status === 502 ||
+      error.response.status === 503 ||
+      error.response.status === 504;
+
+    const isGetOrHead = !originalRequest.method || ['get', 'head'].includes(originalRequest.method.toLowerCase());
+    const retryCount = originalRequest._coldStartRetryCount || 0;
+    const maxColdStartRetries = 3;
+
+    if (isColdStartStatus && isGetOrHead && retryCount < maxColdStartRetries) {
+      originalRequest._coldStartRetryCount = retryCount + 1;
+      const delay = Math.min(3500 * (retryCount + 1), 7000);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return apiClient(originalRequest);
+    }
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh-token')) {

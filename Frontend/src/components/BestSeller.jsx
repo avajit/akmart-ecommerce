@@ -3,17 +3,55 @@ import Title from "./Title";
 import ProductItem from "./ProductItem";
 import { browseProducts } from "../api/consumer.api";
 
+const ProductSkeleton = () => (
+  <div className="bg-[#141721] rounded-2xl p-3 border border-gray-800/60 animate-pulse flex flex-col justify-between h-[340px]">
+    <div className="w-full h-48 bg-gray-800/60 rounded-xl" />
+    <div className="mt-4 space-y-2">
+      <div className="h-4 bg-gray-800/80 rounded w-3/4" />
+      <div className="h-3 bg-gray-800/50 rounded w-1/2" />
+    </div>
+    <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-800/50">
+      <div className="h-5 bg-orange-500/20 rounded w-1/3" />
+      <div className="h-8 w-8 bg-gray-800/80 rounded-lg" />
+    </div>
+  </div>
+);
+
 const BestSeller = () => {
   const [bestSeller, setBestSeller] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Backend doesn't support bestseller sort yet, so we just fetch latest and slice or rely on random.
-    browseProducts({ limit: 5 }).then((res) => {
-      // In a real app, sort by reviewCount or sales. For now, we take the top 5 returned.
-      setBestSeller(res?.data?.products || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    let isMounted = true;
+
+    const loadBestSellers = (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      browseProducts({ limit: 5 })
+        .then((res) => {
+          if (isMounted) {
+            setBestSeller(res?.data?.products || []);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setLoading(false);
+          }
+        });
+    };
+
+    loadBestSellers(false);
+
+    // Auto-reload once server completes cold start
+    const handleServerAwake = () => {
+      loadBestSellers(true);
+    };
+
+    window.addEventListener('akmart:backend-ready', handleServerAwake);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('akmart:backend-ready', handleServerAwake);
+    };
   }, []);
 
   return (
@@ -26,9 +64,15 @@ const BestSeller = () => {
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-400 py-10">Loading best sellers...</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 sm:gap-6">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <ProductSkeleton key={n} />
+          ))}
+        </div>
       ) : bestSeller.length === 0 ? (
-        <div className="text-center text-gray-500 py-10">No products found.</div>
+        <div className="text-center text-gray-500 py-10 bg-[#12151c]/50 rounded-2xl border border-gray-800/50">
+          <p className="text-sm">No products found.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 sm:gap-6">
           {bestSeller.map((item) => (
