@@ -85,12 +85,20 @@ import uploadRoutes from './routes/upload.routes';
 import { streamFile } from './controllers/upload.controller';
 
 // Health Check Endpoint (For orchestrators/load balancers)
-app.get('/health', async (req, res) => {
+app.get(['/health', '/api/v1/health'], async (req, res) => {
   try {
     // Check DB and Redis connectivity
     await prisma.$queryRaw`SELECT 1`;
     await redis.ping();
-    res.status(200).json({ status: 'ok', message: 'All systems operational' });
+    const productCount = await prisma.product.count({ where: { status: 'APPROVED', deletedAt: null } });
+    res.status(200).json({
+      status: 'ok',
+      message: 'All systems operational',
+      database: {
+        connected: true,
+        approvedProducts: productCount,
+      },
+    });
   } catch (error) {
     console.error('Health check failed:', error);
     res.status(503).json({ status: 'error', message: 'Service unavailable' });

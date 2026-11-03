@@ -1,31 +1,27 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { FiZap, FiCheckCircle, FiX } from 'react-icons/fi';
-import apiClient from '../api/client';
+import axios from 'axios';
+
+const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const PING_URL = `${API_URL.replace(/\/$/, '')}/ping`;
 
 export const ServerWakeupNotice: React.FC = () => {
   const [status, setStatus] = useState<'checking' | 'waking' | 'online' | 'hidden'>('checking');
   const [progress, setProgress] = useState<number>(10);
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(35);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(40);
   const [dismissed, setDismissed] = useState<boolean>(false);
   
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // Check if server was already verified awake in this browser session
-    const isAlreadyAwake = sessionStorage.getItem('akmart_server_awake') === 'true';
-    if (isAlreadyAwake) {
-      setStatus('hidden');
-      return;
-    }
-
     let isMounted = true;
     let wakeConfirmed = false;
 
     const startWakingAnimation = () => {
-      // Smoothly advance progress bar from 10% to 92% over 35 seconds
+      // Smoothly advance progress bar from 10% to 92% over 40 seconds (standard Render cold boot)
       const startTime = Date.now();
-      const totalDuration = 35000; // 35 seconds estimated spin-up time
+      const totalDuration = 40000;
 
       timerRef.current = setInterval(() => {
         const elapsed = Date.now() - startTime;
@@ -49,7 +45,7 @@ export const ServerWakeupNotice: React.FC = () => {
 
       setProgress(100);
       setStatus('online');
-      sessionStorage.setItem('akmart_server_awake', 'true');
+      sessionStorage.setItem('akmart_server_awake', String(Date.now()));
 
       // Dispatch global event so page components (Home, Collection, etc.) can re-fetch
       window.dispatchEvent(new CustomEvent('akmart:backend-ready'));
@@ -61,30 +57,31 @@ export const ServerWakeupNotice: React.FC = () => {
     };
 
     const startPolling = () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const res = await apiClient.get('/ping', { timeout: 4000 });
+          const res = await axios.get(PING_URL, { timeout: 3500 });
           if (res.status === 200) {
             handleServerAwake();
           }
         } catch {
           // Still waiting for Render container to boot
         }
-      }, 3500);
+      }, 3000);
     };
 
-    // Fast check: probe ping endpoint
+    // Fast check: probe ping endpoint with a raw short-timeout axios request
     const checkServer = async () => {
       try {
-        const res = await apiClient.get('/ping', { timeout: 3000 });
+        const res = await axios.get(PING_URL, { timeout: 2000 });
         if (res.status === 200 && isMounted) {
           wakeConfirmed = true;
-          sessionStorage.setItem('akmart_server_awake', 'true');
+          sessionStorage.setItem('akmart_server_awake', String(Date.now()));
           setStatus('hidden');
           return;
         }
       } catch {
-        // Ping failed or timed out — backend is cold/spinning up on Render free tier
+        // Ping failed or timed out — backend is asleep/cold on Render free tier
       }
 
       if (!wakeConfirmed && isMounted) {
@@ -94,10 +91,10 @@ export const ServerWakeupNotice: React.FC = () => {
       }
     };
 
-    // Delay 1.5s before showing notice so users on warm servers never see a flicker
+    // Quick initial check (after 500ms)
     const initialDelay = setTimeout(() => {
       checkServer();
-    }, 1500);
+    }, 500);
 
     return () => {
       isMounted = false;
@@ -159,7 +156,7 @@ export const ServerWakeupNotice: React.FC = () => {
             <p className="text-xs text-gray-300 mt-0.5 leading-relaxed">
               {isOnline
                 ? 'Connection established. Loading store catalog and products...'
-                : 'Render free tier spins down after inactivity. Waking container (~35s)...'}
+                : 'Render free tier spins down after inactivity. Waking container (~40s)...'}
             </p>
 
             {/* Progress Bar */}

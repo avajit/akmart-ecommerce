@@ -6,6 +6,19 @@ import { clearPersistedAuthState } from '../utils/authSession';
 // Base URL for our backend API
 const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
+if (
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1' &&
+  API_URL.includes('localhost')
+) {
+  console.warn(
+    '🚨 [AKMart Deployment Config Warning]: VITE_API_URL is pointing to localhost in production (' +
+      API_URL +
+      '). Please ensure VITE_API_URL is configured in your Vercel Project Settings (e.g. https://akmart-backend.onrender.com/api/v1) and redeploy!'
+  );
+}
+
 let inMemoryAccessToken: string | null = null;
 
 export const setAccessToken = (token: string | null) => {
@@ -120,11 +133,11 @@ apiClient.interceptors.response.use(
 
     const isGetOrHead = !originalRequest.method || ['get', 'head'].includes(originalRequest.method.toLowerCase());
     const retryCount = originalRequest._coldStartRetryCount || 0;
-    const maxColdStartRetries = 3;
+    const maxColdStartRetries = 8;
 
     if (isColdStartStatus && isGetOrHead && retryCount < maxColdStartRetries) {
       originalRequest._coldStartRetryCount = retryCount + 1;
-      const delay = Math.min(3500 * (retryCount + 1), 7000);
+      const delay = 4500;
       await new Promise((resolve) => setTimeout(resolve, delay));
       return apiClient(originalRequest);
     }
