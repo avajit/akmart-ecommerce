@@ -64,6 +64,17 @@ const Login: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // Auto-fill remembered identifier if present in localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('akmart_remembered_identifier');
+      if (saved) {
+        setIdentifier(saved);
+        setRememberMe(true);
+      }
+    } catch {}
+  }, []);
+
   // UX visibility states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -160,7 +171,7 @@ const Login: React.FC = () => {
     const parsedId = parseIdentifier(identifier);
 
     if (tab === 'login') {
-      login({ ...parsedId, password });
+      login({ ...parsedId, password, rememberMe });
     } else {
       register({
         fullName: name.trim(),

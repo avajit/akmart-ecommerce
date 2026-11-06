@@ -27,10 +27,23 @@ export const useLogin = () => {
   const location = useLocation();
 
   return useMutation({
-    mutationFn: (data: { email?: string; phoneNumber?: string; password?: string }) => 
-      authService.login(data.email, data.phoneNumber, data.password),
+    mutationFn: (data: { email?: string; phoneNumber?: string; password?: string; rememberMe?: boolean }) => 
+      authService.login(data.email, data.phoneNumber, data.password, data.rememberMe),
     
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      const id = variables.email || variables.phoneNumber;
+      if (variables.rememberMe && id) {
+        try {
+          localStorage.setItem('akmart_remembered_identifier', String(id));
+          localStorage.setItem('akmart_remember_session', 'true');
+        } catch {}
+      } else {
+        try {
+          localStorage.removeItem('akmart_remembered_identifier');
+          localStorage.removeItem('akmart_remember_session');
+        } catch {}
+      }
+
       setAuth(data.user, data.accessToken);
       toast.success('Welcome back! Login successful.', { toastId: 'login-success' });
       const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();
@@ -120,6 +133,9 @@ export const useVerifyOTP = () => {
     
     onSuccess: (data) => {
       sessionStorage.removeItem('akmart_verify_identifier');
+      try {
+        localStorage.setItem('akmart_remember_session', 'true');
+      } catch {}
       setAuth(data.user, data.accessToken);
       toast.success('Account verified successfully! You are now logged in.', {
         toastId: 'verify-success',
@@ -238,6 +254,9 @@ export const useGoogleSSO = () => {
   return useMutation({
     mutationFn: (idToken: string) => authService.googleSSO({ idToken }),
     onSuccess: (data) => {
+      try {
+        localStorage.setItem('akmart_remember_session', 'true');
+      } catch {}
       setAuth(data.user, data.accessToken);
       toast.success('Welcome! Signed in with Google.', { toastId: 'google-success' });
       const role = (data.user?.roleName || (data.user as any)?.role?.name || data.user?.role || '').toUpperCase();

@@ -8,11 +8,12 @@ import {
 } from '../types/api.types';
 
 export const authService = {
-  login: async (email?: string, phoneNumber?: string, password?: string): Promise<LoginResponseDTO> => {
+  login: async (email?: string, phoneNumber?: string, password?: string, rememberMe?: boolean): Promise<LoginResponseDTO> => {
     const response = await apiClient.post<ApiResponse<LoginResponseDTO>>('/auth/login', {
       email,
       phoneNumber,
-      password
+      password,
+      rememberMe,
     });
     return response.data.data;
   },

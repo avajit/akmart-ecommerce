@@ -18,6 +18,7 @@ export const loginSchema = z.object({
     email: z.string().email('Invalid email address').optional(),
     phoneNumber: z.string().regex(/^\d{10}$/, 'Phone number must be exactly 10 digits').optional(),
     password: z.string().min(1, 'Password is required'),
+    rememberMe: z.boolean().optional(),
   }).refine((data) => data.email || data.phoneNumber, {
     message: 'Either email or phone number must be provided for login',
     path: ['email'],

@@ -5,13 +5,9 @@ import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
 import { toUserResponseDTO, AuthResponseDTO } from '../dtos/auth.dto';
 
-const cookieOptions = {
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: (env.NODE_ENV === 'production' ? 'none' : 'strict') as 'none' | 'strict',
-  path: '/',
-  maxAge: env.JWT_REFRESH_EXPIRES_IN_MS,
-};
+import { getAuthCookieOptions } from '../utils/cookie';
+
+const cookieOptions = getAuthCookieOptions(true);
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -28,7 +24,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, phoneNumber, password } = req.body;
+    const { email, phoneNumber, password, rememberMe } = req.body;
     const identifier = email || phoneNumber;
     
     if (!identifier) {
@@ -37,10 +33,11 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const deviceInfo = req.headers['user-agent'] || 'Unknown Device';
     const ip = req.ip || 'Unknown IP';
+    const isRemembered = rememberMe !== false;
 
-    const result = await AuthService.login(identifier, password, deviceInfo, ip);
+    const result = await AuthService.login(identifier, password, deviceInfo, ip, isRemembered);
 
-    res.cookie('refreshToken', result.refreshToken, cookieOptions);
+    res.cookie('refreshToken', result.refreshToken, getAuthCookieOptions(isRemembered));
 
     const responseData: AuthResponseDTO = {
       accessToken: result.accessToken,
@@ -80,7 +77,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
     const result = await AuthService.rotateRefreshToken(token, deviceInfo, ip);
 
-    res.cookie('refreshToken', result.refreshToken, cookieOptions);
+    res.cookie('refreshToken', result.refreshToken, getAuthCookieOptions(result.isPersistent));
 
     res.status(200).json({
       success: true,

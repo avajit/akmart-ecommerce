@@ -86,7 +86,7 @@ export class AuthService {
     return user;
   }
 
-  static async login(identifier: string, password: string, deviceInfo: string, ip: string) {
+  static async login(identifier: string, password: string, deviceInfo: string, ip: string, rememberMe: boolean = true) {
     const user = await prisma.user.findFirst({
       where: { OR: [{ email: identifier }, { phoneNumber: identifier }] },
       include: { role: true },
@@ -127,16 +127,17 @@ export class AuthService {
     const { accessToken, refreshToken } = generateTokens(user.id, user.roleId, user.role.name);
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
+    const sessionDurationMs = rememberMe ? env.JWT_REFRESH_EXPIRES_IN_MS : 24 * 60 * 60 * 1000;
     await prisma.refreshToken.create({
       data: {
         tokenHash,
         userId: user.id,
         deviceInfo: deviceInfo || ip,
-        expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN_MS),
+        expiresAt: new Date(Date.now() + sessionDurationMs),
       },
     });
 
-    return { user, accessToken, refreshToken };
+    return { user, accessToken, refreshToken, isPersistent: rememberMe };
   }
 
   static async rotateRefreshToken(oldToken: string, deviceInfo: string, ip: string) {
@@ -192,16 +193,19 @@ export class AuthService {
     );
     const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
 
+    const isPersistent = (existingToken.expiresAt.getTime() - existingToken.createdAt.getTime()) > (48 * 60 * 60 * 1000);
+    const sessionDurationMs = isPersistent ? env.JWT_REFRESH_EXPIRES_IN_MS : 24 * 60 * 60 * 1000;
+
     await prisma.refreshToken.create({
       data: {
         tokenHash: newTokenHash,
         userId: existingToken.userId,
         deviceInfo: deviceInfo || ip,
-        expiresAt: new Date(Date.now() + env.JWT_REFRESH_EXPIRES_IN_MS),
+        expiresAt: new Date(Date.now() + sessionDurationMs),
       },
     });
 
-    return { accessToken, refreshToken: newRefreshToken };
+    return { accessToken, refreshToken: newRefreshToken, isPersistent };
   }
 
   static async logout(token: string) {

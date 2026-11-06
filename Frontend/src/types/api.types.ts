@@ -35,6 +35,7 @@ export interface LoginRequestDTO {
   email?: string;
   phoneNumber?: string;
   password?: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterRequestDTO {
