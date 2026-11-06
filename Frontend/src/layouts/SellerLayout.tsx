@@ -13,6 +13,7 @@ import {
   FiTruck
 } from 'react-icons/fi';
 import { useLogout } from '../hooks/useAuth';
+import SignOutModal from '../components/SignOutModal';
 import BrandLogo from '../components/BrandLogo';
 
 export default function SellerLayout() {
@@ -226,46 +227,17 @@ export default function SellerLayout() {
       </main>
 
       {/* ── 6. LOGOUT CONFIRMATION MODAL ── */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#161616] border border-gray-800 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl space-y-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center mx-auto shadow-lg">
-              <FiLogOut className="w-6 h-6" />
-            </div>
-
-            <div>
-              <h3 className="text-base font-bold text-white">
-                Sign Out of Merchant Hub?
-              </h3>
-              <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                You will be signed out of your merchant store and returned to the store catalog.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowLogoutConfirm(false)}
-                disabled={isPending}
-                className="w-full py-3 px-4 rounded-xl bg-[#222222] hover:bg-[#2a2a2a] text-gray-300 text-xs font-semibold transition active:scale-95 min-h-[44px]"
-              >
-                Keep Selling
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLogoutConfirm(false);
-                  logout();
-                }}
-                disabled={isPending}
-                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider transition active:scale-95 shadow-lg shadow-rose-600/30 min-h-[44px]"
-              >
-                {isPending ? 'Signing out...' : 'Sign Out'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SignOutModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        isLoading={isPending}
+        title="Sign Out of Merchant Hub?"
+        description="You will be signed out of your merchant store and returned to the store catalog."
+      />
 
     </div>
   );
