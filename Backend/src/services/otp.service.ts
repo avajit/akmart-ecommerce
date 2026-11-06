@@ -115,9 +115,10 @@ export class OTPService {
       }
     } else {
       // SMS Gateway integration placeholder
+      // Note: OTP value intentionally omitted from logs to prevent plain-text token exposure in production
       console.log(`\n======================================================`);
       console.log(`📱 [SMS DISPATCH] To: ${cleanId}`);
-      console.log(`Message: Your AKMart verification code is ${token}`);
+      console.log(`Message: Your AKMart verification code has been generated and would be sent via SMS gateway.`);
       console.log(`======================================================\n`);
     }
 

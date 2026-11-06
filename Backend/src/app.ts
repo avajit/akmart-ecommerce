@@ -46,8 +46,10 @@ app.use(
       // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
       const cleanOrigin = origin.replace(/\/$/, '');
-      const isVercel = cleanOrigin.endsWith('.vercel.app');
-      const isAllowed = allowedOrigins.includes(cleanOrigin) || isVercel;
+      // Restrict Vercel & Netlify previews to only AkMart-owned deployments (prefix guard)
+      const isVercel = cleanOrigin.endsWith('.vercel.app') && cleanOrigin.includes('akmart');
+      const isNetlify = cleanOrigin.endsWith('.netlify.app') && cleanOrigin.includes('akmart');
+      const isAllowed = allowedOrigins.includes(cleanOrigin) || isVercel || isNetlify;
       if (isAllowed) {
         callback(null, true);
       } else {

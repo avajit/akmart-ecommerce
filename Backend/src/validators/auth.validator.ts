@@ -51,7 +51,7 @@ export const resetPasswordSchema = z.object({
 export const verifyAccountSchema = z.object({
   body: z.object({
     identifier: z.string().min(1, 'Email or Phone is required'),
-    token: z.string().length(6, 'Verification code must be exactly 6 digits'),
+    token: z.string().length(6, 'Verification code must be exactly 6 digits').regex(/^\d{6}$/, 'Verification code must be exactly 6 numeric digits'),
   }),
 });
 
