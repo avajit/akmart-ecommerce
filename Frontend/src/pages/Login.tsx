@@ -498,43 +498,6 @@ const Login: React.FC = () => {
                 </div>
               </div>
 
-              {/* Register Extras: Account Type */}
-              <div
-                className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                  tab === 'register' ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
-                }`}
-              >
-                <label className="block text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-2">
-                  Account Type
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setRole('CONSUMER')}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 border rounded-xl text-xs font-semibold transition-all duration-200 ${
-                      role === 'CONSUMER'
-                        ? 'border-orange-500 bg-orange-500/10 text-orange-400'
-                        : 'border-gray-800 bg-[#1A1A1A] text-gray-400 hover:border-gray-700'
-                    }`}
-                  >
-                    <FiShoppingBag className="w-3.5 h-3.5" />
-                    <span>Buyer</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRole('SELLER')}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 border rounded-xl text-xs font-semibold transition-all duration-200 ${
-                      role === 'SELLER'
-                        ? 'border-orange-500 bg-orange-500/10 text-orange-400'
-                        : 'border-gray-800 bg-[#1A1A1A] text-gray-400 hover:border-gray-700'
-                    }`}
-                  >
-                    <FiBriefcase className="w-3.5 h-3.5" />
-                    <span>Supplier</span>
-                  </button>
-                </div>
-              </div>
 
               {/* Register Extras: Terms */}
               <div

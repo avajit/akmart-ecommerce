@@ -111,10 +111,22 @@ export const errorHandler = (
       : err.message || 'File upload failed.';
     errorCode = 'STORAGE_UPLOAD_ERROR';
   }
-  // 7. Unhandled / Unexpected Errors
-  else {
-    // Log unexpected errors through structured logger
-    logger.error('Unhandled Application Exception', { error: err.message, stack: err.stack });
+  // 7. Structured error logging for all HTTP failures
+  if (statusCode >= 500) {
+    logger.error(`[SERVER ERROR ${statusCode}] ${_req.method} ${_req.originalUrl || _req.url}`, {
+      errorCode,
+      message,
+      stack: err.stack,
+      ip: _req.ip,
+      userAgent: _req.headers?.['user-agent'],
+    });
+  } else {
+    logger.warn(`[CLIENT ERROR ${statusCode}] ${_req.method} ${_req.originalUrl || _req.url}`, {
+      errorCode,
+      message,
+      errors,
+      ip: _req.ip,
+    });
   }
 
   // Build the standardized unified response payload adhering to contract

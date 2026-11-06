@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createSellerProfile } from '../../api/seller.api';
+import { createSellerProfile, getSellerProfile } from '../../api/seller.api';
 import { useAuthStore } from '../../store/authStore';
 import { toast } from 'react-toastify';
 import { FiBriefcase, FiCheckCircle, FiShield, FiArrowRight, FiInfo } from 'react-icons/fi';
@@ -12,13 +12,22 @@ export default function Onboarding() {
 
   const rawRole = (user?.roleName || (user as any)?.role?.name || user?.role || '').toUpperCase();
 
-  // If already a seller or admin, give them 1-click access to dashboard
+  // If already an admin or already has an active seller profile, forward to dashboard
   useEffect(() => {
-    if (rawRole === 'SELLER') {
-      toast.info('You already have an active merchant account!', { toastId: 'already-seller' });
-      navigate('/seller/dashboard', { replace: true });
-    } else if (rawRole === 'ADMIN') {
+    if (rawRole === 'ADMIN') {
       navigate('/admin/dashboard', { replace: true });
+      return;
+    }
+
+    if (rawRole === 'SELLER') {
+      getSellerProfile()
+        .then(() => {
+          toast.info('You already have an active merchant account!', { toastId: 'already-seller' });
+          navigate('/seller/dashboard', { replace: true });
+        })
+        .catch(() => {
+          // If no profile yet (404), allow the seller to complete the onboarding form
+        });
     }
   }, [rawRole, navigate]);
 

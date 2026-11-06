@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
 import { env } from '../config/env';
+import { logger } from '../utils/logger';
 
 export class EmailService {
   private static getTransporter() {
@@ -11,6 +12,9 @@ export class EmailService {
         host: 'smtp.resend.com',
         port: 465,
         secure: true,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 15000,
         auth: {
           user: 'resend',
           pass: env.RESEND_API_KEY || env.SMTP_PASS,
@@ -24,6 +28,9 @@ export class EmailService {
         host: 'smtp-relay.brevo.com',
         port: 587,
         secure: false,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 15000,
         auth: {
           user: env.SMTP_USER || 'apikeys',
           pass: env.BREVO_API_KEY || env.SMTP_PASS,
@@ -36,6 +43,9 @@ export class EmailService {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_PORT === 465,
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
       auth: env.SMTP_USER && env.SMTP_PASS ? {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
@@ -213,9 +223,18 @@ export class EmailService {
         html,
         attachments,
       });
-      console.log(`[EMAIL DISPATCHED] "${subject}" to ${to}`);
-    } catch (error) {
-      console.error('[EMAIL ERROR] Failed to send email to', to, error);
+      logger.info(`[EMAIL DISPATCHED] "${subject}" to ${to}`);
+    } catch (error: any) {
+      logger.error('[EMAIL ERROR] Failed to send email', {
+        to,
+        subject,
+        message: error?.message,
+        code: error?.code,
+        response: error?.response,
+        responseCode: error?.responseCode,
+        command: error?.command,
+        stack: error?.stack,
+      });
     }
   }
 

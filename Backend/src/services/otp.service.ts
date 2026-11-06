@@ -3,6 +3,7 @@ import { redis } from '../app';
 import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
 import { EmailService } from './email.service';
+import { logger } from '../utils/logger';
 
 export interface OTPOptions {
   cancelUrl?: string;
@@ -103,15 +104,21 @@ export class OTPService {
     }
     await pipeline.exec();
 
-    // 6. Dispatch Notification Channel
+    // 6. Dispatch Notification Channel (Non-blocking background delivery)
     const isEmail = cleanId.includes('@');
     if (isEmail) {
       if (type === 'EMAIL_VERIFY') {
-        await EmailService.sendVerificationEmail(cleanId, token, cancelUrl);
+        EmailService.sendVerificationEmail(cleanId, token, cancelUrl).catch((err) => {
+          logger.error('[OTP EMAIL ERROR] Background dispatch failed', { identifier: cleanId, type, error: err?.message });
+        });
       } else if (type === 'PASSWORD_RESET') {
-        await EmailService.sendPasswordResetEmail(cleanId, token);
+        EmailService.sendPasswordResetEmail(cleanId, token).catch((err) => {
+          logger.error('[OTP EMAIL ERROR] Background dispatch failed', { identifier: cleanId, type, error: err?.message });
+        });
       } else {
-        await EmailService.sendVerificationEmail(cleanId, token);
+        EmailService.sendVerificationEmail(cleanId, token).catch((err) => {
+          logger.error('[OTP EMAIL ERROR] Background dispatch failed', { identifier: cleanId, type, error: err?.message });
+        });
       }
     } else {
       // SMS Gateway integration placeholder
