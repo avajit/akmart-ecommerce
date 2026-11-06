@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { registerSchema, loginSchema } from '../../validators/auth.validator';
+import { registerSchema } from '../../validators/auth.validator';
 import { AppError } from '../../utils/AppError';
 import { getAuthCookieOptions } from '../../utils/cookie';
 import { env } from '../../config/env';
@@ -262,10 +262,11 @@ describe('Role-Based Access Control, Registration & Onboarding Edge Case Tests',
   });
 
   describe('5. Identifier Parser & Phone / Email Recognition Edge Cases', () => {
-    // Exact logic from Login.tsx
+    // Safe phone recognition without ReDoS backtracking
     const isPhoneNumber = (val: string) => {
       const cleaned = val.replace(/[\s-]/g, '');
-      return /^(\+?977)?[9][678]\d{8}$/.test(cleaned) || /^\d{10}$/.test(cleaned);
+      const digits = cleaned.startsWith('+977') ? cleaned.slice(4) : (cleaned.startsWith('977') ? cleaned.slice(3) : cleaned);
+      return /^[9][678]\d{8}$/.test(digits) || /^\d{10}$/.test(digits);
     };
 
     const parseIdentifier = (value: string) => {

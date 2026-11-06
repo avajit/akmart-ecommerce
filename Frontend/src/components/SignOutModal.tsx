@@ -55,7 +55,7 @@ export const SignOutModal: React.FC<SignOutModalProps> = ({
         </button>
 
         {/* AkMart Themed Icon Badge */}
-        <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+        <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto">
           <FiLogOut className="w-5 h-5" />
         </div>
 
@@ -75,7 +75,7 @@ export const SignOutModal: React.FC<SignOutModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#1C1C1C] hover:bg-[#252525] active:bg-[#181818] border border-gray-800 text-gray-300 hover:text-white text-xs font-semibold transition active:scale-95 disabled:opacity-50 min-h-[42px]"
+            className="w-full py-2.5 px-4 rounded-xl bg-[#1C1C1C] hover:bg-[#252525] active:bg-[#181818] border border-gray-800 text-gray-300 hover:text-white text-xs font-semibold transition active:scale-95 disabled:opacity-50 min-h-[42px] cursor-pointer"
           >
             {cancelText}
           </button>
@@ -84,7 +84,7 @@ export const SignOutModal: React.FC<SignOutModalProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-semibold transition active:scale-95 shadow-sm disabled:opacity-50 min-h-[42px] flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-xs font-semibold transition active:scale-95 shadow-sm shadow-orange-500/20 disabled:opacity-50 min-h-[42px] flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <FiLogOut className="w-3.5 h-3.5 shrink-0" />
             <span>{isLoading ? 'Signing out...' : confirmText}</span>
