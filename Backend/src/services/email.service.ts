@@ -1,3 +1,4 @@
+import '../config/network';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';

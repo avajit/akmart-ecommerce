@@ -1,17 +1,7 @@
-import dns from 'dns';
+import './config/network';
 import { server } from './app';
 import { env } from './config/env';
 import { initBackendSentry } from './lib/sentry';
-
-// Force Node.js to resolve IPv4 addresses first.
-// Cloud container platforms (such as Render free/standard tier) do not support
-// outbound IPv6 routing, which causes SMTP connections to Gmail (smtp.gmail.com)
-// to fail with ENETUNREACH when attempting to connect to IPv6 (2607:f8b0:...).
-try {
-  dns.setDefaultResultOrder('ipv4first');
-} catch {
-  // Ignored on legacy node runtimes
-}
 
 initBackendSentry();
 
