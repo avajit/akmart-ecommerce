@@ -26,8 +26,14 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CALLBACK_URL: z.string().url().optional(),
 
-  EMAIL_PROVIDER: z.enum(['smtp', 'resend', 'brevo']).default('smtp'),
-  RESEND_API_KEY: z.string().optional(),
+  EMAIL_PROVIDER: z.preprocess(
+    (val) => (typeof val === 'string' ? val.replace(/[;\s]+$/, '').trim() : val),
+    z.enum(['smtp', 'resend', 'brevo'])
+  ).default('smtp'),
+  RESEND_API_KEY: z.preprocess(
+    (val) => (typeof val === 'string' ? val.replace(/[;\s]+$/, '').trim() : val),
+    z.string().optional()
+  ),
   BREVO_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().default('smtp.ethereal.email'),
   SMTP_PORT: z.string().transform(Number).default(587 as never),
