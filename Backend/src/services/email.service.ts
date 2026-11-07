@@ -19,7 +19,7 @@ export class EmailService {
           user: 'resend',
           pass: env.RESEND_API_KEY || env.SMTP_PASS,
         },
-      });
+      } as any);
     }
 
     // 2. Brevo (Sendinblue) Provider Configuration
@@ -35,7 +35,7 @@ export class EmailService {
           user: env.SMTP_USER || 'apikeys',
           pass: env.BREVO_API_KEY || env.SMTP_PASS,
         },
-      });
+      } as any);
     }
 
     // 3. Standard Custom SMTP Provider
@@ -43,6 +43,7 @@ export class EmailService {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_PORT === 465,
+      family: 4, // Prevents ENETUNREACH on Render/AWS containers without IPv6
       connectionTimeout: 8000,
       greetingTimeout: 8000,
       socketTimeout: 15000,
@@ -50,7 +51,7 @@ export class EmailService {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
       } : undefined,
-    });
+    } as any);
   }
 
   /**
