@@ -1,4 +1,5 @@
 import '../config/network';
+import axios from 'axios';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
@@ -192,11 +193,124 @@ export class EmailService {
   }
 
   /**
-   * Helper to dispatch email via Nodemailer with attached CID logo.
+   * Dispatches email via Resend HTTP REST API (HTTPS port 443).
+   * 100% immune to cloud container SMTP firewall blocks (Render Free Tier, AWS, Vercel).
+   */
+  private static async sendViaResend(to: string, subject: string, html: string) {
+    try {
+      const apiKey = env.RESEND_API_KEY;
+      if (!apiKey) {
+        throw new Error('RESEND_API_KEY is not configured');
+      }
+
+      // Default to Resend verified sandbox if custom domain is not yet configured
+      let from = env.SMTP_FROM || 'AKMart <onboarding@resend.dev>';
+      if (from.includes('@gmail.com') || from.includes('@akmart.com')) {
+        from = 'AKMart <onboarding@resend.dev>';
+      }
+
+      const payload: any = {
+        from,
+        to: [to],
+        subject,
+        html,
+      };
+
+      const logoPath = path.resolve(__dirname, '../assets/logo.png');
+      if (fs.existsSync(logoPath)) {
+        try {
+          const fileBuffer = fs.readFileSync(logoPath);
+          payload.attachments = [
+            {
+              filename: 'logo.png',
+              content: fileBuffer.toString('base64'),
+            },
+          ];
+        } catch {
+          // Non-critical attachment failure
+        }
+      }
+
+      const res = await axios.post('https://api.resend.com/emails', payload, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      });
+
+      logger.info(`[RESEND EMAIL DISPATCHED] "${subject}" to ${to}`, { id: res.data?.id });
+    } catch (error: any) {
+      logger.error('[RESEND HTTP API ERROR] Failed to send email via Resend', {
+        to,
+        subject,
+        message: error?.response?.data?.message || error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+    }
+  }
+
+  /**
+   * Dispatches email via Brevo HTTP REST API (HTTPS port 443).
+   */
+  private static async sendViaBrevo(to: string, subject: string, html: string) {
+    try {
+      const apiKey = env.BREVO_API_KEY;
+      if (!apiKey) {
+        throw new Error('BREVO_API_KEY is not configured');
+      }
+
+      const payload: any = {
+        sender: {
+          name: 'AKMart',
+          email: env.SMTP_USER || 'support@akmart.com',
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      };
+
+      const res = await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        timeout: 10000,
+      });
+
+      logger.info(`[BREVO EMAIL DISPATCHED] "${subject}" to ${to}`, { messageId: res.data?.messageId });
+    } catch (error: any) {
+      logger.error('[BREVO HTTP API ERROR] Failed to send email via Brevo', {
+        to,
+        subject,
+        message: error?.response?.data?.message || error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+    }
+  }
+
+  /**
+   * Master dispatcher: auto-selects HTTP REST API (Resend / Brevo) or raw Nodemailer SMTP.
    */
   private static async sendRaw(to: string, subject: string, html: string) {
     if (env.NODE_ENV === 'test') return;
 
+    // 1. Resend HTTP REST API (Port 443 - Bypasses Render SMTP firewall)
+    if (env.EMAIL_PROVIDER === 'resend' || env.RESEND_API_KEY) {
+      await this.sendViaResend(to, subject, html);
+      return;
+    }
+
+    // 2. Brevo HTTP REST API (Port 443 - Bypasses Render SMTP firewall)
+    if (env.EMAIL_PROVIDER === 'brevo' || env.BREVO_API_KEY) {
+      await this.sendViaBrevo(to, subject, html);
+      return;
+    }
+
+    // 3. Fallback: Mock check for local testing without SMTP credentials
     if (!env.SMTP_USER || env.SMTP_USER === 'your_ethereal_user@ethereal.email') {
       console.log(`\n======================================================`);
       console.log(`📧 [TRANSACTIONAL EMAIL MOCK] To: ${to}`);
@@ -206,6 +320,7 @@ export class EmailService {
       return;
     }
 
+    // 4. Standard SMTP Dispatch (Nodemailer for custom servers)
     try {
       const transporter = this.getTransporter();
       const attachments: any[] = [];
