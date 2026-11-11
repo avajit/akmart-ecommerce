@@ -34,7 +34,10 @@ const envSchema = z.object({
     (val) => (typeof val === 'string' ? val.replace(/[;\s]+$/, '').trim() : val),
     z.string().optional()
   ),
-  BREVO_API_KEY: z.string().optional(),
+  BREVO_API_KEY: z.preprocess(
+    (val) => (typeof val === 'string' ? val.replace(/[;\s]+$/, '').trim() : val),
+    z.string().optional()
+  ),
   SMTP_HOST: z.string().default('smtp.ethereal.email'),
   SMTP_PORT: z.string().transform(Number).default(587 as never),
   SMTP_USER: z.string().optional(),

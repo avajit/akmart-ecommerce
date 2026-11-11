@@ -261,10 +261,19 @@ export class EmailService {
         throw new Error('BREVO_API_KEY is not configured');
       }
 
+      let senderEmail = env.SMTP_USER;
+      if (!senderEmail && env.SMTP_FROM) {
+        const match = env.SMTP_FROM.match(/<([^>]+)>/);
+        senderEmail = match ? match[1] : env.SMTP_FROM;
+      }
+      if (!senderEmail) {
+        senderEmail = 'mandalavijeet12@gmail.com';
+      }
+
       const payload: any = {
         sender: {
           name: 'AKMart',
-          email: env.SMTP_USER || 'support@akmart.com',
+          email: senderEmail.trim(),
         },
         to: [{ email: to }],
         subject,
