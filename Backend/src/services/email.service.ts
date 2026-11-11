@@ -8,24 +8,8 @@ import { logger } from '../utils/logger';
 
 export class EmailService {
   private static getTransporter() {
-    // 1. Resend Provider Configuration
-    if (env.EMAIL_PROVIDER === 'resend' || env.RESEND_API_KEY) {
-      return nodemailer.createTransport({
-        host: 'smtp.resend.com',
-        port: 465,
-        secure: true,
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 15000,
-        auth: {
-          user: 'resend',
-          pass: env.RESEND_API_KEY || env.SMTP_PASS,
-        },
-      } as any);
-    }
-
-    // 2. Brevo (Sendinblue) Provider Configuration
-    if (env.EMAIL_PROVIDER === 'brevo' || env.BREVO_API_KEY) {
+    // 1. Brevo Provider
+    if (env.EMAIL_PROVIDER === 'brevo' || (!env.EMAIL_PROVIDER && env.BREVO_API_KEY)) {
       return nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
         port: 587,
@@ -36,6 +20,22 @@ export class EmailService {
         auth: {
           user: env.SMTP_USER || 'apikeys',
           pass: env.BREVO_API_KEY || env.SMTP_PASS,
+        },
+      } as any);
+    }
+
+    // 2. Resend Provider
+    if (env.EMAIL_PROVIDER === 'resend' || (!env.EMAIL_PROVIDER && env.RESEND_API_KEY)) {
+      return nodemailer.createTransport({
+        host: 'smtp.resend.com',
+        port: 465,
+        secure: true,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 15000,
+        auth: {
+          user: 'resend',
+          pass: env.RESEND_API_KEY || env.SMTP_PASS,
         },
       } as any);
     }
@@ -307,15 +307,25 @@ export class EmailService {
   private static async sendRaw(to: string, subject: string, html: string) {
     if (env.NODE_ENV === 'test') return;
 
-    // 1. Resend HTTP REST API (Port 443 - Bypasses Render SMTP firewall)
-    if (env.EMAIL_PROVIDER === 'resend' || env.RESEND_API_KEY) {
+    // 1. Explicit Provider Selection via EMAIL_PROVIDER
+    if (env.EMAIL_PROVIDER === 'brevo') {
+      await this.sendViaBrevo(to, subject, html);
+      return;
+    }
+
+    if (env.EMAIL_PROVIDER === 'resend') {
       await this.sendViaResend(to, subject, html);
       return;
     }
 
-    // 2. Brevo HTTP REST API (Port 443 - Bypasses Render SMTP firewall)
-    if (env.EMAIL_PROVIDER === 'brevo' || env.BREVO_API_KEY) {
+    // 2. Auto-detect if EMAIL_PROVIDER is not set or default
+    if (env.BREVO_API_KEY) {
       await this.sendViaBrevo(to, subject, html);
+      return;
+    }
+
+    if (env.RESEND_API_KEY) {
+      await this.sendViaResend(to, subject, html);
       return;
     }
 
